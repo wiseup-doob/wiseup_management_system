@@ -1,0 +1,1 @@
+# wiseup_management_system
