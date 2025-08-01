@@ -15,7 +15,6 @@ wiseUp_management_system/
 │       ├── contexts/         # React Context
 │       ├── routes/           # 라우팅 설정
 │       ├── img/              # 이미지 파일들
-│       ├── styles/           # 전역 스타일
 │       ├── config/           # 설정 파일들
 │       ├── lib/              # 유틸리티 라이브러리
 │       ├── assets/           # 정적 자산
