@@ -1,4 +1,4 @@
-import { PublicUser } from '../users/user.types'
+import {PublicUser} from "../users/user.types";
 
 // 로그인 요청 타입
 export interface LoginRequest {
@@ -12,14 +12,14 @@ export interface RegisterRequest {
   phone: string;
   email: string;
   password: string;
-  status?: 'active' | 'inactive';
+  status?: "active" | "inactive";
 }
 
 // 로그인 응답 타입
 export interface LoginResponse {
-  user: PublicUser;        // Users 모듈의 타입 재사용
-  token?: string;          // JWT 토큰 (추후 구현)
-  refreshToken?: string;   // 리프레시 토큰 (추후 구현)
+  user: PublicUser; // Users 모듈의 타입 재사용
+  token?: string; // JWT 토큰 (추후 구현)
+  refreshToken?: string; // 리프레시 토큰 (추후 구현)
 }
 
 // 비밀번호 변경 요청 타입
@@ -45,7 +45,7 @@ export interface TokenVerifyResponse {
   user?: {
     user_id: string;
     email: string;
-    status: 'active' | 'inactive';
+    status: "active" | "inactive";
   };
   expired?: boolean;
 }
@@ -54,9 +54,9 @@ export interface TokenVerifyResponse {
 export interface JWTPayload {
   user_id: string;
   email: string;
-  status: 'active' | 'inactive';
-  iat?: number;  // issued at
-  exp?: number;  // expires at
+  status: "active" | "inactive";
+  iat?: number; // issued at
+  exp?: number; // expires at
 }
 
 // 인증 세션 타입
@@ -67,4 +67,4 @@ export interface AuthSession {
   lastActiveAt: FirebaseFirestore.Timestamp;
   ipAddress?: string;
   userAgent?: string;
-} 
+}

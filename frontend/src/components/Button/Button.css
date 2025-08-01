@@ -1,0 +1,57 @@
+.button {
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--font-primary);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  color: inherit;
+  text-decoration: none;
+  outline: none;
+  user-select: none;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button:focus {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* 데이터 속성을 이용한 상태 스타일링 */
+.button[data-hovered="true"] {
+  transform: translateY(-1px);
+}
+
+.button[data-focused="true"] {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+.button[data-pressed="true"] {
+  transform: translateY(0);
+}
+
+/* 접근성 개선 */
+.button:focus-visible {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+/* 키보드 네비게이션 */
+.button:focus {
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+} 

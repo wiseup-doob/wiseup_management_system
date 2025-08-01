@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express'
-import { logger } from 'firebase-functions/v2'
+import {Request, Response, NextFunction} from "express";
+import {logger} from "firebase-functions/v2";
 
 export function errorHandler(
   err: any,
@@ -7,7 +7,7 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ) {
-  logger.error(err)
-  const status = err.status ?? 500
-  res.status(status).json({ error: err.message ?? 'internal_error' })
+  logger.error(err);
+  const status = err.status ?? 500;
+  res.status(status).json({error: err.message ?? "internal_error"});
 }

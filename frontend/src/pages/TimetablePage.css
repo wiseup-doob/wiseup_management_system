@@ -1,0 +1,93 @@
+.timetable-page {
+  padding: 20px;
+}
+
+.timetable-controls {
+  margin-bottom: 30px;
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background-color: #1976d2;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #1565c0;
+}
+
+.btn-secondary {
+  background-color: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.btn-secondary:hover {
+  background-color: #e0e0e0;
+}
+
+.timetable-container {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.timetable-grid {
+  display: grid;
+  grid-template-columns: 100px repeat(5, 1fr);
+}
+
+.timetable-header {
+  display: contents;
+}
+
+.timetable-header > div {
+  background-color: #f8f9fa;
+  padding: 12px;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 1px solid #e9ecef;
+  border-right: 1px solid #e9ecef;
+}
+
+.timetable-row {
+  display: contents;
+}
+
+.timetable-row > div {
+  padding: 12px;
+  text-align: center;
+  border-bottom: 1px solid #e9ecef;
+  border-right: 1px solid #e9ecef;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.time-slot {
+  background-color: #f8f9fa;
+  font-weight: 500;
+}
+
+.subject-slot {
+  background-color: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.subject-slot:hover {
+  background-color: #f5f5f5;
+} 

@@ -1,0 +1,75 @@
+.label {
+  /* Widget의 기본 스타일을 상속받음 */
+  display: inline-flex;
+  align-items: center;
+  cursor: default;
+  font-weight: 500;
+}
+
+.label__text {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+}
+
+/* Variants */
+.label--default {
+  font-weight: 400;
+}
+
+.label--heading {
+  font-weight: 600;
+}
+
+.label--caption {
+  font-weight: 300;
+  font-style: italic;
+}
+
+.label--error {
+  font-weight: 500;
+}
+
+/* Sizes */
+.label--small {
+  font-size: 12px;
+}
+
+.label--medium {
+  font-size: 14px;
+}
+
+.label--large {
+  font-size: 16px;
+}
+
+/* Colors */
+.label--primary {
+  color: #007bff;
+}
+
+.label--secondary {
+  color: #6c757d;
+}
+
+.label--success {
+  color: #28a745;
+}
+
+.label--warning {
+  color: #ffc107;
+}
+
+.label--error {
+  color: #dc3545;
+}
+
+/* Disabled state */
+.label[data-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+} 

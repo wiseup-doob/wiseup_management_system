@@ -1,17 +1,17 @@
-import { Router } from 'express'
-import * as controller from './auth.controller'
-import { asyncWrap } from '../../common/asyncWrap'
-import { validate } from '../../common/validator'
-import { 
+import {Router} from "express";
+import * as controller from "./auth.controller";
+import {asyncWrap} from "../../common/asyncWrap";
+import {validate} from "../../common/validator";
+import {
   RegisterSchema,
   LoginSchema,
   ChangePasswordSchema,
   ResetPasswordSchema,
   ConfirmResetPasswordSchema,
-  TokenSchema
-} from './auth.validator'
+  TokenSchema,
+} from "./auth.validator";
 
-const router = Router()
+const router = Router();
 
 /**
  * @route POST /auth/register
@@ -20,10 +20,10 @@ const router = Router()
  * @body {RegisterRequest} - Registration data (name, email, phone, password)
  */
 router.post(
-  '/register',
+  "/register",
   validate(RegisterSchema),
   asyncWrap(controller.register)
-)
+);
 
 /**
  * @route POST /auth/login
@@ -32,21 +32,21 @@ router.post(
  * @body {LoginRequest} - Login credentials (email, password)
  */
 router.post(
-  '/login',
+  "/login",
   validate(LoginSchema),
   asyncWrap(controller.login)
-)
+);
 
 /**
  * @route POST /auth/logout/:id
- * @desc User logout  
+ * @desc User logout
  * @access Private
  * @param {string} id - User ID (numeric string)
  */
 router.post(
-  '/logout/:id',
+  "/logout/:id",
   asyncWrap(controller.logout)
-)
+);
 
 /**
  * @route PUT /auth/password/:id
@@ -56,10 +56,10 @@ router.post(
  * @body {ChangePasswordRequest} - Password change data
  */
 router.put(
-  '/password/:id',
+  "/password/:id",
   validate(ChangePasswordSchema),
   asyncWrap(controller.changePassword)
-)
+);
 
 /**
  * @route POST /auth/password/reset
@@ -68,10 +68,10 @@ router.put(
  * @body {ResetPasswordRequest} - Email for password reset
  */
 router.post(
-  '/password/reset',
+  "/password/reset",
   validate(ResetPasswordSchema),
   asyncWrap(controller.requestPasswordReset)
-)
+);
 
 /**
  * @route POST /auth/password/confirm
@@ -80,10 +80,10 @@ router.post(
  * @body {ConfirmResetPasswordRequest} - Reset token and new password
  */
 router.post(
-  '/password/confirm',
+  "/password/confirm",
   validate(ConfirmResetPasswordSchema),
   asyncWrap(controller.confirmPasswordReset)
-)
+);
 
 /**
  * @route POST /auth/verify
@@ -92,10 +92,10 @@ router.post(
  * @body {TokenRequest} - JWT token to verify
  */
 router.post(
-  '/verify',
+  "/verify",
   validate(TokenSchema),
   asyncWrap(controller.verifyToken)
-)
+);
 
 /**
  * @route POST /auth/refresh
@@ -104,9 +104,9 @@ router.post(
  * @body {RefreshTokenRequest} - Refresh token
  */
 router.post(
-  '/refresh',
-  validate(TokenSchema.extend({ refreshToken: TokenSchema.shape.token })),
+  "/refresh",
+  validate(TokenSchema.extend({refreshToken: TokenSchema.shape.token})),
   asyncWrap(controller.refreshToken)
-)
+);
 
-export default router 
+export default router;

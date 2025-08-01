@@ -1,61 +1,96 @@
-import { Router } from 'express'
-import { asyncWrap } from '../../common/asyncWrap'
-import { validate, validateQuery } from '../../common/validator'
-import { StudentSchema, StudentFilterSchema } from './student.validator'
-import * as ctrl from './student.controller'
+import {Router} from "express";
+import {asyncWrap} from "../../common/asyncWrap";
+import {validate, validateQuery} from "../../common/validator";
+import {
+  CreateStudentSchema,
+  UpdateStudentSchema,
+  StudentFilterSchema,
+  CreateParentStudentSchema,
+} from "./student.validator";
+import {
+  createStudentController,
+  getStudentByIdController,
+  getStudentByUserIdController,
+  getStudentWithUserController,
+  updateStudentController,
+  deleteStudentController,
+  getAllStudentsController,
+  getStudentsByFilterController,
+  createParentStudentRelationController,
+  getParentsByStudentController,
+  getStudentsByParentController,
+} from "./student.controller";
 
-const router = Router()
+const router = Router();
 
-/**
- * @route GET /students/search
- * @desc Search students by filter
- * @access Public
- * @query {StudentFilter} - Search filters (user_id, name, school, grade)
- */
-router.get('/search', validateQuery(StudentFilterSchema), asyncWrap(ctrl.searchStudents))
+// 학생 생성
+router.post(
+  "/",
+  validate(CreateStudentSchema),
+  asyncWrap(createStudentController)
+);
 
-/**
- * @route GET /students/user/:user_id
- * @desc Get student by user_id
- * @access Public
- */
-router.get('/user/:user_id', asyncWrap(ctrl.getByUserId))
+// 모든 학생 조회
+router.get(
+  "/",
+  asyncWrap(getAllStudentsController)
+);
 
-/**
- * @route GET /students
- * @desc Get all students
- * @access Public
- */
-router.get('/', asyncWrap(ctrl.list))
+// 학생 ID로 조회
+router.get(
+  "/:studentId",
+  asyncWrap(getStudentByIdController)
+);
 
-/**
- * @route GET /students/:id
- * @desc Get student by ID
- * @access Public
- */
-router.get('/:id', asyncWrap(ctrl.detail))
+// 사용자 ID로 학생 조회
+router.get(
+  "/user/:userId",
+  asyncWrap(getStudentByUserIdController)
+);
 
-/**
- * @route POST /students/:id
- * @desc Create new student
- * @access Public
- * @body {Student} - Student data
- */
-router.post('/:id', validate(StudentSchema), asyncWrap(ctrl.create))
+// 학생과 사용자 정보 함께 조회
+router.get(
+  "/:studentId/with-user",
+  asyncWrap(getStudentWithUserController)
+);
 
-/**
- * @route PUT /students/:id
- * @desc Update student
- * @access Public
- * @body {Partial<Student>} - Updated student data
- */
-router.put('/:id', validate(StudentSchema.partial()), asyncWrap(ctrl.update))
+// 학생 업데이트
+router.put(
+  "/:studentId",
+  validate(UpdateStudentSchema),
+  asyncWrap(updateStudentController)
+);
 
-/**
- * @route DELETE /students/:id
- * @desc Delete student
- * @access Public
- */
-router.delete('/:id', asyncWrap(ctrl.remove))
+// 학생 삭제
+router.delete(
+  "/:studentId",
+  asyncWrap(deleteStudentController)
+);
 
-export default router
+// 필터로 학생 조회 (쿼리 파라미터 사용)
+router.get(
+  "/filter/search",
+  validateQuery(StudentFilterSchema),
+  asyncWrap(getStudentsByFilterController)
+);
+
+// 부모-학생 관계 생성
+router.post(
+  "/parent-relation",
+  validate(CreateParentStudentSchema),
+  asyncWrap(createParentStudentRelationController)
+);
+
+// 학생의 부모 목록 조회
+router.get(
+  "/:studentId/parents",
+  asyncWrap(getParentsByStudentController)
+);
+
+// 부모의 학생 목록 조회
+router.get(
+  "/parent/:parentId/students",
+  asyncWrap(getStudentsByParentController)
+);
+
+export default router;
