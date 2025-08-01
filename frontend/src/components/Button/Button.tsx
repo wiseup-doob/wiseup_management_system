@@ -1,4 +1,4 @@
-import { useEventHandler } from '../../hooks/useEventHandler'
+import Widget from '../Widget/Widget'
 import './Button.css'
 
 interface ButtonProps {
@@ -14,6 +14,8 @@ interface ButtonProps {
   className?: string
   type?: 'button' | 'submit' | 'reset'
   tabIndex?: number
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
+  size?: 'small' | 'medium' | 'large'
 }
 
 function Button({
@@ -28,31 +30,28 @@ function Button({
   disabled = false,
   className = '',
   type = 'button',
-  tabIndex = 0
+  tabIndex = 0,
+  variant = 'primary',
+  size = 'medium',
+  ...props
 }: ButtonProps) {
-  const { isHovered, isFocused, isPressed, handlers } = useEventHandler({
-    onClick,
-    onHover,
-    onMouseLeave,
-    onFocus,
-    onBlur,
-    onKeyDown,
-    onDoubleClick
-  })
-
   return (
-    <button
-      type={type}
-      className={`button ${className}`}
+    <Widget
+      onClick={onClick}
+      onHover={onHover}
+      onMouseLeave={onMouseLeave}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      onKeyDown={onKeyDown}
+      onDoubleClick={onDoubleClick}
       disabled={disabled}
+      className={`button button--${variant} button--${size} ${className}`}
       tabIndex={tabIndex}
-      data-hovered={isHovered}
-      data-focused={isFocused}
-      data-pressed={isPressed}
-      {...handlers}
+      role="button"
+      {...props}
     >
       {children}
-    </button>
+    </Widget>
   )
 }
 
