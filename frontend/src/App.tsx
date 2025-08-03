@@ -1,17 +1,15 @@
 import './App.css'
-import { useRoutes } from 'react-router-dom'
+import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import routes from './routes/routerConfig'
-import Layout from './Layout/Layout'
 import { AppProvider } from './contexts/AppContext'
 
+// 라우터 생성
+const router = createBrowserRouter(routes)
+
 function App() {
-  const element = useRoutes(routes)
-  
   return (
     <AppProvider>
-      <Layout title="WiseUp Management System">
-        {element}
-      </Layout>
+      <RouterProvider router={router} />
     </AppProvider>
   )
 }

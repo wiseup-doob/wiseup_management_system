@@ -1,0 +1,115 @@
+/* StatusLabels 컴포넌트 스타일 */
+
+.status-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background-color: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  transition: all 0.2s ease;
+}
+
+.status-item:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.status-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+/* 상태별 색상 스타일 */
+.status-item:nth-child(1) .status-color {
+  background-color: #c8e6c9; /* 등원 - 초록색 */
+}
+
+.status-item:nth-child(2) .status-color {
+  background-color: #ffffff; /* 미등원 - 흰색 */
+  border: 2px solid #dee2e6;
+}
+
+.status-item:nth-child(3) .status-color {
+  background-color: #ffcdd2; /* 결석 - 빨간색 */
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .status-labels {
+    padding: 12px;
+    gap: 8px;
+  }
+  
+  .status-item {
+    padding: 6px 10px;
+    gap: 8px;
+  }
+  
+  .status-color {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* 다크 모드 지원 */
+@media (prefers-color-scheme: dark) {
+  .status-labels {
+    background-color: #2d2d2d;
+    border-color: #555555;
+  }
+  
+  .status-item {
+    background-color: #3d3d3d;
+    border-color: #666666;
+  }
+  
+  .status-item:nth-child(2) .status-color {
+    background-color: #3d3d3d;
+    border-color: #666666;
+  }
+}
+
+/* 애니메이션 효과 */
+.status-item {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 각 상태 아이템에 지연 애니메이션 */
+.status-item:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.status-item:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.status-item:nth-child(3) {
+  animation-delay: 0.3s;
+}

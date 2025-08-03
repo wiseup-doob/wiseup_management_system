@@ -1,10 +1,9 @@
 import Button from './Button'
-import './SidebarButton.css'
+import './ImageButton.css'
 
-interface SidebarButtonProps {
-  children: React.ReactNode
-  icon?: string
-  isActive?: boolean
+interface ImageButtonProps {
+  src: string
+  alt: string
   onClick?: () => void
   onHover?: () => void
   onMouseLeave?: () => void
@@ -18,12 +17,14 @@ interface SidebarButtonProps {
   tabIndex?: number
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
   size?: 'small' | 'medium' | 'large'
+  width?: string | number
+  height?: string | number
+  objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
 }
 
-function SidebarButton({
-  children,
-  icon,
-  isActive = false,
+function ImageButton({
+  src,
+  alt,
   onClick,
   onHover,
   onMouseLeave,
@@ -35,10 +36,13 @@ function SidebarButton({
   className = '',
   type = 'button',
   tabIndex = 0,
-  variant = 'ghost',
+  variant = 'primary',
   size = 'medium',
+  width,
+  height,
+  objectFit = 'contain',
   ...props
-}: SidebarButtonProps) {
+}: ImageButtonProps) {
   return (
     <Button
       onClick={onClick}
@@ -49,20 +53,25 @@ function SidebarButton({
       onKeyDown={onKeyDown}
       onDoubleClick={onDoubleClick}
       disabled={disabled}
-      className={`sidebar-button ${isActive ? 'sidebar-button--active' : ''} ${className}`}
+      className={`image-button ${className}`}
       type={type}
       tabIndex={tabIndex}
       variant={variant}
       size={size}
-      data-active={isActive}
       {...props}
     >
-      {icon && (
-        <img src={icon} alt="menu icon" className="sidebar-button__icon" />
-      )}
-      <span className="sidebar-button__label">{children}</span>
+      <img
+        src={src}
+        alt={alt}
+        style={{
+          width: width,
+          height: height,
+          objectFit: objectFit,
+        }}
+        className="image-button__image"
+      />
     </Button>
   )
 }
 
-export default SidebarButton 
+export default ImageButton 

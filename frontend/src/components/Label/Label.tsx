@@ -4,6 +4,14 @@ import './Label.css'
 interface LabelProps {
   children: React.ReactNode
   htmlFor?: string
+  onClick?: () => void
+  onHover?: () => void
+  onMouseLeave?: () => void
+  onFocus?: () => void
+  onBlur?: () => void
+  onKeyDown?: (key: string) => void
+  onDoubleClick?: () => void
+  disabled?: boolean
   className?: string
   variant?: 'default' | 'heading' | 'caption' | 'error'
   size?: 'small' | 'medium' | 'large'
@@ -13,6 +21,14 @@ interface LabelProps {
 function Label({
   children,
   htmlFor,
+  onClick,
+  onHover,
+  onMouseLeave,
+  onFocus,
+  onBlur,
+  onKeyDown,
+  onDoubleClick,
+  disabled = false,
   className = '',
   variant = 'default',
   size = 'medium',
@@ -21,6 +37,14 @@ function Label({
 }: LabelProps) {
   return (
     <Widget
+      onClick={onClick}
+      onHover={onHover}
+      onMouseLeave={onMouseLeave}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      onKeyDown={onKeyDown}
+      onDoubleClick={onDoubleClick}
+      disabled={disabled}
       className={`label label--${variant} label--${size} label--${color} ${className}`}
       role="label"
       {...props}

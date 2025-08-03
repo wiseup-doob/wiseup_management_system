@@ -4,6 +4,74 @@
   --font-secondary: 'Inter', 'Noto Sans KR', system-ui, Avenir, Helvetica, Arial, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   
+  /* 라이트 모드 색상 변수 */
+  --primary-color: #007bff;
+  --primary-green: #c8e6c9;
+  --primary-red: #ffcdd2;
+  --primary-gray: #f5f5f5;
+  
+  /* 텍스트 색상 */
+  --text-color-primary: #333333;
+  --text-color-secondary: #666666;
+  --text-color-muted: #999999;
+  
+  /* 배경 색상 */
+  --bg-color-primary: #ffffff;
+  --bg-color-secondary: #f8f9fa;
+  --bg-color-tertiary: #f0f0f0;
+  
+  /* 사이드바 색상 */
+  --sidebar-bg-color: #f8f9fa;
+  --sidebar-border-color: #e9ecef;
+  
+  /* 메인 콘텐츠 색상 */
+  --main-content-bg-color: #ffffff;
+  
+  /* 레이아웃 색상 */
+  --layout-bg-color: #ffffff;
+  
+  /* 버튼 색상 */
+  --color-hover: #f0f0f0;
+  --color-active: #e3f2fd;
+  --color-active-text: #1976d2;
+  --color-active-hover: #e3f2fd;
+  --color-focus: #1976d2;
+  
+  /* 간격 변수 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  /* padding 변수 */
+  --zero-padding: 0px;
+  --layout-padding: 8px;
+  --sidebar-padding: 8px;
+  --button-padding: 8px;
+  --main-content-padding: 20px;
+  
+  /* 폰트 크기 변수 */
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 28px;
+  --font-size-4xl: 32px;
+  
+  /* 폰트 굵기 변수 */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* 기타 변수 */
+  --border-radius: 8px;
+  --border-radius-md: 8px;
+  
   /* 기본 폰트 설정 */
   font-family: var(--font-primary);
   line-height: 1.5;
@@ -33,11 +101,12 @@ body {
   padding: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #ffffff;
+  background-color: var(--bg-color-primary);
+  color: var(--text-color-primary);
 }
 
 h1 {
-  font-size: 3.2em;
+  font-size: var(--font-size-4xl);
   line-height: 1.1;
 }
 
@@ -45,10 +114,11 @@ button {
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--bg-color-secondary);
+  color: var(--text-color-primary);
   cursor: pointer;
   transition: border-color 0.25s;
 }

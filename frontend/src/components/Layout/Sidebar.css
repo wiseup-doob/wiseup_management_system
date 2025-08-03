@@ -1,0 +1,62 @@
+/* Sidebar 컴포넌트 스타일 */
+
+.sidebar {
+  width: var(--sidebar-length, 256px);
+  height: 1024px;
+  background-color: var(--sidebar-bg-color, #f8f9fa);
+  border-right: 1px solid var(--sidebar-border-color, #e9ecef);
+  padding: var(--sidebar-padding, 20px);
+  position: fixed;
+  left: 0;
+  top: 0;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.logo {
+  margin-bottom: var(--spacing-xl, 30px);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.section {
+  margin-bottom: var(--spacing-lg, 25px);
+}
+
+.section-title {
+  margin-bottom: var(--spacing-md, 10px);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .sidebar {
+    width: var(--sidebar-length-mobile, 200px);
+    padding: var(--sidebar-padding-mobile, 16px);
+  }
+  
+  .logo {
+    margin-bottom: var(--spacing-lg, 20px);
+  }
+  
+  .section {
+    margin-bottom: var(--spacing-md, 16px);
+  }
+}
+
+/* 애니메이션 효과 */
+.sidebar {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+} 

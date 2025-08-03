@@ -1,0 +1,78 @@
+.image-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  overflow: hidden;
+}
+
+.image-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.image-button:active {
+  transform: scale(0.95);
+}
+
+.image-button:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+.image-button[data-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.image-button[data-disabled="true"]:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.image-button__image {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Size variants */
+.image-button.button--small .image-button__image {
+  max-width: 24px;
+  max-height: 24px;
+}
+
+.image-button.button--medium .image-button__image {
+  max-width: 32px;
+  max-height: 32px;
+}
+
+.image-button.button--large .image-button__image {
+  max-width: 48px;
+  max-height: 48px;
+}
+
+/* Variant styles */
+.image-button.button--primary {
+  border-radius: 4px;
+}
+
+.image-button.button--secondary {
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.image-button.button--danger {
+  border-radius: 4px;
+}
+
+.image-button.button--ghost {
+  border-radius: 4px;
+} 

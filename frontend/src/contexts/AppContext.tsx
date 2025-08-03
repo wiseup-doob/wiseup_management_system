@@ -1,13 +1,25 @@
 import { createContext, useContext, useState } from 'react'
 import type { ReactNode } from 'react'
 
+interface Seat {
+  id: string
+  studentName: string
+  status: 'present' | 'absent' | 'unknown'
+  row: number
+  col: number
+}
+
 interface AppContextType {
-  currentPage: string
-  setCurrentPage: (page: string) => void
   sidebarCollapsed: boolean
   setSidebarCollapsed: (collapsed: boolean) => void
   user: any
   setUser: (user: any) => void
+  // 출결 관련 상태
+  attendanceData: {
+    seats: Seat[]
+    searchTerm: string
+  }
+  setAttendanceData: React.Dispatch<React.SetStateAction<{ seats: Seat[], searchTerm: string }>>
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -25,17 +37,31 @@ interface AppProviderProps {
 }
 
 export function AppProvider({ children }: AppProviderProps) {
-  const [currentPage, setCurrentPage] = useState('home')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [user, setUser] = useState(null)
+  
+  // 출결 관련 상태
+  const [attendanceData, setAttendanceData] = useState<{
+    seats: Seat[]
+    searchTerm: string
+  }>({
+    seats: Array.from({ length: 40 }, (_, index) => ({
+      id: `seat-${index + 1}`,
+      studentName: `학생${index + 1}`,
+      status: 'unknown' as const,
+      row: Math.floor(index / 5) + 1,
+      col: (index % 5) + 1
+    })),
+    searchTerm: ''
+  })
 
   const value = {
-    currentPage,
-    setCurrentPage,
     sidebarCollapsed,
     setSidebarCollapsed,
     user,
-    setUser
+    setUser,
+    attendanceData,
+    setAttendanceData
   }
 
   return (

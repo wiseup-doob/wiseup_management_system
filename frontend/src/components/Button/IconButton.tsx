@@ -12,10 +12,11 @@ interface IconButtonProps {
   onKeyDown?: (key: string) => void
   onDoubleClick?: () => void
   disabled?: boolean
-  size?: 'small' | 'medium' | 'large'
-  variant?: 'primary' | 'secondary' | 'ghost'
   className?: string
   type?: 'button' | 'submit' | 'reset'
+  tabIndex?: number
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
+  size?: 'small' | 'medium' | 'large'
 }
 
 function IconButton({
@@ -29,10 +30,12 @@ function IconButton({
   onKeyDown,
   onDoubleClick,
   disabled = false,
-  size = 'medium',
-  variant = 'primary',
   className = '',
-  type = 'button'
+  type = 'button',
+  tabIndex = 0,
+  variant = 'primary',
+  size = 'medium',
+  ...props
 }: IconButtonProps) {
   return (
     <Button
@@ -44,8 +47,12 @@ function IconButton({
       onKeyDown={onKeyDown}
       onDoubleClick={onDoubleClick}
       disabled={disabled}
-      type={type}
       className={`icon-button icon-button--${variant} icon-button--${size} ${className}`}
+      type={type}
+      tabIndex={tabIndex}
+      variant={variant}
+      size={size}
+      {...props}
     >
       <img src={icon} alt={alt} className="icon-button__icon" />
     </Button>

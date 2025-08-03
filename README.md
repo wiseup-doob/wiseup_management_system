@@ -74,10 +74,12 @@ Widget (기본 컴포넌트)
 
 #### 1. **Widget** (기본 컴포넌트)
 - 모든 UI 컴포넌트의 공통 기능 제공
-- 이벤트 핸들링 (onClick, onHover, onFocus 등)
+- **25개 이벤트 지원**: 마우스(11개), 키보드(2개), 포커스(2개), 드래그(6개), 터치(3개)
 - 접근성 속성 (role, aria-label 등)
-- 상태 관리 (hovered, focused, pressed, disabled)
+- 상태 관리 (hovered, focused, pressed, dragging, disabled)
 - 기본 스타일링
+- **드래그 앤 드롭 지원** (`draggable` 속성)
+- **모바일 터치 이벤트 지원**
 
 #### 2. **Button** (Widget 상속)
 - Widget의 모든 기능을 상속받고 버튼 특화 기능 추가
@@ -177,7 +179,15 @@ Widget (기본 컴포넌트)
 
 ### 3. **이벤트 핸들링 시스템**
 - useEventHandler 훅을 통한 일관된 이벤트 처리
-- hover, focus, click, keydown 등 모든 이벤트 지원
+- **25개 이벤트 완전 지원**:
+  - **마우스 이벤트** (11개): click, hover, mouseLeave, doubleClick, mouseDown, mouseUp, mouseMove, mouseOver, mouseOut, contextMenu, wheel
+  - **키보드 이벤트** (2개): keyDown, keyUp
+  - **포커스 이벤트** (2개): focus, blur
+  - **드래그 이벤트** (6개): dragStart, drag, dragEnd, dragEnter, dragLeave, drop
+  - **터치 이벤트** (3개): touchStart, touchMove, touchEnd
+- **상태 관리**: hovered, focused, pressed, dragging
+- **접근성 지원**: 키보드 네비게이션, 스크린 리더 호환
+- **모바일 지원**: 터치 이벤트, 드래그 앤 드롭
 
 ### 4. **반응형 레이아웃**
 - 사이드바 고정 (256px)
@@ -323,6 +333,26 @@ firebase deploy
 <Label variant="heading" size="large" color="primary">
   제목
 </Label>
+
+// 드래그 앤 드롭 가능한 Widget
+<Widget
+  draggable={true}
+  onDragStart={() => console.log('드래그 시작')}
+  onDrop={() => console.log('드롭됨')}
+  onTouchStart={() => console.log('터치 시작')}
+  onContextMenu={() => console.log('우클릭')}
+>
+  드래그 가능한 아이템
+</Widget>
+
+// 키보드 지원 Widget
+<Widget
+  onKeyDown={(key) => console.log(`키 누름: ${key}`)}
+  onKeyUp={(key) => console.log(`키 뗌: ${key}`)}
+  tabIndex={0}
+>
+  키보드로 조작 가능
+</Widget>
 ```
 
 ## 📝 개발 가이드라인
@@ -355,6 +385,9 @@ firebase deploy
 - **Styling**: CSS3 + CSS Variables
 - **State Management**: React Context API
 - **Routing**: React Router DOM
+- **Event Handling**: 25개 이벤트 완전 지원 (마우스, 키보드, 드래그, 터치, 포커스)
+- **Accessibility**: ARIA 속성, 키보드 네비게이션, 스크린 리더 호환
+- **Mobile Support**: 터치 이벤트, 드래그 앤 드롭
 - **Development**: ESLint + TypeScript ESLint
 
 ### 백엔드
