@@ -1,0 +1,10 @@
+.base-widget {
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  display: block;
+}
+
+.base-widget--disabled {
+  pointer-events: none;
+  opacity: 0.6;
+} 

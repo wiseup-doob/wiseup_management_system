@@ -13,6 +13,162 @@
   box-sizing: border-box;
 }
 
+/* 로고 섹션 */
+.sidebar-logo {
+  margin-bottom: var(--spacing-xl, 30px);
+  text-align: center;
+}
+
+.logo-placeholder {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  padding: 10px;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  background-color: #f0f0f0;
+}
+
+/* 섹션 스타일 */
+.sidebar-section {
+  margin-bottom: var(--spacing-lg, 25px);
+}
+
+.section-title {
+  margin-bottom: var(--spacing-md, 10px);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+}
+
+/* 계정 정보 스타일 */
+.account-info {
+  margin-bottom: var(--spacing-md, 15px);
+}
+
+.account-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.account-display:hover {
+  background-color: #f5f5f5;
+}
+
+.account-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.account-email {
+  font-size: 12px;
+  color: #666;
+  margin-left: 8px;
+}
+
+.account-dropdown {
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+  padding: 2px;
+}
+
+/* 계정 액션 버튼들 */
+.account-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: var(--spacing-md, 15px);
+}
+
+.account-action-btn {
+  flex: 1;
+  padding: 8px 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.account-action-btn:hover {
+  background-color: #0056b3;
+}
+
+/* 추가 계정들 */
+.additional-accounts {
+  margin-bottom: var(--spacing-md, 15px);
+}
+
+.account-item {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.account-item:hover {
+  background-color: #f5f5f5;
+}
+
+.account-item .account-name {
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.account-item .account-email {
+  font-size: 11px;
+  margin-left: 0;
+}
+
+/* 구분선 */
+.sidebar-divider {
+  height: 2px;
+  background: linear-gradient(to right, transparent, #e0e0e0, transparent);
+  margin: var(--spacing-lg, 20px) 0;
+  border-radius: 1px;
+  position: relative;
+}
+
+.sidebar-divider::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #f0f0f0;
+}
+
+.sidebar-divider::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #d0d0d0;
+}
+
+/* 기존 스타일들 */
 .logo {
   margin-bottom: var(--spacing-xl, 30px);
   text-align: center;
@@ -21,12 +177,6 @@
 
 .section {
   margin-bottom: var(--spacing-lg, 25px);
-}
-
-.section-title {
-  margin-bottom: var(--spacing-md, 10px);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 /* 반응형 디자인 */

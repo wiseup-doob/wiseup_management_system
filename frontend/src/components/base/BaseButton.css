@@ -1,0 +1,79 @@
+.base-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  transition: all 0.2s ease;
+  user-select: none;
+  text-decoration: none;
+  outline: none;
+}
+
+.base-button--primary {
+  background-color: #1976d2;
+  color: white;
+}
+
+.base-button--primary:hover {
+  background-color: #1565c0;
+}
+
+.base-button--secondary {
+  background-color: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.base-button--secondary:hover {
+  background-color: #e0e0e0;
+}
+
+.base-button--danger {
+  background-color: #f44336;
+  color: white;
+}
+
+.base-button--danger:hover {
+  background-color: #d32f2f;
+}
+
+.base-button--ghost {
+  background-color: transparent;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.base-button--ghost:hover {
+  background-color: #f5f5f5;
+}
+
+.base-button--small {
+  padding: 6px 12px;
+  font-size: 12px;
+  min-height: 32px;
+}
+
+.base-button--medium {
+  padding: 8px 16px;
+  font-size: 14px;
+  min-height: 40px;
+}
+
+.base-button--large {
+  padding: 12px 24px;
+  font-size: 16px;
+  min-height: 48px;
+}
+
+.base-button--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.base-button--disabled:hover {
+  background-color: inherit;
+} 

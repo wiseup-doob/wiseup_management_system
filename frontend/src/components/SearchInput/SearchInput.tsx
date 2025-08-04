@@ -1,63 +1,55 @@
-import Widget from '../Widget/Widget'
+import { forwardRef } from 'react'
+import { BaseWidget } from '../base/BaseWidget'
+import type { BaseWidgetProps } from '../../types/components'
 import './SearchInput.css'
 
-interface SearchInputProps {
-  placeholder: string
-  value: string
-  onChange: (value: string) => void
-  onClick?: () => void
-  onHover?: () => void
-  onMouseLeave?: () => void
-  onFocus?: () => void
-  onBlur?: () => void
-  onKeyDown?: (key: string) => void
-  onDoubleClick?: () => void
-  disabled?: boolean
-  className?: string
+export interface SearchInputProps extends BaseWidgetProps {
+  placeholder?: string
+  value?: string
+  onChange?: (value: string) => void
+  onSearch?: (value: string) => void
+  debounceMs?: number
 }
 
-function SearchInput({ 
-  placeholder, 
-  value, 
-  onChange, 
-  onClick,
-  onHover,
-  onMouseLeave,
-  onFocus, 
-  onBlur,
-  onKeyDown,
-  onDoubleClick,
-  disabled = false,
-  className = ''
-}: SearchInputProps) {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value)
+export const SearchInput = forwardRef<HTMLDivElement, SearchInputProps>(
+  ({ 
+    placeholder = '검색...',
+    value = '',
+    onChange,
+    onSearch,
+    debounceMs = 300,
+    className = '',
+    ...props 
+  }, ref) => {
+    
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = e.target.value
+      onChange?.(newValue)
+    }
+    
+    const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        onSearch?.(value)
+      }
+    }
+    
+    return (
+      <BaseWidget 
+        ref={ref} 
+        className={`search-input-container ${className}`}
+        {...props}
+      >
+        <input
+          type="text"
+          placeholder={placeholder}
+          value={value}
+          onChange={handleInputChange}
+          onKeyPress={handleKeyPress}
+          className="search-input"
+        />
+      </BaseWidget>
+    )
   }
+)
 
-  return (
-    <Widget 
-      onClick={onClick}
-      onHover={onHover}
-      onMouseLeave={onMouseLeave}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      onKeyDown={onKeyDown}
-      onDoubleClick={onDoubleClick}
-      disabled={disabled}
-      className={`search-input-container ${className}`}
-    >
-      <input
-        type="text"
-        className="search-input"
-        placeholder={placeholder}
-        value={value}
-        onChange={handleChange}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        disabled={disabled}
-      />
-    </Widget>
-  )
-}
-
-export default SearchInput
+SearchInput.displayName = 'SearchInput'

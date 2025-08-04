@@ -1,17 +1,14 @@
-import type { RouteObject } from "react-router-dom"
-import { ROUTES } from "./paths"
-import Layout from "../Layout/Layout"
-import HomePage from "../pages/homePage"
-import AttendancePage from "../pages/AttendancePage"
-import TimetablePage from "../pages/TimetablePage"
-import StudentsPage from "../pages/StudentsPage"
-import LearningPage from "../pages/LearningPage"
-import GradesPage from "../pages/GradesPage"
-import ImageButtonExample from "../pages/ImageButtonExample"
+import Layout from '../Layout/Layout'
+import HomePage from '../features/home/pages/HomePage'
+import AttendancePage from '../features/attendance/pages/AttendancePage'
+import StudentsPage from '../features/students/pages/StudentsPage'
+import GradesPage from '../features/grades/pages/GradesPage'
+import TimetablePage from '../features/timetable/pages/TimetablePage'
+import LearningPage from '../features/learning/pages/LearningPage'
 
-const routes: RouteObject[] = [
+const routes = [
   {
-    path: "/",
+    path: '/',
     element: <Layout />,
     children: [
       {
@@ -19,28 +16,24 @@ const routes: RouteObject[] = [
         element: <HomePage />
       },
       {
-        path: ROUTES.ATTENDANCE,
+        path: 'attendance',
         element: <AttendancePage />
       },
       {
-        path: ROUTES.TIMETABLE,
-        element: <TimetablePage />
-      },
-      {
-        path: ROUTES.STUDENTS,
+        path: 'students',
         element: <StudentsPage />
       },
       {
-        path: ROUTES.LEARNING,
-        element: <LearningPage />
-      },
-      {
-        path: ROUTES.GRADES,
+        path: 'grades',
         element: <GradesPage />
       },
       {
-        path: ROUTES.IMAGE_BUTTON_EXAMPLE,
-        element: <ImageButtonExample />
+        path: 'timetable',
+        element: <TimetablePage />
+      },
+      {
+        path: 'learning',
+        element: <LearningPage />
       }
     ]
   }

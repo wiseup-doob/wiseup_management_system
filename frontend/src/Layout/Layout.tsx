@@ -1,16 +1,12 @@
 import type { ReactNode } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import './Layout.css'
-import Sidebar from '../components/Layout/Sidebar'
-import MainContent from '../components/Layout/MainContent'
+import { Sidebar } from '../components/layout/Sidebar'
+import { MainContent } from '../components/layout/MainContent'
 import { ROUTES } from '../routes/paths'
 import { SIDEBAR_MENU_ITEMS, ADMIN_MENU_ITEM } from '../config/menuConfig'
 
-interface LayoutProps {
-  title?: string
-}
-
-function Layout({ title = "WiseUp Management System" }: LayoutProps) {
+function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -45,16 +41,7 @@ function Layout({ title = "WiseUp Management System" }: LayoutProps) {
   return (
     <div className="layout-container">
       {/* Sidebar 컴포넌트 재사용 */}
-      <Sidebar
-        title={title}
-        menuItems={SIDEBAR_MENU_ITEMS}
-        adminMenuItem={ADMIN_MENU_ITEM}
-        isActive={isActive}
-        onMenuClick={handleMenuClick}
-        onAdminClick={handleAdminClick}
-        onMenuHover={handleMenuHover}
-        onMenuLeave={handleMenuLeave}
-      />
+      <Sidebar />
 
       {/* MainContent 컴포넌트 재사용 */}
       <MainContent>

@@ -1,16 +1,24 @@
+import { forwardRef } from 'react'
+import { BaseWidget } from '../base/BaseWidget'
+import type { BaseWidgetProps } from '../../types/components'
 import './MainContent.css'
 
-interface MainContentProps {
-  children: React.ReactNode
-  className?: string
+export interface MainContentProps extends BaseWidgetProps {
+  // MainContent만의 추가 props
 }
 
-function MainContent({ children, className = '' }: MainContentProps) {
-  return (
-    <div className={`main-content ${className}`}>
-      {children}
-    </div>
-  )
-}
+export const MainContent = forwardRef<HTMLDivElement, MainContentProps>(
+  ({ children, className = '', ...props }, ref) => {
+    return (
+      <BaseWidget 
+        ref={ref}
+        className={`main-content ${className}`}
+        {...props}
+      >
+        {children}
+      </BaseWidget>
+    )
+  }
+)
 
-export default MainContent 
+MainContent.displayName = 'MainContent' 

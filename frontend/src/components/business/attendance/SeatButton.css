@@ -1,0 +1,101 @@
+.seat-button {
+  position: relative;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.seat-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.seat-button:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+.seat-student-name {
+  font-size: 0.9rem;
+  line-height: 1.2;
+  word-break: keep-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* 출결 상태별 스타일 */
+.seat-button[data-variant="present"] {
+  background-color: #d4edda;
+  color: #155724;
+  border: 2px solid #c3e6cb;
+}
+
+.seat-button[data-variant="present"]:hover {
+  background-color: #c3e6cb;
+  border-color: #a8d5b3;
+}
+
+.seat-button[data-variant="absent"] {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 2px solid #f5c6cb;
+}
+
+.seat-button[data-variant="absent"]:hover {
+  background-color: #f5c6cb;
+  border-color: #f1b0b7;
+}
+
+.seat-button[data-variant="late"] {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 2px solid #ffeaa7;
+}
+
+.seat-button[data-variant="late"]:hover {
+  background-color: #ffeaa7;
+  border-color: #fdcb6e;
+}
+
+.seat-button[data-variant="unknown"] {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  border: 2px solid #dee2e6;
+}
+
+.seat-button[data-variant="unknown"]:hover {
+  background-color: #e9ecef;
+  border-color: #ced4da;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .seat-button {
+    min-height: 50px;
+    font-size: 0.8rem;
+  }
+  
+  .seat-student-name {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .seat-button {
+    min-height: 45px;
+    font-size: 0.75rem;
+  }
+  
+  .seat-student-name {
+    font-size: 0.75rem;
+  }
+} 

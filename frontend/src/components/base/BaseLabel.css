@@ -1,0 +1,69 @@
+.base-label {
+  display: inline-flex;
+  align-items: center;
+  cursor: default;
+  font-weight: 500;
+}
+
+.base-label__required {
+  color: #f44336;
+  margin-left: 2px;
+}
+
+/* Variants */
+.base-label--default {
+  font-weight: 400;
+}
+
+.base-label--heading {
+  font-weight: 600;
+}
+
+.base-label--caption {
+  font-weight: 300;
+  font-style: italic;
+}
+
+.base-label--error {
+  font-weight: 500;
+}
+
+/* Sizes */
+.base-label--small {
+  font-size: 12px;
+}
+
+.base-label--medium {
+  font-size: 14px;
+}
+
+.base-label--large {
+  font-size: 16px;
+}
+
+/* Colors */
+.base-label--primary {
+  color: #007bff;
+}
+
+.base-label--secondary {
+  color: #6c757d;
+}
+
+.base-label--success {
+  color: #28a745;
+}
+
+.base-label--warning {
+  color: #ffc107;
+}
+
+.base-label--error {
+  color: #dc3545;
+}
+
+/* Disabled state */
+.base-label[data-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+} 

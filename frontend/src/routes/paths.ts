@@ -7,10 +7,7 @@ export const ROUTES = {
   TIMETABLE: '/timetable',
   STUDENTS: '/students',
   LEARNING: '/learning',
-  GRADES: '/grades',
-  
-  // 기타 페이지들
-  IMAGE_BUTTON_EXAMPLE: '/image-button-example'
+  GRADES: '/grades'
 }
 
 // 페이지별 메타데이터 정의

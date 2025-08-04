@@ -1,0 +1,111 @@
+.grades-page {
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+/* 개발 중 알림 스타일 */
+.development-notice {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 40px;
+}
+
+.notice-content {
+  background-color: white;
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  max-width: 500px;
+  width: 100%;
+  border: 1px solid #e0e0e0;
+}
+
+.notice-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #ff6b35;
+  margin-bottom: 20px;
+  animation: pulse 2s infinite;
+}
+
+.notice-description {
+  font-size: 1.1rem;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+/* 진행률 표시 */
+.progress-indicator {
+  margin-top: 30px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff6b35, #f7931e);
+  width: 45%;
+  border-radius: 4px;
+  animation: progress 2s ease-in-out infinite;
+}
+
+.progress-text {
+  font-size: 0.9rem;
+  color: #888;
+  font-weight: 500;
+}
+
+/* 애니메이션 */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes progress {
+  0%, 100% {
+    width: 45%;
+  }
+  50% {
+    width: 47%;
+  }
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .notice-content {
+    padding: 30px 20px;
+    margin: 0 20px;
+  }
+  
+  .notice-title {
+    font-size: 1.5rem;
+  }
+  
+  .notice-description {
+    font-size: 1rem;
+  }
+} 
