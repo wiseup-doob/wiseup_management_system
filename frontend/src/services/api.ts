@@ -38,7 +38,6 @@ class ApiService {
         ...options,
         headers: {
           'Content-Type': 'application/json',
-          'x-request-id': requestId,
           ...options.headers,
         },
       });

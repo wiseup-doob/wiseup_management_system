@@ -1,10 +1,10 @@
 // 환경 설정
 export const config = {
   api: {
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/wiseupmanagementsystem/us-central1/api',
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'https://us-central1-wiseupmanagementsystem-a6189.cloudfunctions.net/wiseupApi',
   },
   firebase: {
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'wiseupmanagementsystem',
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'wiseupmanagementsystem-a6189',
   },
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,

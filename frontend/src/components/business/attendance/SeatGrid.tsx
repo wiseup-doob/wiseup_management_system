@@ -1,6 +1,6 @@
 import { forwardRef } from 'react'
 import { BaseWidget } from '../../base/BaseWidget'
-import { Grid } from '../../layout/Grid'
+import { Grid } from '../../Layout/Grid'
 import { SeatButton } from './SeatButton'
 import { Label } from '../../labels/Label'
 import { ATTENDANCE_CONSTANTS } from '../../../constants/attendance.constants'

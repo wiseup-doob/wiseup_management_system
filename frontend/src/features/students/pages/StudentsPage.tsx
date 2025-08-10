@@ -1,7 +1,7 @@
 import './StudentsPage.css'
 import { BaseWidget } from '../../../components/base/BaseWidget'
 import { Button } from '../../../components/buttons/Button'
-import { Grid } from '../../../components/layout/Grid'
+import { Grid } from '../../../components/Layout/Grid'
 import { Label } from '../../../components/labels/Label'
 import { SearchInput } from '../../../components/SearchInput/SearchInput'
 import { useStudents } from '../hooks/useStudents'

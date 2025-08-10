@@ -14,7 +14,8 @@
     "composite": true,
     "outDir": "./dist",
     "rootDir": ".",
-    "noEmit": false
+    "noEmit": false,
+    "types": ["node"]
   },
   "include": [
     "types/**/*",

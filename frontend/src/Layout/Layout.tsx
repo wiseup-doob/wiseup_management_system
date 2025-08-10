@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import './Layout.css'
-import { Sidebar } from '../components/layout/Sidebar'
-import { MainContent } from '../components/layout/MainContent'
+import { Sidebar } from '../components/Layout/Sidebar'
+import { MainContent } from '../components/Layout/MainContent'
 import { ROUTES } from '../routes/paths'
 import { SIDEBAR_MENU_ITEMS, ADMIN_MENU_ITEM } from '../config/menuConfig'
 

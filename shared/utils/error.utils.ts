@@ -124,8 +124,10 @@ export class AppError extends Error {
     this.timestamp = new Date().toISOString();
     this.requestId = requestId;
     
-    // 스택 트레이스 유지
-    Error.captureStackTrace(this, this.constructor);
+    // 스택 트레이스 유지 (Node.js 환경에서만 사용)
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, this.constructor);
+    }
   }
 
   // 에러 타입별 정적 생성자

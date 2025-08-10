@@ -19,6 +19,8 @@ export interface SearchInputProps extends BaseWidgetProps {
   size?: 'xs' | 'sm' | 'md' | 'lg'
   containerStyle?: React.CSSProperties
   inputStyle?: React.CSSProperties
+  // 자동 포커스 옵션
+  autoFocus?: boolean
 }
 
 export const SearchInput = forwardRef<HTMLDivElement, SearchInputProps>(
@@ -36,6 +38,7 @@ export const SearchInput = forwardRef<HTMLDivElement, SearchInputProps>(
     size = 'lg',
     containerStyle,
     inputStyle,
+    autoFocus = false,
     ...props 
   }, ref) => {
     const [open, setOpen] = useState(false)
@@ -79,6 +82,7 @@ export const SearchInput = forwardRef<HTMLDivElement, SearchInputProps>(
           onFocus={() => setOpen(!!value && suggestions.length > 0)}
           onBlur={() => setTimeout(() => setOpen(false), 120)}
           style={inputStyle}
+          autoFocus={autoFocus}
         />
         {open && filtered.length > 0 && (
           <div className="search-suggestions">

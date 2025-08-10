@@ -5,7 +5,7 @@ export const APP_CONFIG = {
 };
 
 export const API_CONFIG = {
-  BASE_URL: 'http://localhost:5001/wiseupmanagementsystem/us-central1',
+  BASE_URL: 'https://us-central1-wiseupmanagementsystem-a6189.cloudfunctions.net/wiseupApi',
   TIMEOUT: 10000
 };
 

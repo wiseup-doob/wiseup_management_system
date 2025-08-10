@@ -3,7 +3,7 @@ import { Response } from 'express';
 export const setCorsHeaders = (response: Response): void => {
   response.set('Access-Control-Allow-Origin', '*');
   response.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  response.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  response.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, x-request-id');
   response.set('Access-Control-Max-Age', '86400');
 };
 

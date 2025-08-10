@@ -1,7 +1,12 @@
 import axios from 'axios'
 
+export const API_CONFIG = {
+  baseURL: 'https://us-central1-wiseupmanagementsystem-a6189.cloudfunctions.net/wiseupApi',
+  timeout: 30000,
+};
+
 const api = axios.create({
-  baseURL: 'http://localhost:5001/wiseupmanagementsystem/us-central1/api',
+  baseURL: 'https://us-central1-wiseupmanagementsystem-a6189.cloudfunctions.net/wiseupApi',
 })
 
 export default api
