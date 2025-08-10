@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react-jsx",
+    "noEmit": true,
+
+    /* Path mapping for entire project */
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["shared/*"],
+      "@frontend/*": ["frontend/src/*"],
+      "@functions/*": ["functions/src/*"],
+      "@config/*": ["frontend/src/config/*"],
+      "@utils/*": ["frontend/src/utils/*"],
+      "@components/*": ["frontend/src/components/*"],
+      "@features/*": ["frontend/src/features/*"],
+      "@hooks/*": ["frontend/src/hooks/*"],
+      "@services/*": ["frontend/src/services/*"],
+      "@store/*": ["frontend/src/store/*"],
+      "@backend/*": ["functions/src/*"]
+    }
+  },
+  "include": [
+    "shared/**/*",
+    "frontend/src/**/*",
+    "functions/src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "lib"
+  ],
+
+} 
