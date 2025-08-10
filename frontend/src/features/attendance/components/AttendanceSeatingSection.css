@@ -1,0 +1,25 @@
+/* AttendanceSeatingSection 컴포넌트 스타일 */
+.seating-section {
+  margin-bottom: 1rem;
+}
+
+.seating-section .seat-grid {
+  width: 100%;
+}
+
+/* 편집 모드 스타일 */
+.seating-section .editing {
+  cursor: pointer;
+}
+
+.seating-section .editing .seat-button:hover {
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .seating-section {
+    margin-bottom: 0.75rem;
+  }
+}

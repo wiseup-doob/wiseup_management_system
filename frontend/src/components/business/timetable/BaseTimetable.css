@@ -1,0 +1,194 @@
+.base-timetable {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.timetable-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 600px;
+  max-width: 100%;
+}
+
+.timetable-header {
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  gap: 1px;
+  background-color: #f0f0f0;
+  border-bottom: 2px solid #ddd;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.time-column-header {
+  background-color: #f8f9fa;
+  padding: 8px 6px;
+  text-align: center;
+  font-weight: 600;
+  border-right: 1px solid #ddd;
+}
+
+.day-header {
+  background-color: #f8f9fa;
+  padding: 8px 6px;
+  text-align: center;
+  font-weight: 600;
+  border-right: 1px solid #ddd;
+}
+
+.day-header:last-child {
+  border-right: none;
+}
+
+.timetable-grid {
+  flex: 1;
+  display: grid;
+  grid-template-rows: repeat(var(--rows, 14), 1fr);
+}
+
+.time-row {
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  gap: 1px;
+  border-bottom: 1px solid #eee;
+}
+
+.time-column {
+  background-color: #f8f9fa;
+  padding: 6px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid #ddd;
+  font-size: 11px;
+  color: #666;
+}
+
+.timetable-cell {
+  background-color: #fff;
+  padding: 3px;
+  border-right: 1px solid #eee;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.timetable-cell:last-child {
+  border-right: none;
+}
+
+.timetable-cell.editable:hover {
+  background-color: #f0f8ff;
+}
+
+.timetable-cell.editable:active {
+  background-color: #e6f3ff;
+}
+
+.timetable-item {
+  background-color: #4a90e2;
+  color: white;
+  border-radius: 3px;
+  padding: 4px 6px;
+  margin: 1px 0;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.timetable-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.timetable-item.scheduled {
+  background-color: #4a90e2;
+}
+
+.timetable-item.in_progress {
+  background-color: #28a745;
+}
+
+.timetable-item.completed {
+  background-color: #6c757d;
+}
+
+.timetable-item.cancelled {
+  background-color: #dc3545;
+}
+
+.timetable-item.postponed {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.item-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.item-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.item-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.timetable-item:hover .item-actions {
+  opacity: 1;
+}
+
+.edit-btn,
+.delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 2px;
+  font-size: 10px;
+  transition: background-color 0.2s ease;
+}
+
+.edit-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.delete-btn:hover {
+  background-color: rgba(220, 53, 69, 0.2);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .timetable-container {
+    min-width: 600px;
+  }
+  
+  .time-column {
+    font-size: 10px;
+    padding: 4px;
+  }
+  
+  .timetable-item {
+    font-size: 10px;
+    padding: 4px 6px;
+  }
+  
+  .item-actions {
+    opacity: 1;
+  }
+}

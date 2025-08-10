@@ -4,6 +4,7 @@ import studentsReducer from '../features/students/slice/studentsSlice'
 import gradesReducer from '../features/grades/slice/gradesSlice'
 import authReducer from '../features/auth/slice/authSlice'
 import uiReducer from './slices/uiSlice'
+import timetableReducer from '../features/timetable/slice/timetableSlice'
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     grades: gradesReducer,
     auth: authReducer,
     ui: uiReducer,
+    timetable: timetableReducer,
   },
 })
 

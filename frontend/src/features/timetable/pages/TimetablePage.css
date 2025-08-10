@@ -1,93 +1,297 @@
 .timetable-page {
-  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 15px;
+  gap: 15px;
+  overflow: hidden;
 }
 
-.timetable-controls {
-  margin-bottom: 30px;
+/* 검색 및 필터 섹션 */
+.search-filter-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.search-container {
+  flex: 1;
+  max-width: 200px;
+  margin-bottom: 12px;
+}
+
+.student-search {
+  width: 100%;
+  height: 28px;
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+.filter-buttons {
   display: flex;
   gap: 10px;
 }
 
-.btn {
-  padding: 10px 20px;
-  border: none;
+.filter-btn {
+  min-width: 80px;
+}
+
+.edit-toggle-btn {
+  min-width: 80px;
+}
+
+.error-message {
+  background-color: #fee;
+  border: 1px solid #fcc;
   border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  padding: 10px 15px;
+  margin-bottom: 15px;
 }
 
-.btn-primary {
-  background-color: #1976d2;
-  color: white;
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
 }
 
-.btn-primary:hover {
-  background-color: #1565c0;
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  gap: 10px;
 }
 
-.btn-secondary {
-  background-color: #f5f5f5;
-  color: #333;
-  border: 1px solid #ddd;
-}
-
-.btn-secondary:hover {
-  background-color: #e0e0e0;
-}
-
-.timetable-container {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+/* 메인 콘텐츠 */
+.timetable-content {
+  display: flex;
+  flex: 1;
+  gap: 15px;
+  min-height: 0;
   overflow: hidden;
 }
 
-.timetable-grid {
-  display: grid;
-  grid-template-columns: 100px repeat(5, 1fr);
-}
-
-.timetable-header {
-  display: contents;
-}
-
-.timetable-header > div {
-  background-color: #f8f9fa;
+/* 왼쪽 패널 - 학생 목록 */
+.student-panel {
+  width: 180px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding: 12px;
-  text-align: center;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.panel-section {
+  margin-bottom: 20px;
+}
+
+.panel-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  margin-bottom: 10px;
+  color: #333;
   font-weight: 600;
-  border-bottom: 1px solid #e9ecef;
-  border-right: 1px solid #e9ecef;
+  font-size: 14px;
 }
 
-.timetable-row {
-  display: contents;
+.student-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.timetable-row > div {
-  padding: 12px;
-  text-align: center;
-  border-bottom: 1px solid #e9ecef;
-  border-right: 1px solid #e9ecef;
-  min-height: 60px;
+.student-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background-color: #f8f9fa;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.student-item:hover {
+  background-color: #e9ecef;
+}
+
+.student-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.student-status-dot.dismissed {
+  background-color: #6c757d;
+}
+
+.student-status-dot.present {
+  background-color: #28a745;
+}
+
+.student-status-dot.unauthorized_absent {
+  background-color: #dc3545;
+}
+
+.student-status-dot.authorized_absent {
+  background-color: #ffc107;
+}
+
+/* 학생 이름 */
+.student-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+/* 학생 상태 */
+.student-status {
+  font-size: 8px;
+  line-height: 1.1;
+  color: #666;
+}
+
+/* 오른쪽 패널 - 시간표 */
+.timetable-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 선택된 학생 정보 */
+.selected-student-info {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 8px 12px; /* 패딩 줄임 */
+  margin-bottom: 8px; /* 마진 줄임 */
+  flex-shrink: 0;
+}
+
+.student-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #e3f2fd;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
-.time-slot {
-  background-color: #f8f9fa;
-  font-weight: 500;
+.avatar-placeholder {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1976d2;
 }
 
-.subject-slot {
+.student-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.student-name {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.student-status {
+  display: block;
+  color: #666;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+/* 시간표 섹션 */
+.timetable-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background-color: white;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 8px; /* 패딩 줄임 */
+  margin-top: -5px; /* 위로 올림 */
 }
 
-.subject-slot:hover {
-  background-color: #f5f5f5;
+.main-timetable {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* 새로운 시간표 컨테이너 */
+.new-timetable-container {
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+  min-height: 0;
+  padding: 4px; /* 패딩 추가하여 간격 조정 */
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1200px) {
+  .timetable-content {
+    flex-direction: column;
+  }
+  
+  .student-panel {
+    width: 100%;
+    max-height: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .timetable-page {
+    padding: 10px;
+    gap: 15px;
+  }
+  
+  .search-filter-section {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .search-container {
+    max-width: none;
+  }
+  
+  .filter-buttons {
+    justify-content: center;
+  }
 } 

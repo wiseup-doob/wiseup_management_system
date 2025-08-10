@@ -2,6 +2,19 @@
   padding: 20px;
   background-color: #f8f9fa;
   min-height: 100vh;
+  transition: margin-right 0.3s ease-out;
+}
+
+/* 사이드 패널이 열렸을 때 메인 콘텐츠 조정 */
+.attendance-page.with-side-panel {
+  margin-right: 400px; /* 사이드 패널 너비만큼 여백 */
+}
+
+/* 반응형: 모바일에서는 사이드 패널이 전체 화면을 차지하므로 여백 제거 */
+@media (max-width: 768px) {
+  .attendance-page.with-side-panel {
+    margin-right: 0;
+  }
 }
 
 .page-title {

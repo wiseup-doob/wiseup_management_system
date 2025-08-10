@@ -1,0 +1,85 @@
+/* AttendanceHorizontalTimeline 컴포넌트 스타일 */
+
+.attendance-horizontal-timeline {
+  width: 100%;
+  max-width: 600px;
+}
+
+/* 패널 내에서 사용될 때의 스타일 */
+.attendance-content .attendance-horizontal-timeline {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: 350px;
+}
+
+.attendance-content .attendance-horizontal-timeline .base-horizontal-timeline {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: 350px;
+}
+
+/* 출결 타임라인 콘텐츠 */
+.attendance-timeline-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.attendance-title {
+  font-weight: 600;
+  margin: 0;
+}
+
+.attendance-description {
+  margin: 0;
+  opacity: 0.8;
+}
+
+.attendance-notes {
+  margin: 0;
+  opacity: 0.6;
+  font-style: italic;
+  font-size: 11px;
+}
+
+/* 출결 상태별 추가 스타일 */
+.attendance-horizontal-timeline .status-completed .item-content {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+  border-color: #4caf50;
+}
+
+.attendance-horizontal-timeline .status-cancelled .item-content {
+  background-color: #ffebee;
+  color: #c62828;
+  border-color: #f44336;
+}
+
+.attendance-horizontal-timeline .status-pending .item-content {
+  background-color: #fff3e0;
+  color: #ef6c00;
+  border-color: #ff9800;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .attendance-content .attendance-horizontal-timeline {
+    max-height: 300px;
+  }
+  
+  .attendance-content .attendance-horizontal-timeline .base-horizontal-timeline {
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .attendance-timeline-content {
+    gap: 2px;
+  }
+  
+  .attendance-notes {
+    font-size: 10px;
+  }
+} 

@@ -4,6 +4,7 @@ import AttendancePage from '../features/attendance/pages/AttendancePage'
 import StudentsPage from '../features/students/pages/StudentsPage'
 import GradesPage from '../features/grades/pages/GradesPage'
 import TimetablePage from '../features/timetable/pages/TimetablePage'
+import TimetableEditPage from '../features/timetable/pages/TimetableEditPage'
 import LearningPage from '../features/learning/pages/LearningPage'
 
 const routes = [
@@ -30,6 +31,10 @@ const routes = [
       {
         path: 'timetable',
         element: <TimetablePage />
+      },
+      {
+        path: 'timetable/edit',
+        element: <TimetableEditPage />
       },
       {
         path: 'learning',

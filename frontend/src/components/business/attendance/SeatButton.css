@@ -9,11 +9,14 @@
   transition: all 0.2s ease;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: white;
+  border: none;
 }
 
 .seat-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  /* 배경색 유지: hover 시 색 변화 제거 */
 }
 
 .seat-button:focus {
@@ -30,51 +33,25 @@
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  color: white;
+  font-weight: 600;
 }
 
-/* 출결 상태별 스타일 */
-.seat-button[data-variant="present"] {
-  background-color: #d4edda;
-  color: #155724;
-  border: 2px solid #c3e6cb;
+/* 출석 상태별 기본 색깔 (JavaScript에서 동적으로 설정됨) */
+.seat-button[data-status="present"] {
+  background-color: var(--color-present);
 }
 
-.seat-button[data-variant="present"]:hover {
-  background-color: #c3e6cb;
-  border-color: #a8d5b3;
+.seat-button[data-status="dismissed"] {
+  background-color: var(--color-dismissed);
 }
 
-.seat-button[data-variant="absent"] {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 2px solid #f5c6cb;
+.seat-button[data-status="unauthorized_absent"] {
+  background-color: var(--color-unauthorized-absent);
 }
 
-.seat-button[data-variant="absent"]:hover {
-  background-color: #f5c6cb;
-  border-color: #f1b0b7;
-}
-
-.seat-button[data-variant="late"] {
-  background-color: #fff3cd;
-  color: #856404;
-  border: 2px solid #ffeaa7;
-}
-
-.seat-button[data-variant="late"]:hover {
-  background-color: #ffeaa7;
-  border-color: #fdcb6e;
-}
-
-.seat-button[data-variant="unknown"] {
-  background-color: #f8f9fa;
-  color: #6c757d;
-  border: 2px solid #dee2e6;
-}
-
-.seat-button[data-variant="unknown"]:hover {
-  background-color: #e9ecef;
-  border-color: #ced4da;
+.seat-button[data-status="authorized_absent"] {
+  background-color: var(--color-authorized-absent);
 }
 
 /* 반응형 디자인 */

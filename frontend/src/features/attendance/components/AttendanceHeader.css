@@ -1,0 +1,120 @@
+/* AttendanceHeader 컴포넌트 스타일 */
+.attendance-header {
+  margin-bottom: 1rem;
+}
+
+.attendance-header .flex {
+  display: flex;
+}
+
+.attendance-header .items-center {
+  align-items: center;
+}
+
+.attendance-header .gap-2 {
+  gap: 0.5rem;
+}
+
+.attendance-header .mb-4 {
+  margin-bottom: 1rem;
+}
+
+.attendance-header button {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s;
+  font-weight: 500;
+}
+
+.attendance-header button:hover {
+  opacity: 0.9;
+}
+
+.attendance-header button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 편집 모드 상태 표시 */
+.editing-mode-status {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: 0.25rem;
+  border: 1px solid;
+}
+
+.editing-mode-status.remove {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.editing-mode-status.move {
+  background-color: #faf5ff;
+  border-color: #e9d5ff;
+  color: #7c3aed;
+}
+
+/* 헬스 상태 표시 */
+.health-status {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: 0.25rem;
+  border: 1px solid;
+}
+
+.health-status.healthy {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.health-status.degraded {
+  background-color: #fffbeb;
+  border-color: #fed7aa;
+  color: #92400e;
+}
+
+.health-status.unhealthy {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.health-status .flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.health-status .text-sm {
+  font-size: 0.875rem;
+}
+
+.health-status .font-medium {
+  font-weight: 500;
+}
+
+.health-status .mt-2 {
+  margin-top: 0.5rem;
+}
+
+.health-status .ml-4 {
+  margin-left: 1rem;
+}
+
+.health-status ul {
+  margin-top: 0.25rem;
+  margin-left: 1rem;
+  list-style-type: disc;
+}
+
+.health-status li {
+  margin-bottom: 0.25rem;
+}
+
+.health-status .truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

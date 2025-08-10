@@ -1,5 +1,7 @@
 import { createContext, useContext, useState } from 'react'
 import type { ReactNode } from 'react'
+import { Provider } from 'react-redux'
+import { store } from '../store'
 
 interface Seat {
   id: string
@@ -65,8 +67,10 @@ export function AppProvider({ children }: AppProviderProps) {
   }
 
   return (
-    <AppContext.Provider value={value}>
-      {children}
-    </AppContext.Provider>
+    <Provider store={store}>
+      <AppContext.Provider value={value}>
+        {children}
+      </AppContext.Provider>
+    </Provider>
   )
 } 

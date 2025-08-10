@@ -1,122 +1,180 @@
 import './AttendancePage.css'
 import { BaseWidget } from '../../../components/base/BaseWidget'
-import { Button } from '../../../components/buttons/Button'
 import { Label } from '../../../components/labels/Label'
-import { SearchInput } from '../../../components/SearchInput/SearchInput'
-import { SeatGrid } from '../../../components/business/attendance/SeatGrid'
+import { Button } from '../../../components/buttons/Button'
+import { StudentInfoPanel } from '../../../components/business/studentInfo/StudentInfoPanel'
+import { AttendanceHeader } from '../components/AttendanceHeader'
+import { AttendanceSearchSection } from '../components/AttendanceSearchSection'
+import { AttendanceSeatingSection } from '../components/AttendanceSeatingSection'
 import { useAttendance } from '../hooks/useAttendance'
-import { getNextAttendanceStatus } from '../../../utils/attendance.utils'
-import { apiService, type Student } from '../../../services/api'
-import { useEffect, useState } from 'react'
-import type { AttendanceStatus } from '../types/attendance.types'
+import { useAttendanceData } from '../hooks/useAttendanceData'
+import { useAttendanceActions } from '../hooks/useAttendanceActions'
+import { useAttendanceEditing } from '../hooks/useAttendanceEditing'
+import { useAttendanceHealth } from '../hooks/useAttendanceHealth'
+import type { AttendanceStatus } from '@shared/types/common.types'
+import { useState } from 'react'
 
 function AttendancePage() {
   const { 
     seats, 
     students,
+    seatAssignments,
     searchTerm, 
     updateSeat, 
     updateStudents,
-    handleSearchChange 
+    updateSeatAssignments,
+    updateStudentAttendanceStatus,
+    handleSearchChange,
+    updateSeats 
   } = useAttendance()
 
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [initializing, setInitializing] = useState(false)
+  const [isAddingMode, setIsAddingMode] = useState(false)
+  const [pendingSeatId, setPendingSeatId] = useState<string | null>(null)
 
-  // Firebase에서 학생 데이터 불러오기
-  useEffect(() => {
-    fetchStudents()
-  }, [])
+  // 데이터 로딩 훅
+  const { loading, error, dataEmpty, fetchData } = useAttendanceData(
+    updateStudents,
+    updateSeats,
+    updateSeatAssignments
+  )
 
-  const fetchStudents = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      console.log('=== fetchStudents 시작 ===')
-      console.log('API 서비스 호출 중...')
-      
-      const response = await apiService.getStudents()
-      console.log('API 응답 전체:', response)
-      console.log('응답 성공 여부:', response.success)
-      console.log('응답 데이터:', response.data)
-      console.log('응답 데이터 타입:', typeof response.data)
-      console.log('응답 데이터 길이:', response.data?.length)
-      
-      if (response.success && response.data) {
-        console.log('Firebase에서 가져온 학생 데이터:', response.data)
-        updateStudents(response.data)
-        console.log('students 상태 설정 완료')
-      } else {
-        console.error('API 응답 실패:', response)
-        setError(response.message || '학생 데이터를 불러오는데 실패했습니다.')
-      }
-      
-    } catch (err) {
-      console.error('fetchStudents 에러:', err)
-      setError('학생 데이터를 불러오는 중 오류가 발생했습니다.')
-    } finally {
-      setLoading(false)
-      console.log('=== fetchStudents 완료 ===')
-    }
+  // 액션 훅
+  const { 
+    error: actionError, 
+    setError: setActionError,
+    assignSeat, 
+    clearSeat, 
+    swapSeats, 
+    handleAttendanceChange
+  } = useAttendanceActions(fetchData, updateStudentAttendanceStatus)
+
+  // 편집 모드 훅
+  const {
+    editingMode,
+    isEditing,
+    sourceSeatId,
+    assigningStudentId,
+    selectedStudent,
+    isStudentPanelOpen,
+    startEditing,
+    stopEditing,
+    setAssigningStudentId,
+    setSelectedStudent,
+    setIsStudentPanelOpen,
+    handleSeatClick: handleSeatClickBase
+  } = useAttendanceEditing()
+
+  // 헬스체크 훅
+  const {
+    seatHealth,
+    isCheckingHealth,
+    isRepairing,
+    checkHealth,
+    autoRepair
+  } = useAttendanceHealth(fetchData)
+
+  // 학생 이름 조회 함수 (seatAssignments 기반)
+  const getStudentName = (seatId: string, seatAssignments: any[], students: any[]): string => {
+    // 해당 좌석의 활성 배정 찾기
+    const assignment = seatAssignments.find(a => a.seatId === seatId && a.status === 'present')
+    if (!assignment) return ''
+    
+    // 학생 정보에서 이름 찾기
+    const student = students.find(s => s.id === assignment.studentId)
+    return student ? student.name : '미배정'
   }
 
-  // 학생 데이터 초기화
-  const handleInitializeStudents = async () => {
-    try {
-      setInitializing(true)
-      setError(null)
-      
-      const response = await apiService.initializeStudents()
-      
-      if (response.success) {
-        console.log('학생 데이터 초기화 성공:', response.message)
-        // 초기화 후 데이터 다시 불러오기
-        await fetchStudents()
-      } else {
-        setError(response.message || '학생 데이터 초기화에 실패했습니다.')
-      }
-      
-    } catch (err) {
-      setError('학생 데이터 초기화 중 오류가 발생했습니다.')
-      console.error('Error initializing students:', err)
-    } finally {
-      setInitializing(false)
-    }
-  }
+  // 에러 상태 통합
+  const currentError = error || actionError
 
+  // 좌석 클릭 핸들러
   const handleSeatClick = (seatId: string) => {
-    console.log(`자리 ${seatId} 클릭`)
-    // 출결 상태 토글 (unknown -> present -> absent -> late -> unknown)
-    const seat = seats.find(s => s.id === seatId)
-    if (seat) {
-      const nextStatus = getNextAttendanceStatus(seat.status)
-      updateSeat(seatId, nextStatus)
+    console.log('🎯 === AttendancePage handleSeatClick 시작 ===');
+    console.log('📍 입력 파라미터:', { seatId });
+    console.log('📊 현재 상태:', {
+      editingMode,
+      isEditing,
+      sourceSeatId,
+      seatAssignmentsCount: seatAssignments.length,
+      studentsCount: students.length
+    });
+    
+    // 추가 모드일 때의 처리
+    if (isAddingMode) {
+      console.log('➕ 추가 모드: 좌석 선택됨', seatId);
+      setPendingSeatId(seatId)
+      return
+    }
+
+    console.log('🔄 useAttendanceEditing.handleSeatClick 호출 시작');
+    handleSeatClickBase(
+      seatId,
+      seatAssignments,
+      students,
+      clearSeat,
+      swapSeats
+    );
+    console.log('✅ useAttendanceEditing.handleSeatClick 호출 완료');
+    console.log('🎯 === AttendancePage handleSeatClick 완료 ===');
+  }
+
+  // 학생 패널 닫기
+  const handleCloseStudentPanel = () => {
+    setIsStudentPanelOpen(false)
+    setSelectedStudent(null)
+  }
+
+  // 출결 상태 변경 핸들러
+  const handleAttendanceChangeWrapper = async (status: AttendanceStatus) => {
+    if (!selectedStudent) return
+    
+    await handleAttendanceChange(selectedStudent, status, () => {
+      setIsStudentPanelOpen(false)
+      setSelectedStudent(null)
+    })
+  }
+
+  // 편집 모드 변경 핸들러
+  const handleEditModeChange = (mode: 'remove' | 'move') => {
+    startEditing(mode)
+  }
+
+  // 편집 완료 핸들러
+  const handleEditComplete = () => {
+    stopEditing()
+  }
+
+  // 학생 배정 핸들러
+  const handleAssignStudent = (studentId: string) => {
+    if (isAddingMode && pendingSeatId) {
+      // 추가 모드: 대기 중인 좌석에 배정
+      console.log('➕ 추가 모드: 학생 배정 실행', { studentId, seatId: pendingSeatId });
+      assignSeat(pendingSeatId, studentId)
+      setPendingSeatId(null)
+      setIsAddingMode(false)
+    } else {
+      // 기존 방식: assigningStudentId 설정
+      setAssigningStudentId(studentId)
     }
   }
 
-  // 학생 데이터를 좌석 데이터와 매핑
-  const getStudentName = (seatId: string): string => {
-    // seatId에서 번호 추출 (예: "seat-1" -> 1)
-    const seatNumber = parseInt(seatId.replace('seat-', ''), 10)
-    
-    console.log('=== getStudentName 디버깅 ===')
-    console.log('seatId:', seatId)
-    console.log('추출된 좌석 번호:', seatNumber, '(타입:', typeof seatNumber, ')')
-    console.log('현재 students 배열:', students)
-    console.log('students 길이:', students.length)
-    
-    const student = students.find(s => s.seatNumber === seatNumber)
-    console.log('찾은 학생:', student)
-    
-    const result = student ? student.name : `학생${seatNumber}`
-    console.log('최종 결과:', result)
-    console.log('========================')
-    
-    return result
+  // 학생 패널 열기 핸들러
+  const handleOpenStudentPanel = (student: any) => {
+    setSelectedStudent(student)
+    setIsStudentPanelOpen(true)
   }
 
+  // 좌석 추가 모드 토글
+  const handleToggleAddingMode = (mode: boolean) => {
+    setIsAddingMode(mode)
+    setPendingSeatId(null)
+    if (!mode) {
+      // 모드 종료 시 검색어 초기화
+      handleSearchChange('')
+    }
+  }
+
+  // 로딩 상태
   if (loading) {
     return (
       <BaseWidget className="attendance-page">
@@ -133,14 +191,15 @@ function AttendancePage() {
             size="medium" 
             className="loading-text"
           >
-            학생 데이터를 불러오는 중...
+            데이터를 불러오는 중...
           </Label>
         </BaseWidget>
       </BaseWidget>
     )
   }
 
-  if (error) {
+  // 에러 상태
+  if (currentError) {
     return (
       <BaseWidget className="attendance-page">
         <Label 
@@ -156,7 +215,7 @@ function AttendancePage() {
             size="medium" 
             className="error-text"
           >
-            {error}
+            {currentError}
           </Label>
           <BaseWidget className="error-actions">
             <Button 
@@ -167,14 +226,53 @@ function AttendancePage() {
             >
               다시 시도
             </Button>
+          </BaseWidget>
+        </BaseWidget>
+      </BaseWidget>
+    )
+  }
+
+  // 데이터 없음 상태
+  if (dataEmpty) {
+    return (
+      <BaseWidget className="attendance-page">
+        <Label 
+          variant="heading" 
+          size="large" 
+          className="page-title"
+        >
+          출결 관리
+        </Label>
+        <BaseWidget className="empty-section">
+          <Label 
+            variant="default" 
+            size="medium" 
+            className="empty-text"
+          >
+            데이터가 없습니다.
+          </Label>
+          <Label 
+            variant="secondary" 
+            size="small" 
+            className="empty-hint"
+          >
+            Firebase Emulator를 시작할 때 자동으로 데이터가 초기화됩니다.
+          </Label>
+          <Label 
+            variant="secondary" 
+            size="small" 
+            className="empty-hint"
+          >
+            터미널에서 ./dev.sh를 실행해주세요.
+          </Label>
+          <BaseWidget className="empty-actions">
             <Button 
-              variant="secondary" 
+              variant="primary" 
               size="medium" 
-              onClick={handleInitializeStudents}
-              disabled={initializing}
-              className="initialize-button"
+              onClick={fetchData}
+              className="retry-button"
             >
-              {initializing ? '초기화 중...' : '학생 데이터 초기화'}
+              새로고침
             </Button>
           </BaseWidget>
         </BaseWidget>
@@ -183,41 +281,71 @@ function AttendancePage() {
   }
 
   return (
-    <BaseWidget className="attendance-page">
-      <Label 
-        variant="heading" 
-        size="large" 
-        className="page-title"
-      >
-        출결 관리
-      </Label>
-      
-      <BaseWidget className="search-section">
-        <SearchInput 
-          placeholder="원생을 검색하세요" 
-          value={searchTerm}
-          onChange={(value) => handleSearchChange(value)}
+    <>
+      <BaseWidget className={`attendance-page ${isStudentPanelOpen ? 'with-side-panel' : ''}`}>
+        <Label 
+          variant="heading" 
+          size="large" 
+          className="page-title"
+        >
+          출결 관리
+        </Label>
+        
+        {/* 헤더 컴포넌트 */}
+        <AttendanceHeader
+          editingMode={editingMode}
+          isEditing={isEditing}
+          sourceSeatId={sourceSeatId}
+          onRefresh={fetchData}
+          onEditModeChange={handleEditModeChange}
+          onEditComplete={handleEditComplete}
+          onCheckHealth={checkHealth}
+          onAutoRepair={autoRepair}
+          isCheckingHealth={isCheckingHealth}
+          isRepairing={isRepairing}
+          seatHealth={seatHealth}
+        />
+        
+        {/* 검색 섹션 컴포넌트 */}
+        <AttendanceSearchSection
+          searchTerm={searchTerm}
+          students={students}
+          isEditing={isEditing}
+          isAddingMode={isAddingMode}
+          onSearchChange={handleSearchChange}
+          onSearch={() => {}} // SearchInput에서 직접 처리
+          onSelectSuggestion={() => {}} // SearchInput에서 직접 처리
+          onAssignStudent={handleAssignStudent}
+          onOpenStudentPanel={handleOpenStudentPanel}
+          onToggleAddingMode={handleToggleAddingMode}
+        />
+        
+        {/* 좌석 배치 섹션 컴포넌트 */}
+        <AttendanceSeatingSection
+          seats={seats}
+          seatAssignments={seatAssignments}
+          students={students}
+          isEditing={isEditing}
+          assigningStudentId={assigningStudentId}
+          onSeatClick={handleSeatClick}
+          onSeatAssign={assignSeat}
+          onSeatClear={clearSeat}
+          onSeatSwap={swapSeats}
+          onAssignedDone={() => setAssigningStudentId(null)}
+          getStudentName={(seatId) => getStudentName(seatId, seatAssignments, students)}
+          isAddingMode={isAddingMode} // 추가 모드 상태 전달
+          pendingSeatId={pendingSeatId} // 대기 중인 좌석 ID 전달
         />
       </BaseWidget>
 
-      <SeatGrid
-        seats={seats}
-        getStudentName={getStudentName}
-        onSeatClick={handleSeatClick}
-        onSeatHover={(seatId: string) => console.log(`자리 ${seatId} 호버`)}
-        onSeatFocus={(seatId: string) => console.log(`자리 ${seatId} 포커스`)}
+      {/* 학생 정보 사이드 패널 */}
+      <StudentInfoPanel
+        student={selectedStudent}
+        isOpen={!isEditing && isStudentPanelOpen}
+        onClose={handleCloseStudentPanel}
+        onAttendanceChange={handleAttendanceChangeWrapper}
       />
-      
-      <BaseWidget className="door-indicator">
-        <Label 
-          variant="default" 
-          size="small" 
-          className="door-text"
-        >
-          문
-        </Label>
-      </BaseWidget>
-    </BaseWidget>
+    </>
   )
 }
 

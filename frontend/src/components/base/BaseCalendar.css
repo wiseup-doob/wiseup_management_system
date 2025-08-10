@@ -1,0 +1,227 @@
+/* BaseCalendar 컴포넌트 스타일 */
+
+.base-calendar {
+  width: 100%;
+  max-width: 400px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  font-family: inherit;
+}
+
+/* 캘린더 헤더 */
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.month-nav-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.month-nav-button:hover {
+  background: var(--color-gray-100);
+  transform: scale(1.05);
+}
+
+.month-title-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.month-title {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.today-indicator {
+  color: var(--color-primary, #2196f3);
+  font-size: 10px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* 요일 헤더 */
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.weekday-header {
+  padding: 8px 4px;
+  text-align: center;
+  border-right: 1px solid var(--color-border);
+}
+
+.weekday-header:last-child {
+  border-right: none;
+}
+
+.weekday-header.sunday {
+  color: var(--color-danger);
+}
+
+.weekday-label {
+  font-weight: 600;
+  font-size: 12px;
+  margin: 0;
+}
+
+/* 캘린더 그리드 */
+.calendar-grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.calendar-week:last-child {
+  border-bottom: none;
+}
+
+.calendar-day {
+  position: relative;
+  min-height: 60px;
+  padding: 4px;
+  border-right: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.calendar-day:last-child {
+  border-right: none;
+}
+
+.calendar-day:hover {
+  background-color: var(--color-gray-50);
+}
+
+.calendar-day.other-month {
+  background-color: var(--color-gray-25);
+}
+
+.calendar-day.other-month:hover {
+  background-color: var(--color-gray-100);
+}
+
+/* 오늘 날짜 스타일 */
+.calendar-day.today {
+  background-color: var(--color-primary-light, #e3f2fd);
+  border: 2px solid var(--color-primary, #2196f3);
+}
+
+.calendar-day.today .day-number {
+  color: var(--color-primary, #2196f3);
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.calendar-day.today:hover {
+  background-color: var(--color-primary-lighter, #bbdefb);
+}
+
+/* 선택된 날짜 스타일 */
+.calendar-day.selected {
+  background-color: var(--color-primary, #2196f3);
+}
+
+.calendar-day.selected .day-number {
+  color: white;
+  font-weight: bold;
+}
+
+.calendar-day.selected:hover {
+  background-color: var(--color-primary-dark, #1976d2);
+}
+
+/* 오늘 날짜이면서 선택된 경우 */
+.calendar-day.today.selected {
+  background-color: var(--color-primary, #2196f3);
+  border: 2px solid var(--color-primary-dark, #1976d2);
+}
+
+.calendar-day.today.selected .day-number {
+  color: white;
+  font-weight: bold;
+}
+
+/* 날짜 번호 */
+.day-number {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  margin: 0;
+  z-index: 1;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 480px) {
+  .base-calendar {
+    max-width: 100%;
+  }
+  
+  .calendar-day {
+    min-height: 50px;
+  }
+  
+  .calendar-day.today .day-number {
+    font-size: 12px;
+  }
+  
+  .today-indicator {
+    font-size: 9px;
+  }
+}
+
+/* 애니메이션 */
+.calendar-day {
+  transition: all 0.2s ease;
+}
+
+.calendar-day:active {
+  transform: scale(0.95);
+}
+
+/* 포커스 스타일 */
+.calendar-day:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+/* 접근성 */
+@media (prefers-reduced-motion: reduce) {
+  .calendar-day,
+  .month-nav-button {
+    transition: none;
+  }
+} 

@@ -1,92 +1,121 @@
-export class AppError extends Error {
-  public code: string
-  public statusCode?: number
+import { ERROR_MESSAGES } from '../config/constants';
 
-  constructor(
-    message: string,
-    code: string,
-    statusCode?: number
-  ) {
-    super(message)
-    this.name = 'AppError'
-    this.code = code
-    this.statusCode = statusCode
+export const ErrorType = {
+  NETWORK: 'NETWORK',
+  API: 'API',
+  VALIDATION: 'VALIDATION',
+  AUTHENTICATION: 'AUTHENTICATION',
+  UNKNOWN: 'UNKNOWN'
+} as const;
+
+export type ErrorType = typeof ErrorType[keyof typeof ErrorType];
+
+export interface AppError {
+  type: ErrorType;
+  message: string;
+  details?: any;
+  originalError?: Error;
+}
+
+export interface ValidationError extends AppError {
+  type: 'VALIDATION';
+  field?: string;
+  value?: any;
+}
+
+export interface ApiError extends AppError {
+  type: 'API';
+  statusCode?: number;
+  endpoint?: string;
+}
+
+export interface ErrorContext {
+  component?: string;
+  action?: string;
+  timestamp: Date;
+}
+
+export class ErrorHandler {
+  static createApiError(error: any, endpoint?: string): ApiError {
+    return {
+      type: ErrorType.API,
+      message: error.message || ERROR_MESSAGES.API_ERROR,
+      details: error,
+      endpoint,
+      originalError: error instanceof Error ? error : undefined
+    };
   }
-}
 
-export class ValidationError extends AppError {
-  constructor(message: string) {
-    super(message, 'VALIDATION_ERROR', 400)
-    this.name = 'ValidationError'
+  static createValidationError(message: string, field?: string, value?: any): ValidationError {
+    return {
+      type: ErrorType.VALIDATION,
+      message: message || ERROR_MESSAGES.VALIDATION_ERROR,
+      field,
+      value
+    };
   }
-}
 
-export class NetworkError extends AppError {
-  constructor(message: string) {
-    super(message, 'NETWORK_ERROR', 0)
-    this.name = 'NetworkError'
+  static createNetworkError(error: any): AppError {
+    return {
+      type: ErrorType.NETWORK,
+      message: ERROR_MESSAGES.NETWORK_ERROR,
+      details: error,
+      originalError: error instanceof Error ? error : undefined
+    };
   }
-}
 
-export class ApiError extends AppError {
-  constructor(message: string, statusCode: number) {
-    super(message, 'API_ERROR', statusCode)
-    this.name = 'ApiError'
+  static handleApiResponse(response: Response): Promise<any> {
+    if (!response.ok) {
+      const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
+      throw this.createApiError(error, response.url);
+    }
+    return response.json();
   }
-}
 
-export const handleApiError = (error: unknown): AppError => {
-  if (error instanceof AppError) {
-    return error
+  static handleAttendanceError(error: any): AppError {
+    if (error.type === ErrorType.API) {
+      return error;
+    }
+    
+    if (error.message?.includes('네트워크')) {
+      return this.createNetworkError(error);
+    }
+    
+    return {
+      type: ErrorType.UNKNOWN,
+      message: ERROR_MESSAGES.UNKNOWN_ERROR,
+      details: error,
+      originalError: error instanceof Error ? error : undefined
+    };
   }
-  
-  if (error instanceof Error) {
-    return new AppError(error.message, 'UNKNOWN_ERROR')
+
+  static logError(error: AppError, context?: ErrorContext): void {
+    const logData = {
+      type: error.type,
+      message: error.message,
+      details: error.details,
+      context,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.error('Error logged:', logData);
+    
+    // TODO: 실제 로깅 서비스로 전송
+    // analytics.track('error', logData);
   }
-  
-  return new AppError('알 수 없는 오류가 발생했습니다', 'UNKNOWN_ERROR')
-}
 
-export const handleValidationError = (field: string, message: string): ValidationError => {
-  return new ValidationError(`${field}: ${message}`)
-}
-
-export const handleNetworkError = (error: Error): NetworkError => {
-  return new NetworkError(`네트워크 오류: ${error.message}`)
-}
-
-export const isAppError = (error: unknown): error is AppError => {
-  return error instanceof AppError
-}
-
-export const isValidationError = (error: unknown): error is ValidationError => {
-  return error instanceof ValidationError
-}
-
-export const isNetworkError = (error: unknown): error is NetworkError => {
-  return error instanceof NetworkError
-}
-
-export const isApiError = (error: unknown): error is ApiError => {
-  return error instanceof ApiError
-}
-
-export const getErrorMessage = (error: unknown): string => {
-  if (error instanceof AppError) {
-    return error.message
+  static getUserFriendlyMessage(error: AppError): string {
+    switch (error.type) {
+      case ErrorType.NETWORK:
+        return ERROR_MESSAGES.NETWORK_ERROR;
+      case ErrorType.API:
+        return ERROR_MESSAGES.API_ERROR;
+      case ErrorType.VALIDATION:
+        return ERROR_MESSAGES.VALIDATION_ERROR;
+      case ErrorType.AUTHENTICATION:
+        return '인증이 필요합니다. 다시 로그인해주세요.';
+      default:
+        return ERROR_MESSAGES.UNKNOWN_ERROR;
+    }
   }
-  
-  if (error instanceof Error) {
-    return error.message
-  }
-  
-  return '알 수 없는 오류가 발생했습니다'
-}
-
-export const getErrorCode = (error: unknown): string => {
-  if (error instanceof AppError) {
-    return error.code
-  }
-  
-  return 'UNKNOWN_ERROR'
 } 

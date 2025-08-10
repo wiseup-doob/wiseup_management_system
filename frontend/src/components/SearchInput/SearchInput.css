@@ -3,7 +3,23 @@
 .search-input-container {
   position: relative;
   width: 100%;
-  max-width: 400px;
+  max-width: 100%;
+}
+
+.search-input-container.pill .search-input {
+  border-radius: 999px;
+  background: #f7f9fc;
+  border-color: #e6eef8;
+  color: #333333; /* pill 상태에서도 검은색 글씨 보이도록 */
+}
+
+.search-input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
 }
 
 .search-input {
@@ -16,6 +32,28 @@
   color: #333333;
   transition: all 0.2s ease;
   outline: none;
+}
+
+.search-input--xs { height: 28px; padding: 4px 32px 4px 28px; font-size: 12px; border-radius: 8px; }
+.search-input--sm { height: 32px; padding: 6px 36px 6px 30px; font-size: 13px; border-radius: 8px; }
+.search-input--md { height: 36px; padding: 8px 40px 8px 32px; font-size: 14px; border-radius: 10px; }
+.search-input--lg { height: 40px; padding: 12px 44px 12px 36px; font-size: 14px; border-radius: 12px; }
+
+.search-input--pill {
+  padding-left: 40px; /* 아이콘 여백 */
+  background: #f7f9fc;
+  color: #333333; /* pill 상태에서도 검은색 글씨 보이도록 */
+}
+
+/* Compact size for sidebar alignment */
+.search-input-container.compact .search-input {
+  border-radius: 8px;
+}
+.search-input-container.compact .search-input-icon {
+  left: 10px;
+}
+.search-input-container.compact.pill .search-input {
+  border-radius: 999px;
 }
 
 .search-input::placeholder {
@@ -48,6 +86,39 @@
     padding: 10px 14px;
     font-size: 16px; /* 모바일에서 더 큰 폰트 */
   }
+}
+
+/* 제안 드롭다운 */
+.search-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-top: none;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+  z-index: 20;
+  max-height: 260px;
+  overflow-y: auto;
+  margin-top: 6px;
+}
+
+.search-suggestion-item {
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: none;
+  border-bottom: 1px solid #f2f2f2;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333333; /* 드롭다운 글자 색상을 검은색으로 설정 */
+}
+
+.search-suggestion-item:hover {
+  background: #f7fbff;
 }
 
 /* 다크 모드 지원 */

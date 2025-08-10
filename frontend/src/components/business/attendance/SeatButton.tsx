@@ -1,7 +1,7 @@
-import { forwardRef } from 'react'
+import React from 'react'
 import { BaseButton } from '../../base/BaseButton'
-import { getAttendanceVariant } from '../../../utils/attendance.utils'
-import type { AttendanceStatus } from '../../../features/attendance/types/attendance.types'
+import { ATTENDANCE_STATUS_BUTTON_VARIANTS, ATTENDANCE_STATUS_BG_COLORS, ATTENDANCE_STATUS_TEXT_COLORS } from '../../../utils/attendance.utils'
+import type { AttendanceStatus } from '@shared/types/common.types'
 import type { BaseButtonProps } from '../../../types/components'
 import './SeatButton.css'
 
@@ -14,7 +14,7 @@ export interface SeatButtonProps extends Omit<BaseButtonProps, 'variant'> {
   onSeatFocus?: (seatId: string) => void
 }
 
-export const SeatButton = forwardRef<HTMLButtonElement, SeatButtonProps>(
+export const SeatButton = React.forwardRef<HTMLButtonElement, SeatButtonProps>(
   ({ 
     seatId, 
     status, 
@@ -39,12 +39,20 @@ export const SeatButton = forwardRef<HTMLButtonElement, SeatButtonProps>(
       onSeatFocus?.(seatId)
     }
 
+    const buttonStyle = {
+      backgroundColor: ATTENDANCE_STATUS_BG_COLORS[status],
+      color: ATTENDANCE_STATUS_TEXT_COLORS[status],
+      '--hover-color': ATTENDANCE_STATUS_BG_COLORS[status]
+    } as React.CSSProperties;
+
     return (
       <BaseButton
         ref={ref}
-        variant={getAttendanceVariant(status)}
+        variant={ATTENDANCE_STATUS_BUTTON_VARIANTS[status]}
         size={size}
         className={`seat-button ${className}`}
+        style={buttonStyle}
+        data-status={status}
         onClick={handleClick}
         onHover={handleHover}
         onFocus={handleFocus}

@@ -52,24 +52,6 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
               <button className="account-dropdown">▼</button>
             </div>
           </div>
-          
-          {/* 계정 액션 버튼들 */}
-          <div className="account-actions">
-            <button className="account-action-btn">계정 추가</button>
-            <button className="account-action-btn">로그아웃</button>
-          </div>
-          
-          {/* 추가 관리자 계정들 */}
-          <div className="additional-accounts">
-            <div className="account-item">
-              <span className="account-name">관리자2</span>
-              <span className="account-email">xxx@gmail.com</span>
-            </div>
-            <div className="account-item">
-              <span className="account-name">관리자2</span>
-              <span className="account-email">xxx@gmail.com</span>
-            </div>
-          </div>
         </div>
 
         {/* 구분선 */}

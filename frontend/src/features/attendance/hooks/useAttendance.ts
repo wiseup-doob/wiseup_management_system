@@ -7,17 +7,26 @@ import {
   setSelectedSeat, 
   resetAllSeats, 
   markAllPresent,
-  setStudents
+  setStudents,
+  setSeatAssignments,
+  setSeats,
+  updateSeatAssignment,
+  updateStudentAttendance
 } from '../slice/attendanceSlice'
-import type { AttendanceStatus } from '../types/attendance.types'
-import type { Student } from '../../../services/api'
+import type { AttendanceStatus } from '@shared/types/common.types'
+import type { Student, SeatAssignment } from '@shared/types'
+import type { SeatAssignmentResponse } from '../types/attendance.types'
 
 export const useAttendance = () => {
   const dispatch = useAppDispatch()
-  const { seats, students, searchTerm, selectedSeat, isLoading, error } = useAppSelector(state => state.attendance)
+  const { seats, students, seatAssignments, searchTerm, selectedSeat, isLoading, error } = useAppSelector(state => state.attendance)
 
   const updateSeat = useCallback((seatId: string, status: AttendanceStatus) => {
     dispatch(updateSeatStatus({ seatId, status }))
+  }, [dispatch])
+
+  const updateStudentAttendanceStatus = useCallback((studentId: string, status: AttendanceStatus) => {
+    dispatch(updateStudentAttendance({ studentId, status }))
   }, [dispatch])
 
   const handleSearchChange = useCallback((value: string) => {
@@ -40,15 +49,32 @@ export const useAttendance = () => {
     dispatch(setStudents(students))
   }, [dispatch])
 
+  const updateSeatAssignments = useCallback((assignments: SeatAssignmentResponse[]) => {
+    dispatch(setSeatAssignments(assignments))
+  }, [dispatch])
+
+  const updateSeats = useCallback((seats: any[]) => {
+    dispatch(setSeats(seats))
+  }, [dispatch])
+
+  const updateSingleSeatAssignment = useCallback((assignment: SeatAssignmentResponse) => {
+    dispatch(updateSeatAssignment(assignment))
+  }, [dispatch])
+
   return {
     seats,
     students,
+    seatAssignments,
     searchTerm,
     selectedSeat,
     isLoading,
     error,
     updateSeat,
+    updateStudentAttendanceStatus,
     updateStudents,
+    updateSeatAssignments,
+    updateSeats,
+    updateSingleSeatAssignment,
     handleSearchChange,
     handleSeatSelection,
     handleResetAll,
