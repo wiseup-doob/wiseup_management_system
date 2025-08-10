@@ -1,0 +1,117 @@
+export declare const ErrorType: {
+    readonly VALIDATION: "VALIDATION_ERROR";
+    readonly NOT_FOUND: "NOT_FOUND";
+    readonly UNAUTHORIZED: "UNAUTHORIZED";
+    readonly FORBIDDEN: "FORBIDDEN";
+    readonly CONFLICT: "CONFLICT";
+    readonly INTERNAL: "INTERNAL_ERROR";
+    readonly NETWORK: "NETWORK_ERROR";
+    readonly DATABASE: "DATABASE_ERROR";
+    readonly TIMEOUT: "TIMEOUT_ERROR";
+};
+export type ErrorType = typeof ErrorType[keyof typeof ErrorType];
+export declare const ERROR_CODES: {
+    readonly INVALID_INPUT: "INVALID_INPUT";
+    readonly MISSING_REQUIRED_FIELD: "MISSING_REQUIRED_FIELD";
+    readonly INVALID_FORMAT: "INVALID_FORMAT";
+    readonly INVALID_VALUE: "INVALID_VALUE";
+    readonly VALIDATION_ERROR: "VALIDATION_ERROR";
+    readonly UNAUTHORIZED: "UNAUTHORIZED";
+    readonly UNAUTHORIZED_ACCESS: "UNAUTHORIZED_ACCESS";
+    readonly FORBIDDEN: "FORBIDDEN";
+    readonly INVALID_TOKEN: "INVALID_TOKEN";
+    readonly TOKEN_EXPIRED: "TOKEN_EXPIRED";
+    readonly EXPIRED_TOKEN: "EXPIRED_TOKEN";
+    readonly INSUFFICIENT_PERMISSIONS: "INSUFFICIENT_PERMISSIONS";
+    readonly DATABASE_CONNECTION_ERROR: "DATABASE_CONNECTION_ERROR";
+    readonly DATABASE_QUERY_ERROR: "DATABASE_QUERY_ERROR";
+    readonly DATABASE_TRANSACTION_ERROR: "DATABASE_TRANSACTION_ERROR";
+    readonly RESOURCE_NOT_FOUND: "RESOURCE_NOT_FOUND";
+    readonly STUDENT_NOT_FOUND: "STUDENT_NOT_FOUND";
+    readonly SEAT_NOT_FOUND: "SEAT_NOT_FOUND";
+    readonly ATTENDANCE_RECORD_NOT_FOUND: "ATTENDANCE_RECORD_NOT_FOUND";
+    readonly USER_NOT_FOUND: "USER_NOT_FOUND";
+    readonly DUPLICATE_RESOURCE: "DUPLICATE_RESOURCE";
+    readonly SEAT_NUMBER_CONFLICT: "SEAT_NUMBER_CONFLICT";
+    readonly STUDENT_ALREADY_EXISTS: "STUDENT_ALREADY_EXISTS";
+    readonly SEAT_ALREADY_ASSIGNED: "SEAT_ALREADY_ASSIGNED";
+    readonly INVALID_ATTENDANCE_STATUS: "INVALID_ATTENDANCE_STATUS";
+    readonly INVALID_TIME_FORMAT: "INVALID_TIME_FORMAT";
+    readonly DUPLICATE_ATTENDANCE: "DUPLICATE_ATTENDANCE";
+    readonly EXTERNAL_SERVICE_ERROR: "EXTERNAL_SERVICE_ERROR";
+    readonly NETWORK_CONNECTION_ERROR: "NETWORK_CONNECTION_ERROR";
+    readonly NETWORK_TIMEOUT: "NETWORK_TIMEOUT";
+    readonly INTERNAL_SERVER_ERROR: "INTERNAL_SERVER_ERROR";
+    readonly SERVICE_UNAVAILABLE: "SERVICE_UNAVAILABLE";
+    readonly NOT_IMPLEMENTED: "NOT_IMPLEMENTED";
+};
+export declare const ERROR_MESSAGES: {
+    readonly INVALID_INPUT: "입력 데이터가 유효하지 않습니다.";
+    readonly MISSING_REQUIRED_FIELD: "필수 필드가 누락되었습니다.";
+    readonly INVALID_FORMAT: "잘못된 형식입니다.";
+    readonly INVALID_VALUE: "유효하지 않은 값입니다.";
+    readonly UNAUTHORIZED_ACCESS: "인증이 필요합니다.";
+    readonly INSUFFICIENT_PERMISSIONS: "접근 권한이 없습니다.";
+    readonly INVALID_TOKEN: "유효하지 않은 토큰입니다.";
+    readonly EXPIRED_TOKEN: "만료된 토큰입니다.";
+    readonly RESOURCE_NOT_FOUND: "요청한 리소스를 찾을 수 없습니다.";
+    readonly STUDENT_NOT_FOUND: "학생을 찾을 수 없습니다.";
+    readonly ATTENDANCE_RECORD_NOT_FOUND: "출석 기록을 찾을 수 없습니다.";
+    readonly DUPLICATE_RESOURCE: "이미 존재하는 리소스입니다.";
+    readonly SEAT_NUMBER_CONFLICT: "이미 사용 중인 좌석 번호입니다.";
+    readonly INTERNAL_SERVER_ERROR: "서버 내부 오류가 발생했습니다.";
+    readonly DATABASE_CONNECTION_ERROR: "데이터베이스 연결에 실패했습니다.";
+    readonly DATABASE_QUERY_ERROR: "데이터베이스 쿼리 실행 중 오류가 발생했습니다.";
+    readonly EXTERNAL_SERVICE_ERROR: "외부 서비스 호출 중 오류가 발생했습니다.";
+    readonly NETWORK_TIMEOUT: "네트워크 요청 시간이 초과되었습니다.";
+    readonly NETWORK_CONNECTION_ERROR: "네트워크 연결을 확인해주세요.";
+    readonly INVALID_ATTENDANCE_STATUS: "유효하지 않은 출석 상태입니다.";
+    readonly INVALID_TIME_FORMAT: "유효하지 않은 시간 형식입니다.";
+    readonly DUPLICATE_ATTENDANCE: "이미 존재하는 출석 기록입니다.";
+    readonly STUDENT_ALREADY_EXISTS: "이미 존재하는 학생입니다.";
+};
+export declare class AppError extends Error {
+    readonly type: ErrorType;
+    readonly code: string;
+    readonly statusCode: number;
+    readonly details?: any;
+    readonly timestamp: string;
+    readonly requestId?: string;
+    constructor(type: ErrorType, code: string, message?: string, statusCode?: number, details?: any, requestId?: string);
+    static validation(code: string, message?: string, details?: any, requestId?: string): AppError;
+    static badRequest(code: string, message?: string, details?: any, requestId?: string): AppError;
+    static notFound(code: string, message?: string, details?: any, requestId?: string): AppError;
+    static unauthorized(code: string, message?: string, details?: any, requestId?: string): AppError;
+    static forbidden(code: string, message?: string, details?: any, requestId?: string): AppError;
+    static conflict(code: string, message?: string, details?: any, requestId?: string): AppError;
+    static internal(code: string, message?: string, details?: any, requestId?: string): AppError;
+    static network(code: string, message?: string, details?: any, requestId?: string): AppError;
+    static database(code: string, message?: string, details?: any, requestId?: string): AppError;
+    static timeout(code: string, message?: string, details?: any, requestId?: string): AppError;
+}
+export interface ErrorResponse {
+    success: false;
+    error: string;
+    message: string;
+    code: string;
+    type: ErrorType;
+    statusCode: number;
+    timestamp: string;
+    requestId?: string;
+    details?: any;
+    meta?: {
+        timestamp: string;
+        version: string;
+        requestId?: string;
+    };
+}
+export declare function createErrorResponse(error: AppError): ErrorResponse;
+export declare function normalizeError(error: any, requestId?: string): AppError;
+export declare const logError: (error: AppError, context?: {
+    component?: string;
+    action?: string;
+    userId?: string;
+    [key: string]: any;
+}) => void;
+export declare function errorHandler(error: any, requestId?: string): ErrorResponse;
+//# sourceMappingURL=error.utils.d.ts.map

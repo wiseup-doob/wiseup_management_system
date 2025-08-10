@@ -1,0 +1,71 @@
+// 데이터베이스 구조 타입들
+export * from './common.types';
+export * from './database.types';
+export * from './attendance.types';
+export * from './timetable.types';
+export type {
+  GetStudentsRequest,
+  GetStudentsResponse,
+  GetStudentResponse,
+  CreateStudentRequest,
+  UpdateStudentRequest,
+  CreateAttendanceRecordRequest,
+  UpdateAttendanceRecordRequest,
+  GetAttendanceRecordsRequest,
+  GetAttendanceRecordsResponse,
+  GetAttendanceStatsRequest,
+  GetAttendanceStatsResponse,
+  BulkAttendanceUpdateRequest,
+  BulkAttendanceUpdateResponse,
+  SearchStudentsRequest,
+  SearchStudentsResponse,
+  SearchAttendanceRecordsRequest,
+  SearchAttendanceRecordsResponse,
+  // 시간표 관련 API 타입 (임시 주석 처리 - 구현 시 활성화)
+  // GetTimetablesRequest,
+  // GetTimetablesResponse,
+  // GetTimetableResponse,
+  // CreateTimetableResponse,
+  // UpdateTimetableResponse,
+  // GetClassesRequest,
+  // GetClassesResponse,
+  // GetClassResponse,
+  // CreateClassResponse,
+  // UpdateClassResponse,
+  // GetTeachersRequest,
+  // GetTeachersResponse,
+  // GetTeacherResponse,
+  // CreateTeacherRequest,
+  // UpdateTeacherRequest,
+  // CreateTeacherResponse,
+  // UpdateTeacherResponse,
+  // GetClassroomsRequest,
+  // GetClassroomsResponse,
+  // GetClassroomResponse,
+  // CreateClassroomRequest,
+  // UpdateClassroomRequest,
+  // CreateClassroomResponse,
+  // UpdateClassroomResponse,
+  // GetEnrollmentsRequest,
+  // GetEnrollmentsResponse,
+  // GetEnrollmentResponse,
+  // CreateEnrollmentResponse,
+  // UpdateEnrollmentRequest,
+  // UpdateEnrollmentResponse,
+  // CreateClassAttendanceRequest,
+  // UpdateClassAttendanceRequest,
+  // CreateClassAttendanceResponse,
+  // UpdateClassAttendanceResponse,
+  // GetClassAttendanceRequest,
+  // GetClassAttendanceResponse,
+  // GetTimetableStatsRequest,
+  // GetTimetableStatsResponse,
+  // GetTeacherStatsRequest,
+  // GetTeacherStatsResponse,
+  // GetStudentTimetableStatsRequest,
+  // GetStudentTimetableStatsResponse
+} from './api.types';
+
+// 중복 해결을 위한 명시적 export
+export type { AttendanceRecord } from './attendance.types';
+export type { Seat } from './database.types'; 
