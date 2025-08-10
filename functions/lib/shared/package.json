@@ -1,0 +1,23 @@
+{
+  "name": "@wiseup/shared",
+  "version": "1.0.0",
+  "description": "Shared types and constants for WiseUp Management System",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  },
+  "keywords": [
+    "typescript",
+    "shared",
+    "types",
+    "constants"
+  ],
+  "author": "WiseUp Team",
+  "license": "MIT"
+}

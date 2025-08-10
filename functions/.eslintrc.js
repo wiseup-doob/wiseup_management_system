@@ -5,22 +5,24 @@ module.exports = {
     node: true,
   },
   extends: [
-    "eslint:recommended",
+    'eslint:recommended',
   ],
-  parser: "@typescript-eslint/parser",
+  parser: '@typescript-eslint/parser',
   parserOptions: {
-    project: ["tsconfig.json", "tsconfig.dev.json"],
-    sourceType: "module",
+    project: ['tsconfig.json', 'tsconfig.dev.json'],
+    sourceType: 'module',
   },
   ignorePatterns: [
-    "/lib/**/*", // Ignore built files.
+    '/lib/**/*', // Ignore built files.
+    '/scripts/**/*', // Ignore scripts directory
   ],
   plugins: [
-    "@typescript-eslint",
+    '@typescript-eslint',
   ],
   rules: {
-    "quotes": ["error", "double"],
-    "max-len": "off",
-    "@typescript-eslint/no-explicit-any": "off",
+    'quotes': ['error', 'single'],
+    'max-len': 'off',
+    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-unused-vars': 'warn',
   },
 };

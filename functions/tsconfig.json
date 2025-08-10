@@ -1,4 +1,5 @@
 {
+  "extends": "../tsconfig.json",
   "compilerOptions": {
     "module": "NodeNext",
     "esModuleInterop": true,
@@ -8,10 +9,22 @@
     "outDir": "lib",
     "sourceMap": true,
     "strict": true,
-    "target": "es2017"
+    "target": "es2017",
+    "composite": true,
+    "baseUrl": "..",
+    "paths": {
+      "@shared/*": ["shared/*"]
+    },
+    "noEmit": false,
+    "rootDir": ".."
   },
   "compileOnSave": true,
   "include": [
-    "src"
+    "src",
+    "../shared/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "lib"
   ]
 }

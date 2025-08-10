@@ -1,64 +1,57 @@
-import * as functions from "firebase-functions";
+import { Router, Request, Response, NextFunction } from 'express';
+import { container } from '../config/container';
 import { AuthController } from '../controllers/AuthController';
-import { AuthService } from '../services/auth/AuthService';
-import { setCorsHeaders, handleOptionsRequest } from '../middleware/cors';
-import { createErrorResponse } from '../middleware/errorHandler';
 
-// HTTP 핸들러 팩토리
-const createHttpHandler = (handler: (request: any, response: any) => Promise<void>) => {
-  return functions.https.onRequest(async (request, response) => {
-    setCorsHeaders(response);
+// Express Router 생성
+const router = Router();
 
-    if (handleOptionsRequest(response)) {
-      return;
-    }
-
-    try {
-      await handler(request, response);
-    } catch (error) {
-      createErrorResponse(response, error, "요청 처리 중 오류가 발생했습니다.");
-    }
-  });
+// 컨트롤러 해결 함수
+const getAuthController = (): AuthController => {
+  return container.resolve<AuthController>('AuthController');
 };
 
-// 인증 서비스 및 컨트롤러 인스턴스
-const authService = new AuthService();
-const authController = new AuthController(authService);
+// 에러 핸들링 래퍼
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+};
 
-// 인증 라우트
-export const authRoutes = {
-  // 관리자 계정 초기화
-  initializeAdmin: createHttpHandler(async (request, response) => {
-    await authController.initializeAdmin(request, response);
-  }),
-  
-  // 로그인
-  login: createHttpHandler(async (request, response) => {
-    await authController.login(request, response);
-  }),
-  
-  // 회원가입
-  register: createHttpHandler(async (request, response) => {
-    await authController.register(request, response);
-  }),
-  
-  // 로그아웃
-  logout: createHttpHandler(async (request, response) => {
-    await authController.logout(request, response);
-  }),
-  
-  // 토큰 갱신
-  refreshToken: createHttpHandler(async (request, response) => {
-    await authController.refreshToken(request, response);
-  }),
-  
-  // 현재 사용자 정보 조회
-  getCurrentUser: createHttpHandler(async (request, response) => {
-    await authController.getCurrentUser(request, response);
-  }),
-  
-  // 토큰 검증
-  verifyToken: createHttpHandler(async (request, response) => {
-    await authController.verifyToken(request, response);
-  }),
-}; 
+// ===== 인증 라우트 =====
+
+// POST /initialize-admin - 관리자 초기화
+router.post('/initialize-admin', asyncHandler(async (req: Request, res: Response) => {
+  await getAuthController().initializeAdmin(req, res);
+}));
+
+// POST /login - 로그인
+router.post('/login', asyncHandler(async (req: Request, res: Response) => {
+  await getAuthController().login(req, res);
+}));
+
+// POST /register - 회원가입
+router.post('/register', asyncHandler(async (req: Request, res: Response) => {
+  await getAuthController().register(req, res);
+}));
+
+// POST /logout - 로그아웃
+router.post('/logout', asyncHandler(async (req: Request, res: Response) => {
+  await getAuthController().logout(req, res);
+}));
+
+// POST /refresh - 토큰 갱신
+router.post('/refresh', asyncHandler(async (req: Request, res: Response) => {
+  await getAuthController().refreshToken(req, res);
+}));
+
+// GET /current-user - 현재 사용자 조회
+router.get('/current-user', asyncHandler(async (req: Request, res: Response) => {
+  await getAuthController().getCurrentUser(req, res);
+}));
+
+// POST /verify - 토큰 검증
+router.post('/verify', asyncHandler(async (req: Request, res: Response) => {
+  await getAuthController().verifyToken(req, res);
+}));
+
+export const authRouter: Router = router; 

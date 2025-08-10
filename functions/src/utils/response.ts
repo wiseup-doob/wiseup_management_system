@@ -1,4 +1,4 @@
-import { ApiResponse } from '../types/common';
+import type { ApiResponse } from '@shared/types';
 
 export const createSuccessResponse = <T>(data: T, message?: string): ApiResponse<T> => {
   return {
