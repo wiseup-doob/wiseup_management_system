@@ -3,9 +3,8 @@
 .sidebar {
   width: var(--sidebar-length, 256px);
   height: 1024px;
-  background-color: var(--sidebar-bg-color, #f8f9fa);
-  border-right: 1px solid var(--sidebar-border-color, #e9ecef);
-  padding: var(--sidebar-padding, 20px);
+  background-color: #F4F7FA;
+  padding: var(--sidebar-padding, 8px);
   position: fixed;
   left: 0;
   top: 0;
@@ -17,6 +16,16 @@
 .sidebar-logo {
   margin-bottom: var(--spacing-xl, 30px);
   text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.wiseup-logo {
+  max-width: 100%;
+  height: auto;
+  max-height: 60px;
+  object-fit: contain;
 }
 
 .logo-placeholder {
@@ -35,137 +44,74 @@
 }
 
 .section-title {
-  margin-bottom: var(--spacing-md, 10px);
+  margin: 0 0 var(--spacing-md, 10px) 0;
+  padding: 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-size: 12px;
-  font-weight: 600;
-  color: #666;
-}
-
-/* 계정 정보 스타일 */
-.account-info {
-  margin-bottom: var(--spacing-md, 15px);
-}
-
-.account-display {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px;
-  background-color: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.account-display:hover {
-  background-color: #f5f5f5;
-}
-
-.account-name {
-  font-weight: 600;
-  color: #333;
-  font-size: 14px;
-}
-
-.account-email {
-  font-size: 12px;
-  color: #666;
-  margin-left: 8px;
-}
-
-.account-dropdown {
+  font-weight: 500;
+  line-height: 16px;
+  color: #191E22;
   background: none;
   border: none;
-  font-size: 12px;
-  color: #666;
-  cursor: pointer;
-  padding: 2px;
+  outline: none;
+  list-style: none;
+  text-decoration: none;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-/* 계정 액션 버튼들 */
-.account-actions {
-  display: flex;
-  gap: 8px;
-  margin-bottom: var(--spacing-md, 15px);
+/* section-title 내부 요소들 정리 */
+.section-title::before,
+.section-title::after {
+  content: none;
+  display: none;
 }
 
-.account-action-btn {
-  flex: 1;
-  padding: 8px 12px;
-  background-color: #007bff;
-  color: white;
+.section-title h1,
+.section-title h2,
+.section-title h3,
+.section-title h4,
+.section-title h5,
+.section-title h6 {
+  margin: 0;
+  padding: 0;
+  font-size: var(--label-medium-font-size);
+  font-weight: var(--label-medium-font-weight);
+  line-height: var(--label-medium-line-height);
+  color: var(--color-font-primary);
+  background: none;
   border: none;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  outline: none;
+  list-style: none;
+  text-decoration: none;
 }
 
-.account-action-btn:hover {
-  background-color: #0056b3;
+/* 네비게이션 영역 */
+.sidebar-nav {
+  margin: 0;
+  padding: 0;
 }
 
-/* 추가 계정들 */
-.additional-accounts {
-  margin-bottom: var(--spacing-md, 15px);
+/* 메뉴 리스트 */
+.sidebar-menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.account-item {
-  display: flex;
-  flex-direction: column;
-  padding: 8px 10px;
-  margin-bottom: 6px;
-  background-color: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+/* 메뉴 아이템 */
+.sidebar-menu-item {
+  margin: 0;
+  padding: 0;
 }
 
-.account-item:hover {
-  background-color: #f5f5f5;
-}
-
-.account-item .account-name {
-  font-size: 13px;
-  margin-bottom: 2px;
-}
-
-.account-item .account-email {
-  font-size: 11px;
+/* 메뉴 아이템 내부 버튼 정렬 */
+.sidebar-menu-item .sidebar-button {
   margin-left: 0;
-}
-
-/* 구분선 */
-.sidebar-divider {
-  height: 2px;
-  background: linear-gradient(to right, transparent, #e0e0e0, transparent);
-  margin: var(--spacing-lg, 20px) 0;
-  border-radius: 1px;
-  position: relative;
-}
-
-.sidebar-divider::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background-color: #f0f0f0;
-}
-
-.sidebar-divider::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background-color: #d0d0d0;
+  margin-right: 0;
+  width: 100%;
 }
 
 /* 기존 스타일들 */
@@ -192,6 +138,11 @@
   
   .section {
     margin-bottom: var(--spacing-md, 16px);
+  }
+  
+  .section-title {
+    font-size: 11px;
+    line-height: 14px;
   }
 }
 

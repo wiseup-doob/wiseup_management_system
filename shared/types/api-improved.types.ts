@@ -1,14 +1,56 @@
-// API 구조를 위한 타입 정의
+// API 응답 및 요청 타입 정의
 import type { 
-  Student, 
+  Student,
+  StudentSearchParams
+} from './student.types';
+
+import type {
   AttendanceRecord,
-  StudentSearchParams,
   AttendanceSearchParams
-} from './database.types';
-import type { 
-  AttendanceStatus,
-  ApiResponse
+} from './attendance.types';
+
+import type {
+  AttendanceStatus
 } from './common.types';
+
+// API 응답 타입
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message?: string;
+  data?: T;
+  error?: string;
+  meta?: {
+    timestamp?: string;
+    version?: string;
+    requestId?: string;
+    count?: number;
+    [key: string]: any;
+  };
+}
+
+// 페이지네이션 응답 타입
+export interface PaginatedResponse<T> extends ApiResponse<T[]> {
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+// 페이지네이션 파라미터 타입
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+// 검색 파라미터 타입
+export interface SearchParams extends PaginationParams {
+  query?: string;
+  filters?: Record<string, any>;
+}
 
 // ===== 학생 관련 API =====
 
@@ -246,28 +288,4 @@ export interface SearchAttendanceRecordsResponse {
   page: number;
   limit: number;
   totalPages: number;
-}
-
-// ===== API 응답 래퍼 =====
-
-// 성공 응답 래퍼
-export type ApiSuccessResponse<T> = ApiResponse<T>;
-
-// 오류 응답 래퍼
-export type ApiErrorResponse = ApiResponse<null>;
-
-// 페이지네이션 메타데이터
-export interface PaginationMeta {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
-
-// 페이지네이션 응답
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: PaginationMeta;
 } 

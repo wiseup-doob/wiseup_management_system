@@ -54,4 +54,74 @@ export declare const ATTENDANCE_MESSAGES: {
         readonly DUPLICATE_UPDATE: "이미 출석이 기록되었습니다.";
     };
 };
+export declare const ATTENDANCE_STATUS_STYLES: {
+    readonly present: {
+        readonly text: "등원";
+        readonly className: "attendance-present";
+        readonly backgroundColor: "#e8f5e8";
+        readonly color: "#2e7d32";
+        readonly borderColor: "#4caf50";
+        readonly dotColor: "#4CAF50";
+    };
+    readonly dismissed: {
+        readonly text: "하원";
+        readonly className: "attendance-dismissed";
+        readonly backgroundColor: "#f5f5f5";
+        readonly color: "#666666";
+        readonly borderColor: "#9e9e9e";
+        readonly dotColor: "#9E9E9E";
+    };
+    readonly unauthorized_absent: {
+        readonly text: "무단결석";
+        readonly className: "attendance-unauthorized";
+        readonly backgroundColor: "#ffebee";
+        readonly color: "#c62828";
+        readonly borderColor: "#f44336";
+        readonly dotColor: "#F44336";
+    };
+    readonly authorized_absent: {
+        readonly text: "사유결석";
+        readonly className: "attendance-authorized";
+        readonly backgroundColor: "#fff3e0";
+        readonly color: "#ef6c00";
+        readonly borderColor: "#ff9800";
+        readonly dotColor: "#FF9800";
+    };
+    readonly not_enrolled: {
+        readonly text: "미등록";
+        readonly className: "attendance-not-enrolled";
+        readonly backgroundColor: "#f5f5f5";
+        readonly color: "#9e9e9e";
+        readonly borderColor: "#bdbdbd";
+        readonly dotColor: "#BDBDBD";
+    };
+};
+export declare const ATTENDANCE_TO_TIMELINE_STATUS: {
+    readonly present: "success";
+    readonly dismissed: "info";
+    readonly unauthorized_absent: "error";
+    readonly authorized_absent: "warning";
+    readonly not_enrolled: "default";
+};
+export declare const DEFAULT_ATTENDANCE_ACTIVITIES: readonly [{
+    readonly id: "1";
+    readonly activity: "수업";
+    readonly description: "정규 수업 참여";
+}, {
+    readonly id: "2";
+    readonly activity: "자습";
+    readonly description: "자율 학습";
+}, {
+    readonly id: "3";
+    readonly activity: "보충";
+    readonly description: "보충 수업";
+}, {
+    readonly id: "4";
+    readonly activity: "특별활동";
+    readonly description: "동아리, 봉사활동 등";
+}, {
+    readonly id: "5";
+    readonly activity: "기타";
+    readonly description: "기타 활동";
+}];
 //# sourceMappingURL=attendance.constants.d.ts.map

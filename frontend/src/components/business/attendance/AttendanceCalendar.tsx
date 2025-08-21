@@ -1,9 +1,9 @@
 import React from 'react'
 import { BaseCalendar, type CalendarDay } from '../../base/BaseCalendar'
 import type { BaseWidgetProps } from '../../../types/components'
-import type { AttendanceRecord } from '@shared/types/attendance.types'
-import type { AttendanceStatus } from '@shared/types/common.types'
-import { ATTENDANCE_STATUS_STYLES } from '@shared/types/attendance.types'
+import type { AttendanceRecord } from '@shared/types'
+import type { AttendanceStatus } from '@shared/types'
+import { ATTENDANCE_STATUS_STYLES } from '@shared/constants'
 import './AttendanceCalendar.css'
 
 export interface AttendanceCalendarProps extends BaseWidgetProps {

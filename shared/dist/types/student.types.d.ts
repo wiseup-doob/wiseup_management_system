@@ -1,80 +1,101 @@
-import type { BaseEntity } from './common.types';
-import type { AttendanceStatus, AttendanceRecord } from './attendance.types';
-import type { Student as NewStudent } from './database.types';
-export interface Student extends BaseEntity {
-    name: string;
-    seatNumber: number;
-    grade: string;
-    className: string;
-    status: 'active' | 'inactive';
-    attendanceHistory: AttendanceRecord[];
-    currentAttendance?: AttendanceStatus;
-    lastAttendanceUpdate?: string;
-    firstAttendanceDate?: string;
+import type { BaseEntity, FirestoreTimestamp } from './common.types';
+export type Grade = '초1' | '초2' | '초3' | '초4' | '초5' | '초6' | '중1' | '중2' | '중3' | '고1' | '고2' | '고3' | 'N수';
+export type StudentStatus = 'active' | 'inactive';
+export interface StudentContactInfo {
+    phone?: string;
+    email?: string;
+    address?: string;
 }
-export type { Student as StudentV2, StudentBasicInfo, StudentCurrentStatus } from './database.types';
+export interface StudentParentInfo {
+    parentId: string;
+    name: string;
+    relationship: string;
+    phone: string;
+}
+export interface Student extends BaseEntity {
+    id: string;
+    name: string;
+    grade: Grade;
+    firstAttendanceDate?: FirestoreTimestamp;
+    lastAttendanceDate?: FirestoreTimestamp;
+    parentsId?: string;
+    status: StudentStatus;
+    contactInfo?: {
+        phone?: string;
+        email?: string;
+        address?: string;
+    };
+    createdAt: FirestoreTimestamp;
+    updatedAt: FirestoreTimestamp;
+}
 export interface CreateStudentRequest {
     name: string;
-    seatNumber: number;
-    grade: string;
-    className: string;
-    status?: 'active' | 'inactive';
-    attendanceHistory?: AttendanceRecord[];
-    currentAttendance?: AttendanceStatus;
+    grade: Grade;
+    firstAttendanceDate?: FirestoreTimestamp;
+    lastAttendanceDate?: FirestoreTimestamp;
+    parentsId?: string;
+    status?: StudentStatus;
+    contactInfo?: {
+        phone?: string;
+        email?: string;
+        address?: string;
+    };
 }
 export interface UpdateStudentRequest {
     name?: string;
-    seatNumber?: number;
-    grade?: string;
-    className?: string;
-    status?: 'active' | 'inactive';
-    attendanceHistory?: AttendanceRecord[];
-    currentAttendance?: AttendanceStatus;
-    lastAttendanceUpdate?: string;
+    grade?: Grade;
+    firstAttendanceDate?: FirestoreTimestamp;
+    lastAttendanceDate?: FirestoreTimestamp;
+    parentsId?: string;
+    status?: StudentStatus;
+    contactInfo?: {
+        phone?: string;
+        email?: string;
+        address?: string;
+    };
 }
 export interface StudentSearchParams {
     name?: string;
-    grade?: string;
-    className?: string;
-    status?: 'active' | 'inactive';
-    currentAttendance?: AttendanceStatus;
+    grade?: Grade;
+    status?: StudentStatus;
+    parentsId?: string;
+    firstAttendanceDateRange?: {
+        start: FirestoreTimestamp;
+        end: FirestoreTimestamp;
+    };
+    lastAttendanceDateRange?: {
+        start: FirestoreTimestamp;
+        end: FirestoreTimestamp;
+    };
 }
-export type { CreateStudentRequest as CreateStudentRequestV2, UpdateStudentRequest as UpdateStudentRequestV2 } from './api.types';
-export type TransformToNewStudent = (oldStudent: Student) => NewStudent;
-export type TransformToOldStudent = (newStudent: NewStudent) => Student;
-export type StudentVersion = 'v1' | 'v2';
-export type StudentUnion = Student | NewStudent;
-export declare const isOldStudent: (student: StudentUnion) => student is Student;
-export declare const isNewStudent: (student: StudentUnion) => student is NewStudent;
-export interface StudentTransformers {
-    toNew: TransformToNewStudent;
-    toOld: TransformToOldStudent;
-    validate: (student: StudentUnion) => boolean;
+export interface StudentStatistics {
+    totalStudents: number;
+    activeStudents: number;
+    inactiveStudents: number;
+    studentsByGrade: Record<Grade, number>;
+    studentsWithAttendance: number;
+    averageAttendanceRate: number;
 }
-export declare const STUDENT_STATUS: {
-    readonly ACTIVE: "active";
-    readonly INACTIVE: "inactive";
-};
-export declare const STUDENT_GRADES: {
-    readonly GRADE_1: "1학년";
-    readonly GRADE_2: "2학년";
-    readonly GRADE_3: "3학년";
-};
-export declare const STUDENT_CLASSES: {
-    readonly CLASS_A: "A반";
-    readonly CLASS_B: "B반";
-    readonly CLASS_C: "C반";
-    readonly CLASS_D: "D반";
-};
-export interface StudentValidationResult {
-    isValid: boolean;
-    errors: string[];
-    warnings: string[];
+export interface StudentDependencies {
+    hasAttendanceRecords: boolean;
+    attendanceCount: number;
+    hasTimetable: boolean;
+    hasClassEnrollments: boolean;
+    classEnrollmentCount: number;
+    hasSeatAssignments: boolean;
+    seatAssignmentCount: number;
+    hasStudentSummary: boolean;
+    totalRelatedRecords: number;
 }
-export interface StudentValidationRule {
-    field: keyof Student | keyof NewStudent;
-    required: boolean;
-    validator?: (value: any) => boolean;
-    errorMessage: string;
+export interface HierarchicalDeleteResponse {
+    success: boolean;
+    deletedRecords: {
+        attendanceRecords: number;
+        seatAssignments: number;
+        studentSummary: boolean;
+        timetable: boolean;
+        student: boolean;
+    };
+    message: string;
 }
 //# sourceMappingURL=student.types.d.ts.map

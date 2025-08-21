@@ -1,0 +1,285 @@
+/* 삭제 확인 모달 스타일 */
+.delete-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.delete-modal-content {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: deleteModalSlideIn 0.3s ease-out;
+  border: 2px solid #dc3545;
+}
+
+@keyframes deleteModalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.delete-modal-header {
+  background-color: #dc3545;
+  color: white;
+  padding: 1.5rem 1.5rem 1rem 1.5rem;
+  border-radius: 6px 6px 0 0;
+}
+
+.delete-modal-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.delete-modal-body {
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.warning-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  animation: warningPulse 2s infinite;
+}
+
+@keyframes warningPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.delete-message {
+  font-size: 1.1rem;
+  color: #333;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.delete-message strong {
+  color: #dc3545;
+}
+
+.warning-message {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ffeaa7;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.caution-message {
+  color: #dc3545;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* 학생 의존성 정보 스타일 */
+.student-dependencies-info {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  text-align: left;
+}
+
+.student-dependencies-info h4 {
+  margin: 0 0 1rem 0;
+  color: #495057;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.dependencies-list {
+  margin-bottom: 1rem;
+}
+
+.dependency-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.dependency-item:last-child {
+  border-bottom: none;
+}
+
+.total-impact {
+  padding: 0.75rem;
+  background-color: #dc3545;
+  color: white;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.total-impact strong {
+  color: white;
+}
+
+/* 교사 의존성 정보 스타일 */
+.teacher-dependencies-info {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  text-align: left;
+}
+
+.teacher-dependencies-info h4 {
+  margin: 0 0 1rem 0;
+  color: #495057;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* 강의실 의존성 정보 스타일 */
+.classroom-dependencies-info {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  text-align: left;
+}
+
+.classroom-dependencies-info h4 {
+  margin: 0 0 1rem 0;
+  color: #495057;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.delete-modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  padding: 1rem 1.5rem 1.5rem 1.5rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.cancel-btn {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.15s ease-in-out;
+  min-width: 100px;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background-color: #5a6268;
+}
+
+.confirm-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.15s ease-in-out;
+  min-width: 100px;
+}
+
+.confirm-btn:hover:not(:disabled) {
+  background-color: #c82333;
+}
+
+.confirm-btn:disabled,
+.cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .delete-modal-content {
+    margin: 0.5rem;
+    max-width: calc(100vw - 1rem);
+  }
+
+  .delete-modal-header {
+    padding: 1rem 1rem 0.75rem 1rem;
+  }
+
+  .delete-modal-body {
+    padding: 1.5rem 1rem;
+  }
+
+  .delete-modal-actions {
+    flex-direction: column;
+    padding: 1rem;
+  }
+
+  .cancel-btn,
+  .confirm-btn {
+    width: 100%;
+  }
+}
+
+/* 다크 모드 지원 */
+@media (prefers-color-scheme: dark) {
+  .delete-modal-content {
+    background-color: #2d3748;
+    color: #e2e8f0;
+    border-color: #e53e3e;
+  }
+
+  .delete-modal-header {
+    background-color: #e53e3e;
+  }
+
+  .delete-message {
+    color: #e2e8f0;
+  }
+
+  .warning-message {
+    background-color: #744210;
+    color: #fbd38d;
+    border-color: #d69e2e;
+  }
+
+  .caution-message {
+    color: #fc8181;
+  }
+
+  .delete-modal-actions {
+    border-top-color: #4a5568;
+  }
+}

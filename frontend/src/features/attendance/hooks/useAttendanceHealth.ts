@@ -1,68 +1,76 @@
-import { useState } from 'react'
-import { apiService } from '../../../services/api'
-
-interface SeatHealth {
-  status: 'HEALTHY' | 'DEGRADED' | 'UNHEALTHY'
-  totalSeats: number
-  assignedSeats: number
-  mismatchedSeats: number
-  issues: Array<{
-    seatId: string
-    type: 'MISMATCH' | 'ORPHANED' | 'DUPLICATE'
-    description: string
-  }>
-  lastChecked: string
-}
+import { useState, useCallback } from 'react'
+import type { SeatHealthStatus } from '../types/attendance.types'
 
 interface UseAttendanceHealthReturn {
-  seatHealth: SeatHealth | null
+  seatHealth: SeatHealthStatus | null
   isCheckingHealth: boolean
   isRepairing: boolean
   checkHealth: () => Promise<void>
   autoRepair: () => Promise<void>
 }
 
-export const useAttendanceHealth = (fetchData: () => Promise<void>): UseAttendanceHealthReturn => {
-  const [seatHealth, setSeatHealth] = useState<SeatHealth | null>(null)
+export const useAttendanceHealth = (
+  fetchData: () => Promise<void>
+): UseAttendanceHealthReturn => {
+  const [seatHealth, setSeatHealth] = useState<SeatHealthStatus | null>(null)
   const [isCheckingHealth, setIsCheckingHealth] = useState(false)
   const [isRepairing, setIsRepairing] = useState(false)
 
-  const checkHealth = async () => {
+  const checkHealth = useCallback(async () => {
     try {
       setIsCheckingHealth(true)
-      const response = await apiService.checkSeatHealth()
-      if (response.success && response.data) {
-        setSeatHealth(response.data)
-        console.log('좌석 데이터 헬스체크 결과:', response.data)
+      setSeatHealth(null)
+      
+      console.log('🔍 좌석 데이터 헬스체크 시작...')
+      
+      // API 호출하여 헬스체크 실행
+      const response = await fetch('/api/seats/health')
+      const data = await response.json()
+      
+      if (data.success) {
+        console.log('✅ 좌석 데이터 헬스체크 완료:', data.data)
+        setSeatHealth(data.data)
       } else {
-        console.error('헬스체크 실패:', response.error)
+        console.error('❌ 좌석 데이터 헬스체크 실패:', data.message)
+        setSeatHealth(null)
       }
     } catch (error) {
-      console.error('헬스체크 오류:', error)
+      console.error('좌석 데이터 헬스체크 중 오류 발생:', error)
+      setSeatHealth(null)
     } finally {
       setIsCheckingHealth(false)
     }
-  }
+  }, [])
 
-  const autoRepair = async () => {
+  const autoRepair = useCallback(async () => {
     try {
       setIsRepairing(true)
-      const response = await apiService.autoRepairSeats()
-      if (response.success && response.data) {
-        console.log('자동 복구 완료:', response.data)
-        // 복구 후 데이터 새로고침
-        await fetchData()
-        // 헬스체크도 다시 실행
+      
+      console.log('🔧 좌석 데이터 자동 복구 시작...')
+      
+      // API 호출하여 자동 복구 실행
+      const response = await fetch('/api/seats/repair', {
+        method: 'POST'
+      })
+      const data = await response.json()
+      
+      if (data.success) {
+        console.log('✅ 좌석 데이터 자동 복구 완료')
+        
+        // 복구 완료 후 헬스체크 다시 실행
         await checkHealth()
+        
+        // 데이터 새로고침
+        await fetchData()
       } else {
-        console.error('자동 복구 실패:', response.error)
+        console.error('❌ 좌석 데이터 자동 복구 실패:', data.message)
       }
     } catch (error) {
-      console.error('자동 복구 오류:', error)
+      console.error('좌석 데이터 자동 복구 중 오류 발생:', error)
     } finally {
       setIsRepairing(false)
     }
-  }
+  }, [checkHealth, fetchData])
 
   return {
     seatHealth,

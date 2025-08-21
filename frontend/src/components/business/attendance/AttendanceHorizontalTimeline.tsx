@@ -3,8 +3,8 @@ import { BaseHorizontalTimeline, type TimelineItem } from '../../base/BaseHorizo
 import { Label } from '../../labels/Label'
 import type { BaseWidgetProps } from '../../../types/components'
 import type { AttendanceTimelineItem } from '@shared/types/attendance.types'
-import type { AttendanceStatus } from '@shared/types/common.types'
-import { ATTENDANCE_STATUS_STYLES, ATTENDANCE_TO_TIMELINE_STATUS } from '@shared/types/attendance.types'
+import type { AttendanceStatus } from '@shared/types'
+import { ATTENDANCE_STATUS_STYLES, ATTENDANCE_TO_TIMELINE_STATUS } from '@shared/constants'
 import './AttendanceHorizontalTimeline.css'
 
 export interface AttendanceHorizontalTimelineProps extends BaseWidgetProps {

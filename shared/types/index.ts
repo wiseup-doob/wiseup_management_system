@@ -1,71 +1,41 @@
-// 데이터베이스 구조 타입들
+// 공통 타입들
 export * from './common.types';
-export * from './database.types';
+
+// 엔티티 타입들
+export * from './student.types';
+export * from './parent.types';
+export * from './teacher.types';
+export * from './course.types';
+export * from './class-section.types';
+export * from './classroom.types';
+
+export * from './seat.types';
+export * from './seat-assignment.types';
+export * from './student-timetable.types';
+export * from './student-summary.types';
 export * from './attendance.types';
 export * from './timetable.types';
-export type {
-  GetStudentsRequest,
-  GetStudentsResponse,
-  GetStudentResponse,
-  CreateStudentRequest,
-  UpdateStudentRequest,
-  CreateAttendanceRecordRequest,
-  UpdateAttendanceRecordRequest,
-  GetAttendanceRecordsRequest,
-  GetAttendanceRecordsResponse,
-  GetAttendanceStatsRequest,
-  GetAttendanceStatsResponse,
-  BulkAttendanceUpdateRequest,
-  BulkAttendanceUpdateResponse,
-  SearchStudentsRequest,
-  SearchStudentsResponse,
-  SearchAttendanceRecordsRequest,
-  SearchAttendanceRecordsResponse,
-  // 시간표 관련 API 타입 (임시 주석 처리 - 구현 시 활성화)
-  // GetTimetablesRequest,
-  // GetTimetablesResponse,
-  // GetTimetableResponse,
-  // CreateTimetableResponse,
-  // UpdateTimetableResponse,
-  // GetClassesRequest,
-  // GetClassesResponse,
-  // GetClassResponse,
-  // CreateClassResponse,
-  // UpdateClassResponse,
-  // GetTeachersRequest,
-  // GetTeachersResponse,
-  // GetTeacherResponse,
-  // CreateTeacherRequest,
-  // UpdateTeacherRequest,
-  // CreateTeacherResponse,
-  // UpdateTeacherResponse,
-  // GetClassroomsRequest,
-  // GetClassroomsResponse,
-  // GetClassroomResponse,
-  // CreateClassroomRequest,
-  // UpdateClassroomRequest,
-  // CreateClassroomResponse,
-  // UpdateClassroomResponse,
-  // GetEnrollmentsRequest,
-  // GetEnrollmentsResponse,
-  // GetEnrollmentResponse,
-  // CreateEnrollmentResponse,
-  // UpdateEnrollmentRequest,
-  // UpdateEnrollmentResponse,
-  // CreateClassAttendanceRequest,
-  // UpdateClassAttendanceRequest,
-  // CreateClassAttendanceResponse,
-  // UpdateClassAttendanceResponse,
-  // GetClassAttendanceRequest,
-  // GetClassAttendanceResponse,
-  // GetTimetableStatsRequest,
-  // GetTimetableStatsResponse,
-  // GetTeacherStatsRequest,
-  // GetTeacherStatsResponse,
-  // GetStudentTimetableStatsRequest,
-  // GetStudentTimetableStatsResponse
-} from './api.types';
 
-// 중복 해결을 위한 명시적 export
-export type { AttendanceRecord } from './attendance.types';
-export type { Seat } from './database.types'; 
+// 공통 통계 및 인덱스 타입들 (중복되지 않는 것들만)
+export { 
+  COLLECTION_NAMES, 
+  REQUIRED_INDEXES,
+  DailySummary,
+  MonthlyReport
+} from './database.types';
+
+// 유틸리티 함수들
+export * from '../utils/database.utils';
+export * from '../utils/uuid';
+
+// Timestamp 관련 유틸리티 함수들
+export * from '../utils/timestamp.utils';
+
+// 좌석 관련 유틸리티 함수들
+export * from '../utils/seat';
+
+// 상수들
+export * from '../constants/api.constants';
+export * from '../constants/attendance.constants';
+export * from '../constants/student.constants';
+export * from '../constants/seat.constants'; 

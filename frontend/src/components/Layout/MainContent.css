@@ -2,9 +2,9 @@
 
 .main-content {
   width: calc(100vw - var(--sidebar-length, 256px));
-  padding: var(--main-content-padding, 20px);
+  /* padding: var(--main-content-padding, 20px); */
   min-height: 100vh;
-  background-color: var(--main-content-bg-color, #ffffff);
+  background-color: #FFFFFF;
   margin-left: var(--sidebar-length, 256px);
   box-sizing: border-box;
   overflow-x: hidden;

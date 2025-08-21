@@ -21,11 +21,18 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
     description: '원생 출결 현황 관리'
   },
   {
-    id: 'timetable',
+    id: 'schedule',
     label: '시간표 관리',
-    path: ROUTES.TIMETABLE,
+    path: ROUTES.SCHEDULE,
     icon: SIDEBAR_IMPORTS.DEFAULT_ICON,
-    description: '수업 시간표 관리'
+    description: '학생 시간표 관리'
+  },
+  {
+    id: 'class',
+    label: '수업 관리',
+    path: ROUTES.CLASS,
+    icon: SIDEBAR_IMPORTS.DEFAULT_ICON,
+    description: '수업 클래스 관리'
   },
   {
     id: 'students',
@@ -33,20 +40,6 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
     path: ROUTES.STUDENTS,
     icon: SIDEBAR_IMPORTS.DEFAULT_ICON,
     description: '원생 정보 관리'
-  },
-  {
-    id: 'learning',
-    label: '학습데이터 관리',
-    path: ROUTES.LEARNING,
-    icon: SIDEBAR_IMPORTS.DEFAULT_ICON,
-    description: '학습 진도 및 성과 관리'
-  },
-  {
-    id: 'grades',
-    label: '성적 분석 시스템',
-    path: ROUTES.GRADES,
-    icon: SIDEBAR_IMPORTS.DEFAULT_ICON,
-    description: '성적 분석 및 통계'
   }
 ]
 

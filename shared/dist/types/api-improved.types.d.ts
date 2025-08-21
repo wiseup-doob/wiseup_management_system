@@ -1,5 +1,37 @@
-import type { Student, AttendanceRecord, StudentSearchParams, AttendanceSearchParams } from './database.types';
-import type { AttendanceStatus, ApiResponse } from './common.types';
+import type { Student, StudentSearchParams } from './student.types';
+import type { AttendanceRecord, AttendanceSearchParams } from './attendance.types';
+import type { AttendanceStatus } from './common.types';
+export interface ApiResponse<T = any> {
+    success: boolean;
+    message?: string;
+    data?: T;
+    error?: string;
+    meta?: {
+        timestamp?: string;
+        version?: string;
+        requestId?: string;
+        count?: number;
+        [key: string]: any;
+    };
+}
+export interface PaginatedResponse<T> extends ApiResponse<T[]> {
+    pagination?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+    };
+}
+export interface PaginationParams {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+}
+export interface SearchParams extends PaginationParams {
+    query?: string;
+    filters?: Record<string, any>;
+}
 export interface GetStudentsRequest {
     search?: StudentSearchParams;
     page?: number;
@@ -179,19 +211,5 @@ export interface SearchAttendanceRecordsResponse {
     page: number;
     limit: number;
     totalPages: number;
-}
-export type ApiSuccessResponse<T> = ApiResponse<T>;
-export type ApiErrorResponse = ApiResponse<null>;
-export interface PaginationMeta {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-}
-export interface PaginatedResponse<T> {
-    data: T[];
-    meta: PaginationMeta;
 }
 //# sourceMappingURL=api-improved.types.d.ts.map

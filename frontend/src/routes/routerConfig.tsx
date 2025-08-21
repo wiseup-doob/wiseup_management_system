@@ -2,10 +2,9 @@ import Layout from '../Layout/Layout'
 import HomePage from '../features/home/pages/HomePage'
 import AttendancePage from '../features/attendance/pages/AttendancePage'
 import StudentsPage from '../features/students/pages/StudentsPage'
-import GradesPage from '../features/grades/pages/GradesPage'
-import TimetablePage from '../features/timetable/pages/TimetablePage'
-import TimetableEditPage from '../features/timetable/pages/TimetableEditPage'
-import LearningPage from '../features/learning/pages/LearningPage'
+import ClassPage from '../features/class/pages/ClassPage'
+import AddClassPage from '../features/class/pages/AddClassPage'
+import SchedulePage from '../features/schedule/pages/SchedulePage'
 
 const routes = [
   {
@@ -25,20 +24,16 @@ const routes = [
         element: <StudentsPage />
       },
       {
-        path: 'grades',
-        element: <GradesPage />
+        path: 'class',
+        element: <ClassPage />
       },
       {
-        path: 'timetable',
-        element: <TimetablePage />
+        path: 'class/add',
+        element: <AddClassPage isOpen={true} onClose={() => {}} />
       },
       {
-        path: 'timetable/edit',
-        element: <TimetableEditPage />
-      },
-      {
-        path: 'learning',
-        element: <LearningPage />
+        path: 'schedule',
+        element: <SchedulePage />
       }
     ]
   }

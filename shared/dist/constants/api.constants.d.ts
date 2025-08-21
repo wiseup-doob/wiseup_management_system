@@ -6,92 +6,197 @@ export declare const API_ENDPOINTS: {
         UPDATE: (id: string) => string;
         DELETE: (id: string) => string;
         SEARCH: string;
-        INITIALIZE: string;
+        COUNT_BY_GRADE: string;
+        COUNT_ACTIVE: string;
         UPDATE_ATTENDANCE: (studentId: string) => string;
+        GET_DEPENDENCIES: (id: string) => string;
+        DELETE_HIERARCHICALLY: (id: string) => string;
     };
-    TIMETABLE: {
-        TIMETABLES: {
-            GET_ALL: string;
-            GET_BY_ID: (id: string) => string;
-            CREATE: string;
-            UPDATE: (id: string) => string;
-            DELETE: (id: string) => string;
-            SUMMARY: (id: string) => string;
-        };
-        ITEMS: {
-            GET_BY_TIMETABLE: (timetableId: string) => string;
-            GET_BY_ID: (id: string) => string;
-            CREATE: string;
-            UPDATE: (id: string) => string;
-            DELETE: (id: string) => string;
-        };
-        TIME_SLOTS: {
-            GET_ALL: string;
-            CREATE: string;
-        };
-        CLASSES: {
-            GET_ALL: string;
-            CREATE: string;
-        };
-        TEACHERS: {
-            GET_ALL: string;
-            CREATE: string;
-        };
-        CLASSROOMS: {
-            GET_ALL: string;
-            CREATE: string;
-        };
-        STUDENTS: {
-            GET_ITEMS: (studentId: string) => string;
-            ENSURE_TIMETABLE: (studentId: string) => string;
-        };
-        INIT: {
-            INITIALIZE: string;
-            CLEAR: string;
-        };
+    PARENTS: {
+        GET_ALL: string;
+        GET_BY_ID: (id: string) => string;
+        CREATE: string;
+        UPDATE: (id: string) => string;
+        DELETE: (id: string) => string;
+        SEARCH: string;
+        GET_STATS: string;
+    };
+    STUDENT_SUMMARIES: {
+        GET_ALL: string;
+        GET_BY_ID: (id: string) => string;
+        CREATE: string;
+        UPDATE: (id: string) => string;
+        DELETE: (id: string) => string;
+        SEARCH: string;
+        GET_STATS: string;
     };
     ATTENDANCE: {
+        GET_ALL: string;
+        GET_BY_ID: (id: string) => string;
+        CREATE: string;
+        UPDATE: (id: string) => string;
+        DELETE: (id: string) => string;
+        SEARCH: string;
+        GET_BY_STUDENT: (studentId: string) => string;
+        GET_BY_DATE: (date: string) => string;
+        GET_BY_DATE_RANGE: string;
+        GET_STUDENT_STATISTICS: (studentId: string) => string;
+        GET_DAILY_SUMMARY: (date: string) => string;
+        GET_MONTHLY_STATISTICS: (year: string, month: string) => string;
+        GET_STATUS_STATISTICS: string;
+        GET_ISSUES: string;
+        CREATE_BULK: string;
+        COPY: string;
         GET_RECORDS: string;
         GET_RECORD_BY_ID: (id: string) => string;
         CREATE_RECORD: string;
         UPDATE_RECORD: (id: string) => string;
         DELETE_RECORD: (id: string) => string;
-        GET_BY_STUDENT: (studentId: string) => string;
-        GET_BY_DATE: (date: string) => string;
-        BULK_UPDATE: string;
         GET_STATS: string;
-        INITIALIZE: string;
-        INITIALIZE_TODAY: string;
+        BULK_UPDATE: string;
+    };
+    COURSES: {
+        GET_ALL: string;
+        GET_BY_ID: (id: string) => string;
+        CREATE: string;
+        UPDATE: (id: string) => string;
+        DELETE: (id: string) => string;
+        SEARCH: string;
+        GET_STATS: string;
+    };
+    CLASS_SECTIONS: {
+        GET_ALL: string;
+        GET_BY_ID: (id: string) => string;
+        CREATE: string;
+        CREATE_WITH_COURSE: string;
+        UPDATE: (id: string) => string;
+        DELETE: (id: string) => string;
+        SEARCH: string;
+        GET_BY_TEACHER: (teacherId: string) => string;
+        GET_BY_COURSE: (courseId: string) => string;
+        GET_BY_CLASSROOM: (classroomId: string) => string;
+        GET_STATS: string;
+        GET_DEPENDENCIES: (id: string) => string;
+        DELETE_HIERARCHICALLY: (id: string) => string;
+        ADD_STUDENT: (classSectionId: string, studentId: string) => string;
+        REMOVE_STUDENT: (classSectionId: string, studentId: string) => string;
+        GET_ENROLLED_STUDENTS: (classSectionId: string) => string;
+    };
+    STUDENT_TIMETABLES: {
+        GET_ALL: string;
+        GET_BY_ID: (id: string) => string;
+        CREATE: string;
+        UPDATE: (id: string) => string;
+        DELETE: (id: string) => string;
+        GET_BY_STUDENT: (studentId: string) => string;
+        ADD_CLASS: (studentId: string) => string;
+        REMOVE_CLASS: (studentId: string) => string;
+    };
+    TIMETABLES: {
+        GET_ALL: string;
+        GET_BY_ID: (id: string) => string;
+        CREATE: string;
+        UPDATE: (id: string) => string;
+        DELETE: (id: string) => string;
+        SEARCH: string;
+        GET_STATS: string;
+    };
+    TIMETABLE_ITEMS: {
+        GET_ALL: string;
+        GET_BY_ID: (id: string) => string;
+        CREATE: string;
+        UPDATE: (id: string) => string;
+        DELETE: (id: string) => string;
+        GET_BY_TIMETABLE: (timetableId: string) => string;
+        SEARCH: string;
+        GET_STATS: string;
+    };
+    TEACHERS: {
+        GET_ALL: string;
+        GET_BY_ID: (id: string) => string;
+        CREATE: string;
+        UPDATE: (id: string) => string;
+        DELETE: (id: string) => string;
+        SEARCH: string;
+        GET_STATS: string;
+        GET_DEPENDENCIES: (id: string) => string;
+        DELETE_HIERARCHICALLY: (id: string) => string;
+    };
+    CLASSROOMS: {
+        GET_ALL: string;
+        GET_BY_ID: (id: string) => string;
+        CREATE: string;
+        UPDATE: (id: string) => string;
+        DELETE: (id: string) => string;
+        SEARCH: string;
+        GET_STATS: string;
+        GET_DEPENDENCIES: (id: string) => string;
+        DELETE_HIERARCHICALLY: (id: string) => string;
+    };
+    TIME_SLOTS: {
+        GET_ALL: string;
+        GET_BY_ID: (id: string) => string;
+        CREATE: string;
+        UPDATE: (id: string) => string;
+        DELETE: (id: string) => string;
+        GET_BY_ORDER: string;
+        GET_CLASS_TIME_SLOTS: string;
+        GET_BREAK_TIME_SLOTS: string;
+        SEARCH: string;
+        GET_STATS: string;
+        REORDER: string;
     };
     SEATS: {
         GET_ALL: string;
-        GET_BY_ID: (seatId: string) => string;
-        GET_BY_STUDENT: (studentId: string) => string;
+        GET_BY_ID: (id: string) => string;
+        CREATE: string;
+        UPDATE: (id: string) => string;
+        DELETE: (id: string) => string;
+        GET_ACTIVE: string;
+        GET_AVAILABLE: string;
+        GET_BY_NUMBER: string;
+        GET_BY_STATUS: (status: string) => string;
+        SEARCH: string;
         GET_STATS: string;
-        ASSIGN_STUDENT: string;
-        UNASSIGN_STUDENT: string;
-        UPDATE_STATUS: string;
-        INITIALIZE: string;
+        UPDATE_STATUS: (id: string) => string;
+        TOGGLE_ACTIVE: (id: string) => string;
+        GET_NEXT_AVAILABLE_NUMBER: string;
+        CREATE_BATCH: string;
+        DEACTIVATE_BATCH: string;
+        GET_BY_STUDENT: (studentId: string) => string;
     };
-    INITIALIZATION: {
-        INITIALIZE_ALL: string;
-    };
-    DAILY_SUMMARIES: {
+    SEAT_ASSIGNMENTS: {
         GET_ALL: string;
+        GET_BY_ID: (id: string) => string;
+        CREATE: string;
+        UPDATE: (id: string) => string;
+        DELETE: (id: string) => string;
+        GET_ACTIVE: string;
+        GET_BY_SEAT: (seatId: string) => string;
+        GET_BY_STUDENT: (studentId: string) => string;
         GET_BY_DATE: (date: string) => string;
-        CREATE: string;
-        UPDATE: (date: string) => string;
+        SEARCH: string;
+        GET_STATS: string;
+        UPDATE_STATUS: (id: string) => string;
+        RELEASE: (id: string) => string;
+        GET_CURRENT_BY_STUDENT: (studentId: string) => string;
+        GET_CURRENT_BY_SEAT: (seatId: string) => string;
+        GET_HISTORY_BY_STUDENT: (studentId: string) => string;
+        GET_HISTORY_BY_SEAT: (seatId: string) => string;
     };
-    MONTHLY_REPORTS: {
-        GET_ALL: string;
-        GET_BY_MONTH: (year: string, month: string) => string;
-        CREATE: string;
-        UPDATE: (year: string, month: string) => string;
+    TEST_DATA: {
+        INITIALIZE_ALL: string;
+        INITIALIZE_STUDENTS: string;
+        INITIALIZE_TEACHERS: string;
+        CLEAR_STUDENTS: string;
+        CLEAR_TEACHERS: string;
+        CLEAR_ALL: string;
+        GET_STATUS: string;
     };
     SYSTEM: {
+        ROOT: string;
         HEALTH: string;
         VERSION: string;
-        INITIALIZE: string;
     };
 };
 export declare const HTTP_METHODS: {

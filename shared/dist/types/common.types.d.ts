@@ -1,8 +1,13 @@
+export type FirestoreTimestamp = any;
 export interface BaseEntity {
     id: string;
-    createdAt?: string;
-    updatedAt?: string;
+    createdAt?: FirestoreTimestamp;
+    updatedAt?: FirestoreTimestamp;
 }
+export type SubjectType = 'mathematics' | 'english' | 'korean' | 'other';
+export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
+export type AttendanceStatus = 'present' | 'dismissed' | 'unauthorized_absent' | 'authorized_absent' | 'not_enrolled';
+export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 export type UUID = string;
 export type EntityId = UUID;
 export type StudentId = UUID;
@@ -29,7 +34,6 @@ export interface IdGenerator {
     generateUserId(): UserId;
 }
 export type EntityStatus = 'active' | 'inactive';
-export type AttendanceStatus = 'present' | 'dismissed' | 'unauthorized_absent' | 'authorized_absent' | 'not_enrolled';
 export type ClassStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'postponed';
 export type ClassAttendanceStatus = 'present' | 'absent' | 'late' | 'excused';
 export type EnrollmentStatus = 'enrolled' | 'dropped' | 'completed' | 'suspended';
@@ -38,6 +42,7 @@ export type RecurrenceType = 'weekly' | 'monthly';
 export type DateString = string;
 export type TimeString = string;
 export type DateTimeString = string;
+export type Timestamp = FirestoreTimestamp;
 export interface DateRange {
     start: DateString;
     end: DateString;
@@ -45,6 +50,15 @@ export interface DateRange {
 export interface TimeRange {
     start: TimeString;
     end: TimeString;
+}
+export interface TimestampUtils {
+    now(): FirestoreTimestamp;
+    fromDate(date: Date): FirestoreTimestamp;
+    fromISOString(isoString: string): FirestoreTimestamp;
+    toDate(timestamp: FirestoreTimestamp): Date;
+    toISOString(timestamp: FirestoreTimestamp): string;
+    fromSeconds(seconds: number): FirestoreTimestamp;
+    fromMillis(millis: number): FirestoreTimestamp;
 }
 export interface ApiResponse<T = any> {
     success: boolean;

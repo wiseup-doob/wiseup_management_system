@@ -2,6 +2,7 @@ import { forwardRef } from 'react'
 import { BaseWidget } from '../base/BaseWidget'
 import type { BaseWidgetProps } from '../../types/components'
 import { SidebarButton } from '../buttons/SidebarButton'
+import { AccountButton } from '../buttons/AccountButton'
 import { Label } from '../labels/Label'
 import './Sidebar.css'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -9,6 +10,7 @@ import { SIDEBAR_MENU_ITEMS, ADMIN_MENU_ITEM } from '../../config/menuConfig'
 import { useAppSelector } from '../../hooks/useAppSelector'
 import { useAppDispatch } from '../../hooks/useAppDispatch'
 import { toggleSidebar } from '../../store/slices/uiSlice'
+import WiseupLogo from '../../img/Wiseup_logo.png'
 
 export interface SidebarProps extends BaseWidgetProps {
   // Sidebar만의 추가 props
@@ -29,6 +31,11 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
       dispatch(toggleSidebar())
     }
 
+    const handleAccountClick = () => {
+      // 계정 버튼 클릭 시 홈 화면으로 이동
+      navigate('/')
+    }
+
     return (
       <BaseWidget 
         ref={ref}
@@ -37,29 +44,29 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
       >
         {/* 로고 섹션 */}
         <div className="sidebar-logo">
-          <div className="logo-placeholder">로고</div>
+          <img 
+            src={WiseupLogo} 
+            alt="Wiseup Logo" 
+            className="wiseup-logo"
+          />
         </div>
 
         {/* 계정 섹션 */}
         <div className="sidebar-section">
-          <h3 className="section-title">계정</h3>
+          <h5 className="section-title">계정</h5>
           
-          {/* 현재 계정 정보 */}
-          <div className="account-info">
-            <div className="account-display">
-              <span className="account-name">관리자</span>
-              <span className="account-email">xxx@gmail.com</span>
-              <button className="account-dropdown">▼</button>
-            </div>
-          </div>
+          {/* AccountButton 사용 */}
+          <AccountButton
+            accountName="관리자"
+            accountEmail="xxx@gmail.com"
+            showEmail={true}
+            onClick={handleAccountClick}
+          />
         </div>
-
-        {/* 구분선 */}
-        <div className="sidebar-divider"></div>
 
         {/* 일반 메뉴 섹션 */}
         <div className="sidebar-section">
-          <h3 className="section-title">일반</h3>
+          <h5 className="section-title">일반</h5>
           <nav className="sidebar-nav">
             <ul className="sidebar-menu">
               {SIDEBAR_MENU_ITEMS.map((item) => (
@@ -72,22 +79,6 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
                   />
                 </li>
               ))}
-            </ul>
-          </nav>
-        </div>
-
-        {/* 관리자 메뉴 섹션 */}
-        <div className="sidebar-section">
-          <nav className="sidebar-nav">
-            <ul className="sidebar-menu">
-              <li className="sidebar-menu-item">
-                <SidebarButton
-                  icon={ADMIN_MENU_ITEM.icon}
-                  label={ADMIN_MENU_ITEM.label}
-                  isActive={location.pathname === ADMIN_MENU_ITEM.path}
-                  onClick={() => handleMenuClick(ADMIN_MENU_ITEM.path)}
-                />
-              </li>
             </ul>
           </nav>
         </div>

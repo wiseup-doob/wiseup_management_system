@@ -4,6 +4,7 @@ import type {
   AttendanceRecord 
 } from '@shared/types'
 import type { AttendanceStatus } from '@shared/types/common.types'
+import { config } from '../config/environment';
 
 // 임시 AttendanceStats 타입 정의 (향후 shared에서 제공될 예정)
 interface AttendanceStats {
@@ -56,29 +57,16 @@ interface SingleAttendanceUpdateRequest {
   method?: 'manual' | 'qr' | 'nfc' | 'auto'
 }
 
-// API 엔드포인트
-const API_ENDPOINTS = {
-  STUDENTS: {
-    GET_ALL: '/api/v1/attendance/students',
-    GET_BY_ID: (id: string) => `/api/v1/attendance/students/${id}`,
-    CREATE: '/api/v1/attendance/students',
-    UPDATE: (id: string) => `/api/v1/attendance/students/${id}`,
-    DELETE: (id: string) => `/api/v1/attendance/students/${id}`
-  },
-  ATTENDANCE: {
-    GET_STATS: '/api/v1/attendance/stats',
-    BULK_UPDATE: '/api/v1/attendance/bulk-update',
-    UPDATE_SINGLE: (id: string) => `/api/v1/attendance/students/${id}/attendance`,
-    GET_HISTORY: '/api/v1/attendance/history',
-    INITIALIZE: '/api/v1/attendance/initialize'
-  }
-}
+// API 엔드포인트 - shared 상수 사용
+import { API_ENDPOINTS } from '@shared/constants';
+
+// API_ENDPOINTS_LOCAL 제거하고 직접 API_ENDPOINTS 사용
 
 // 기본 API 클라이언트
 class ApiClient {
   private baseUrl: string
 
-  constructor(baseUrl: string = 'http://localhost:5001') {
+  constructor(baseUrl: string = config.api.baseURL) {
     this.baseUrl = baseUrl
   }
 
@@ -168,13 +156,13 @@ export class SharedAttendanceApiService {
     studentId: string,
     request: SingleAttendanceUpdateRequest
   ): Promise<ApiResponse<void>> {
-    const endpoint = API_ENDPOINTS.ATTENDANCE.UPDATE_SINGLE(studentId)
+    const endpoint = API_ENDPOINTS.ATTENDANCE.UPDATE(studentId)
     return this.client.put<void>(endpoint, request)
   }
 
   // 배치 출석 업데이트
   async updateAttendanceBulk(request: BulkAttendanceUpdateRequest): Promise<ApiResponse<void>> {
-    const endpoint = API_ENDPOINTS.ATTENDANCE.BULK_UPDATE
+    const endpoint = API_ENDPOINTS.ATTENDANCE.CREATE_BULK
     return this.client.put<void>(endpoint, request)
   }
 
@@ -190,8 +178,8 @@ export class SharedAttendanceApiService {
     }
     
     const endpoint = queryString.toString() 
-      ? `${API_ENDPOINTS.ATTENDANCE.GET_STATS}?${queryString.toString()}`
-      : API_ENDPOINTS.ATTENDANCE.GET_STATS
+      ? `${API_ENDPOINTS.ATTENDANCE.GET_STATUS_STATISTICS}?${queryString.toString()}`
+      : API_ENDPOINTS.ATTENDANCE.GET_STATUS_STATISTICS
     
     return this.client.get<AttendanceStats>(endpoint)
   }
@@ -210,7 +198,7 @@ export class SharedAttendanceApiService {
       }
     })
     
-    const endpoint = `${API_ENDPOINTS.ATTENDANCE.GET_HISTORY}?${queryString.toString()}`
+    const endpoint = `${API_ENDPOINTS.ATTENDANCE.GET_BY_STUDENT}?${queryString.toString()}`
     return this.client.get<AttendanceRecord[]>(endpoint)
   }
 
@@ -222,7 +210,7 @@ export class SharedAttendanceApiService {
     createdBy: string
     studentNames?: string[]
   }): Promise<ApiResponse<Student[]>> {
-    const endpoint = API_ENDPOINTS.ATTENDANCE.INITIALIZE
+    const endpoint = API_ENDPOINTS.ATTENDANCE.CREATE
     return this.client.post<Student[]>(endpoint, request)
   }
 }

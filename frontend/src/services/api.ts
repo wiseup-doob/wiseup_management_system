@@ -1,4 +1,4 @@
-// Firebase Functions API 서비스 - v2 구조
+// Firebase Functions API 서비스 - 백엔드 데이터 구조와 통일
 import { API_CONFIG } from '../config/api.config';
 import type {
   Student,
@@ -10,8 +10,30 @@ import type {
   UpdateAttendanceRecordRequest,
   AttendanceSearchParams,
   Seat,
-  SeatAssignment
+  SeatAssignment,
+  AttendanceStatus,
+  DateString,
+  TimeString,
+  DateTimeString,
+  ClassSection,
+  CreateClassSectionRequest,
+  UpdateClassSectionRequest,
+  ClassSectionSearchParams,
+  ClassSectionStatistics,
+  Teacher,
+  Course,
+  Classroom,
+  StudentSearchParams,
+  StudentDependencies,
+  HierarchicalDeleteResponse,
+  TeacherDependencies,
+  TeacherHierarchicalDeleteResponse,
+  ClassroomDependencies,
+  ClassroomHierarchicalDeleteResponse,
+  ClassSectionDependencies,
+  ClassSectionHierarchicalDeleteResponse
 } from '@shared/types';
+import type { StudentTimetableResponse } from '../features/schedule/types/timetable.types';
 import {
   API_ENDPOINTS
 } from '@shared/constants';
@@ -25,6 +47,20 @@ import {
 const FIREBASE_FUNCTIONS_BASE_URL = API_CONFIG.BASE_URL;
 
 class ApiService {
+  // FirestoreTimestamp를 string으로 변환하는 헬퍼 함수
+  private convertFirestoreTimestampToString(timestamp: any): string {
+    if (timestamp instanceof Date) {
+      return timestamp.toISOString().split('T')[0];
+    }
+    if (typeof timestamp === 'string') {
+      return timestamp;
+    }
+    if (timestamp && typeof timestamp === 'object' && timestamp.toDate) {
+      return timestamp.toDate().toISOString().split('T')[0];
+    }
+    return '';
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -71,73 +107,128 @@ class ApiService {
       }
 
       // 에러 응답 처리
-      if (!response.ok || !data.success) {
-        console.error('❌ === API 에러 응답 감지 ===');
-        console.error('🚨 HTTP 상태:', response.status, response.statusText);
-        console.error('🚨 응답 데이터:', data);
-        console.error('🚨 응답 성공 여부:', data.success);
-        console.error('🚨 에러 메시지:', data.error || data.message);
+      if (!response.ok) {
+        // 404 에러는 "리소스를 찾을 수 없음"이므로 특별 처리
+        if (response.status === 404) {
+          // 404 에러를 정상적인 응답으로 변환
+          const notFoundResponse: ApiResponse<T> = {
+            success: false,
+            message: data.message || data.error || 'Resource not found',
+            data: null as T,
+            meta: {
+              timestamp: new Date().toISOString(),
+              requestId,
+              count: 0
+            }
+          };
+          return notFoundResponse;
+        }
         
-        const errorMessage = data.error || data.message || `HTTP ${response.status}: ${response.statusText}`;
-        const appError = AppError.internal(ERROR_CODES.EXTERNAL_SERVICE_ERROR, errorMessage, data, requestId);
-        logError(appError, { component: 'ApiService', action: 'request' });
-        throw appError;
+        const errorMessage = data.message || data.error || `HTTP ${response.status}: ${response.statusText}`;
+        throw AppError.internal(
+          ERROR_CODES.EXTERNAL_SERVICE_ERROR,
+          errorMessage,
+          {
+            status: response.status,
+            statusText: response.statusText,
+            endpoint,
+            requestId
+          },
+          requestId
+        );
+      }
+
+      // 성공 응답 검증
+      if (!data.success) {
+        throw AppError.internal(
+          ERROR_CODES.EXTERNAL_SERVICE_ERROR,
+          data.message || 'API 요청이 실패했습니다',
+          {
+            endpoint,
+            requestId,
+            apiError: data.error
+          },
+          requestId
+        );
       }
 
       return data;
     } catch (error) {
-      console.error('API 요청 오류:', error);
-      
-      // 네트워크 에러 처리
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        const appError = AppError.network(ERROR_CODES.NETWORK_CONNECTION_ERROR, '네트워크 연결에 실패했습니다.', error, requestId);
-        logError(appError, { component: 'ApiService', action: 'request' });
-        
-        const errorResponse: ApiResponse<T> = {
-          success: false,
-          error: appError.message,
-          message: 'API 요청 중 오류가 발생했습니다.',
-          meta: {
-            timestamp: new Date().toISOString(),
-            version: 'v2',
-            requestId: requestId
-          }
-        };
-        return errorResponse;
-      }
-
-      // 기타 에러 처리
       const normalizedError = normalizeError(error, requestId);
-      logError(normalizedError, { component: 'ApiService', action: 'request' });
       
-      const errorResponse: ApiResponse<T> = {
-        success: false,
-        error: normalizedError.message,
-        message: 'API 요청 중 오류가 발생했습니다.',
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId: requestId
-        }
-      };
-      return errorResponse;
+      logError(normalizedError, {
+        component: 'ApiService',
+        action: 'request',
+        endpoint,
+        requestId
+      });
+      
+      throw normalizedError;
     }
   }
 
   // ===== 학생 관리 API =====
 
-  async initializeStudents(): Promise<ApiResponse<Student[]>> {
-    return this.request<Student[]>(API_ENDPOINTS.STUDENTS.INITIALIZE, {
-      method: 'POST'
-    });
-  }
-
   async getStudents(): Promise<ApiResponse<Student[]>> {
     return this.request<Student[]>(API_ENDPOINTS.STUDENTS.GET_ALL);
   }
 
+  async searchStudents(params: StudentSearchParams): Promise<ApiResponse<Student[]>> {
+    const searchParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') {
+        if (typeof value === 'object') {
+          // 날짜 범위 처리
+          if (key.endsWith('Range')) {
+            searchParams.append(`${key}.start`, value.start);
+            searchParams.append(`${key}.end`, value.end);
+          }
+        } else {
+          searchParams.append(key, String(value));
+        }
+      }
+    });
+
+    const endpoint = searchParams.toString() 
+      ? `${API_ENDPOINTS.STUDENTS.SEARCH}?${searchParams.toString()}`
+      : API_ENDPOINTS.STUDENTS.SEARCH;
+    
+    return this.request<Student[]>(endpoint);
+  }
+
   async getStudentById(id: string): Promise<ApiResponse<Student>> {
     return this.request<Student>(API_ENDPOINTS.STUDENTS.GET_BY_ID(id));
+  }
+
+  // ===== 학생 시간표 관리 API =====
+
+  async getStudentTimetable(studentId: string): Promise<ApiResponse<StudentTimetableResponse['data']>> {
+    return this.request<StudentTimetableResponse['data']>(
+      API_ENDPOINTS.STUDENT_TIMETABLES.GET_BY_STUDENT(studentId)
+    );
+  }
+
+  // 학생 시간표에 수업 추가
+  async addClassToStudentTimetable(studentId: string, classSectionId: string): Promise<ApiResponse<StudentTimetableResponse['data']>> {
+    return this.request<StudentTimetableResponse['data']>(
+      API_ENDPOINTS.STUDENT_TIMETABLES.ADD_CLASS(studentId),
+      {
+        method: 'POST',
+        body: JSON.stringify({ classSectionId })
+      }
+    );
+  }
+
+  // 학생 시간표에서 수업 제거
+  async removeClassFromStudentTimetable(studentId: string, classSectionId: string): Promise<ApiResponse<StudentTimetableResponse['data']>> {
+    return this.request<StudentTimetableResponse['data']>(
+      API_ENDPOINTS.STUDENT_TIMETABLES.REMOVE_CLASS(studentId),
+      {
+        method: 'POST',
+        body: JSON.stringify({ classSectionId })
+      }
+    );
   }
 
   async createStudent(data: CreateStudentRequest): Promise<ApiResponse<Student>> {
@@ -162,23 +253,34 @@ class ApiService {
 
   // ===== 출석 관리 API =====
 
-  async getAttendanceRecords(filters?: AttendanceSearchParams): Promise<ApiResponse<AttendanceRecord[]>> {
+  async getAttendanceRecords(params?: AttendanceSearchParams): Promise<ApiResponse<AttendanceRecord[]>> {
     let endpoint = API_ENDPOINTS.ATTENDANCE.GET_RECORDS;
     
-    if (filters) {
-      const params = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          if (typeof value === 'object') {
-            params.append(key, JSON.stringify(value));
-          } else {
-            params.append(key, String(value));
-          }
-        }
-      });
+    if (params) {
+      const searchParams = new URLSearchParams();
       
-      if (params.toString()) {
-        endpoint += `?${params.toString()}`;
+      // ✅ types.ts에 존재하는 속성들만 사용
+      if (params.studentId) searchParams.append('studentId', params.studentId);
+      if (params.date) searchParams.append('date', params.date);
+      if (params.status) searchParams.append('status', params.status);
+      if (params.updatedBy) searchParams.append('updatedBy', params.updatedBy);
+      if (params.isLate !== undefined) searchParams.append('isLate', params.isLate.toString());
+      if (params.hasLateIssues !== undefined) searchParams.append('hasLateIssues', params.hasLateIssues.toString());
+      if (params.hasAbsentIssues !== undefined) searchParams.append('hasAbsentIssues', params.hasAbsentIssues.toString());
+      if (params.hasDismissedIssues !== undefined) searchParams.append('hasDismissedIssues', params.hasDismissedIssues.toString());
+      
+      // ✅ dateRange는 types.ts의 타입에 맞게 처리
+      if (params.dateRange) {
+        // FirestoreTimestamp를 string으로 변환
+        const startDate = this.convertFirestoreTimestampToString(params.dateRange.start);
+        const endDate = this.convertFirestoreTimestampToString(params.dateRange.end);
+        
+        searchParams.append('startDate', startDate);
+        searchParams.append('endDate', endDate);
+      }
+      
+      if (searchParams.toString()) {
+        endpoint += `?${searchParams.toString()}`;
       }
     }
     
@@ -209,7 +311,7 @@ class ApiService {
     });
   }
 
-  async getAttendanceByStudent(studentId: string, dateRange?: { start: string; end: string }): Promise<ApiResponse<AttendanceRecord[]>> {
+  async getAttendanceByStudent(studentId: string, dateRange?: { start: DateString; end: DateString }): Promise<ApiResponse<AttendanceRecord[]>> {
     let endpoint = API_ENDPOINTS.ATTENDANCE.GET_BY_STUDENT(studentId);
     
     if (dateRange) {
@@ -223,11 +325,11 @@ class ApiService {
     return this.request<AttendanceRecord[]>(endpoint);
   }
 
-  async getAttendanceByDate(date: string): Promise<ApiResponse<AttendanceRecord[]>> {
+  async getAttendanceByDate(date: DateString): Promise<ApiResponse<AttendanceRecord[]>> {
     return this.request<AttendanceRecord[]>(API_ENDPOINTS.ATTENDANCE.GET_BY_DATE(date));
   }
 
-  async getAttendanceStatistics(dateRange?: { start: string; end: string }): Promise<ApiResponse<any>> {
+  async getAttendanceStatistics(dateRange?: { start: DateString; end: DateString }): Promise<ApiResponse<any>> {
     let endpoint = API_ENDPOINTS.ATTENDANCE.GET_STATS;
     
     if (dateRange) {
@@ -243,10 +345,9 @@ class ApiService {
 
   async updateStudentAttendance(
     studentId: string,
-    attendanceStatus: string,
-    checkInTime?: string,
-    checkOutTime?: string,
-    location?: string,
+    attendanceStatus: AttendanceStatus,
+    checkInTime?: TimeString,
+    checkOutTime?: TimeString,
     notes?: string
   ): Promise<ApiResponse<void>> {
     return this.request<void>(API_ENDPOINTS.STUDENTS.UPDATE_ATTENDANCE(studentId), {
@@ -256,7 +357,6 @@ class ApiService {
         updatedBy: 'admin',
         checkInTime,
         checkOutTime,
-        location,
         notes
       })
     });
@@ -266,8 +366,8 @@ class ApiService {
     studentId: string,
     days: number = 7
   ): Promise<ApiResponse<AttendanceRecord[]>> {
-    const endDate = new Date().toISOString().split('T')[0];
-    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const endDate = new Date().toISOString().split('T')[0] as DateString;
+    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0] as DateString;
     
     return this.getAttendanceByStudent(studentId, { start: startDate, end: endDate });
   }
@@ -275,7 +375,7 @@ class ApiService {
   // ===== 좌석 관리 API =====
 
   async getSeats(): Promise<ApiResponse<Seat[]>> {
-    return this.request<Seat[]>('/api/seats');
+    return this.request<Seat[]>(API_ENDPOINTS.SEATS.GET_ALL);
   }
 
   async getSeatById(seatId: string): Promise<ApiResponse<Seat>> {
@@ -293,80 +393,571 @@ class ApiService {
   // ===== 좌석 배정 API =====
 
   async getSeatAssignments(): Promise<ApiResponse<SeatAssignment[]>> {
-    return this.request<SeatAssignment[]>('/api/assignments/all');
+    return this.request<SeatAssignment[]>('/api/seat-assignments'); // ✨ FIX: 백엔드 라우트와 일치
   }
 
   async getSeatAssignmentBySeatId(seatId: string): Promise<ApiResponse<SeatAssignment>> {
-    return this.request<SeatAssignment>(`/api/assignments/seat/${seatId}`);
+    return this.request<SeatAssignment>(`/api/seat-assignments/seat/${seatId}`);
   }
 
   async getSeatAssignmentByStudentId(studentId: string): Promise<ApiResponse<SeatAssignment>> {
-    return this.request<SeatAssignment>(`/api/assignments/student/${studentId}`);
+    return this.request<SeatAssignment>(`/api/seat-assignments/student/${studentId}`);
   }
 
-  async assignStudentToSeat(studentId: string, seatId: string): Promise<ApiResponse<SeatAssignment>> {
-    return this.request<SeatAssignment>('/api/assignments/assign', {
+  async assignStudentToSeat(seatId: string, studentId: string, assignedBy?: string, notes?: string): Promise<ApiResponse<void>> {
+    return this.request<void>('/api/seat-assignments', { // ✨ FIX: 백엔드 라우트와 일치
       method: 'POST',
-      body: JSON.stringify({ studentId, seatId })
+      body: JSON.stringify({
+        seatId,
+        studentId,
+        assignedBy,
+        notes
+      })
     });
   }
 
-  async unassignStudentFromSeat(studentId: string, seatId: string): Promise<ApiResponse<boolean>> {
-    return this.request<boolean>('/api/assignments/unassign', {
+  async unassignStudentFromSeat(seatId: string, unassignedBy?: string, notes?: string): Promise<ApiResponse<void>> {
+    return this.request<void>('/api/seat-assignments/release', { // ✨ FIX: 백엔드 라우트와 일치
       method: 'POST',
-      body: JSON.stringify({ studentId, seatId })
+      body: JSON.stringify({
+        seatId,
+        unassignedBy,
+        notes
+      })
     });
   }
 
-  async bulkAssignStudents(studentIds: string[]): Promise<ApiResponse<SeatAssignment[]>> {
-    return this.request<SeatAssignment[]>('/api/assignments/bulk-assign', {
+  async bulkAssignStudents(assignments: Array<{ seatId: string; studentId: string }>, assignedBy?: string): Promise<ApiResponse<void>> {
+    return this.request<void>('/api/seat-assignments/batch', { // ✨ FIX: 백엔드 라우트와 일치
       method: 'POST',
-      body: JSON.stringify({ studentIds })
+      body: JSON.stringify({
+        assignments,
+        assignedBy
+      })
     });
   }
 
-  // ===== 시스템 API =====
+  async getAssignmentStats(): Promise<ApiResponse<any>> {
+    return this.request<any>('/api/seat-assignments/stats/overview'); // ✨ FIX: 백엔드 라우트와 일치
+  }
 
-  // 좌석 배치(번호) 스왑
-  async swapSeatPositions(seatAId: string, seatBId: string): Promise<ApiResponse<void>> {
-    return this.request<void>('/api/seats/swap', {
+  // ===== 출석 초기화 API =====
+
+  async initializeAttendanceData(date?: DateString, resetExisting?: boolean): Promise<ApiResponse<void>> {
+    return this.request<void>('/api/attendance/initialize', { // ✨ FIX: 백엔드 라우트와 일치
       method: 'POST',
-      body: JSON.stringify({ seatAId, seatBId })
+      body: JSON.stringify({
+        date,
+        options: {
+          resetExisting
+        }
+      })
     });
   }
 
-  async checkSeatHealth(): Promise<ApiResponse<{
-    status: 'HEALTHY' | 'DEGRADED' | 'UNHEALTHY';
-    totalSeats: number;
-    assignedSeats: number;
-    mismatchedSeats: number;
-    issues: Array<{
-      seatId: string;
-      type: 'MISMATCH' | 'ORPHANED' | 'DUPLICATE';
-      description: string;
-    }>;
-    lastChecked: string;
-  }>> {
-    return this.request('/api/seats/health');
+  async initializeTodayAttendanceData(resetExisting?: boolean): Promise<ApiResponse<void>> {
+    return this.request<void>('/api/attendance/initialize-today', { // ✨ FIX: 백엔드 라우트와 일치
+      method: 'POST',
+      body: JSON.stringify({
+        options: {
+          resetExisting
+        }
+      })
+    });
   }
 
-  async autoRepairSeats(): Promise<ApiResponse<{
-    repaired: number;
-    failed: number;
-    details: Array<{ seatId: string; action: string; success: boolean; error?: string }>;
-  }>> {
-    return this.request('/api/seats/repair', {
+  // ===== 좌석 초기화 API =====
+
+  async initializeSeats(rows: number, cols: number, startNumber?: number): Promise<ApiResponse<void>> {
+    return this.request<void>('/api/seats/batch/create', { // ✨ FIX: 백엔드 라우트와 일치
+      method: 'POST',
+      body: JSON.stringify({
+        rows,
+        cols,
+        startNumber
+      })
+    });
+  }
+
+  // ===== 좌석 헬스체크 API =====
+
+  async checkSeatHealth(): Promise<ApiResponse<any>> {
+    return this.request<any>('/api/seats/stats/overview'); // ✨ FIX: 백엔드 라우트와 일치
+  }
+
+  async autoRepairSeats(): Promise<ApiResponse<void>> {
+    return this.request<void>('/api/seats/batch/deactivate', { // ✨ FIX: 백엔드 라우트와 일치
       method: 'POST'
     });
   }
 
-  async getHealth(): Promise<ApiResponse<any>> {
-    return this.request<any>('/api/health');
+  // ===== 좌석 상태 업데이트 API =====
+
+  async updateSeatStatus(seatId: string, status: AttendanceStatus, updatedBy?: string, notes?: string): Promise<ApiResponse<void>> {
+    return this.request<void>(`/api/seats/${seatId}/status`, { // ✨ FIX: 백엔드 라우트와 일치
+      method: 'PATCH',
+      body: JSON.stringify({
+        status,
+        updatedBy,
+        notes
+      })
+    });
   }
 
-  async getVersion(): Promise<ApiResponse<any>> {
-    return this.request<any>('/api/version');
+  // ===== 좌석 교환 API =====
+
+  async swapSeatPositions(seatId1: string, seatId2: string, swappedBy?: string): Promise<ApiResponse<void>> {
+    return this.request<void>('/api/seats/swap', { // ✨ FIX: 백엔드 라우트와 일치
+      method: 'POST',
+      body: JSON.stringify({
+        seatId1,
+        seatId2,
+        swappedBy
+      })
+    });
+  }
+
+  // ===== 일괄 출석 업데이트 API =====
+
+  async bulkUpdateAttendance(updates: Array<{
+    studentId: string;
+    seatId?: string;
+    status: AttendanceStatus;
+    checkInTime?: TimeString;
+    checkOutTime?: TimeString;
+    notes?: string;
+  }>, updatedBy?: string): Promise<ApiResponse<void>> {
+    return this.request<void>(API_ENDPOINTS.ATTENDANCE.BULK_UPDATE, {
+      method: 'POST',
+      body: JSON.stringify({
+        updates,
+        updatedBy
+      })
+    });
+  }
+
+  // ===== 학생 초기화 API =====
+
+  async initializeStudents(): Promise<ApiResponse<void>> {
+    return this.request<void>('/api/students/initialize', { // ✨ FIX: 백엔드 라우트와 일치
+      method: 'POST'
+    });
+  }
+
+  // ===== 통합 초기화 API =====
+
+  async initializeAllData(): Promise<ApiResponse<void>> {
+    return this.request<void>('/api/initialization/all', { // ✨ FIX: 백엔드 라우트와 일치
+      method: 'POST'
+    });
+  }
+
+  // ===== 수업 관리 API =====
+
+  // 모든 수업 조회
+  async getClassSections(): Promise<ApiResponse<ClassSection[]>> {
+    return this.request<ClassSection[]>(API_ENDPOINTS.CLASS_SECTIONS.GET_ALL);
+  }
+
+  // 모든 수업을 상세 정보와 함께 조회 (Course, Teacher, Classroom 포함)
+  async getClassSectionsWithDetails(): Promise<ApiResponse<any[]>> {
+    return this.request<any[]>('/api/class-sections/with-details');
+  }
+
+  // 특정 수업 조회 (ID로)
+  async getClassSectionById(id: string): Promise<ApiResponse<ClassSection>> {
+    return this.request<ClassSection>(`${API_ENDPOINTS.CLASS_SECTIONS.GET_BY_ID}/${id}`);
+  }
+
+  // 특정 수업을 상세 정보와 함께 조회 (ID로)
+  async getClassSectionWithDetailsById(id: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/api/class-sections/${id}/with-details`);
+  }
+
+  async createClassSection(data: CreateClassSectionRequest): Promise<ApiResponse<ClassSection>> {
+    return this.request<ClassSection>(API_ENDPOINTS.CLASS_SECTIONS.CREATE, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  // Course와 ClassSection을 한번에 생성하는 새로운 API
+  async createClassWithCourse(data: {
+    courseName: string;
+    subject: string;
+    difficulty?: string;
+    name: string;
+    teacherId: string;
+    classroomId: string;
+    schedule: Array<{ dayOfWeek: string; startTime: string; endTime: string }>;
+    maxStudents: number;
+    description?: string;
+    notes?: string;
+  }): Promise<ApiResponse<{ course: any; classSection: ClassSection }>> {
+    // API_ENDPOINTS가 제대로 로드되었는지 확인하고, 실패 시 하드코딩된 엔드포인트 사용
+    let endpoint = API_ENDPOINTS?.CLASS_SECTIONS?.CREATE_WITH_COURSE;
+    
+    if (!endpoint) {
+      console.warn('⚠️ API_ENDPOINTS 로드 실패, 하드코딩된 엔드포인트 사용:', {
+        API_ENDPOINTS,
+        CLASS_SECTIONS: API_ENDPOINTS?.CLASS_SECTIONS,
+        CREATE_WITH_COURSE: API_ENDPOINTS?.CLASS_SECTIONS?.CREATE_WITH_COURSE
+      });
+                    endpoint = '/api/class-sections/create-with-course'; // ✨ FIX: 백엔드 라우트와 일치
+    }
+    
+    console.log('🔍 createClassWithCourse 호출:', { endpoint, fullUrl: `${FIREBASE_FUNCTIONS_BASE_URL}${endpoint}` });
+    
+    return this.request<{ course: any; classSection: ClassSection }>(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async updateClassSection(id: string, data: UpdateClassSectionRequest): Promise<ApiResponse<ClassSection>> {
+    return this.request<ClassSection>(API_ENDPOINTS.CLASS_SECTIONS.UPDATE(id), {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async deleteClassSection(id: string): Promise<ApiResponse<void>> {
+    return this.request<void>(API_ENDPOINTS.CLASS_SECTIONS.DELETE(id), {
+      method: 'DELETE'
+    });
+  }
+
+  async searchClassSections(params: ClassSectionSearchParams): Promise<ApiResponse<ClassSection[]>> {
+    let endpoint = API_ENDPOINTS.CLASS_SECTIONS.SEARCH;
+    
+    if (params) {
+      const searchParams = new URLSearchParams();
+      
+      if (params.name) searchParams.append('name', params.name);
+      if (params.courseId) searchParams.append('courseId', params.courseId);
+      if (params.teacherId) searchParams.append('teacherId', params.teacherId);
+      if (params.classroomId) searchParams.append('classroomId', params.classroomId);
+      if (params.status) searchParams.append('status', params.status);
+      
+      if (searchParams.toString()) {
+        endpoint += `?${searchParams.toString()}`;
+      }
+    }
+    
+    return this.request<ClassSection[]>(endpoint);
+  }
+
+  async getClassSectionsByTeacher(teacherId: string): Promise<ApiResponse<ClassSection[]>> {
+    return this.request<ClassSection[]>(API_ENDPOINTS.CLASS_SECTIONS.GET_BY_TEACHER(teacherId));
+  }
+
+  async getClassSectionsByCourse(courseId: string): Promise<ApiResponse<ClassSection[]>> {
+    return this.request<ClassSection[]>(API_ENDPOINTS.CLASS_SECTIONS.GET_BY_COURSE(courseId));
+  }
+
+  async getClassSectionsByClassroom(classroomId: string): Promise<ApiResponse<ClassSection[]>> {
+    return this.request<ClassSection[]>(API_ENDPOINTS.CLASS_SECTIONS.GET_BY_CLASSROOM(classroomId));
+  }
+
+  async getClassSectionStats(): Promise<ApiResponse<ClassSectionStatistics>> {
+    return this.request<ClassSectionStatistics>(API_ENDPOINTS.CLASS_SECTIONS.GET_STATS);
+  }
+
+  // ===== 수업 계층적 삭제 API =====
+
+  // 수업 의존성 확인
+  async getClassSectionDependencies(classSectionId: string): Promise<ApiResponse<ClassSectionDependencies>> {
+    return this.request(API_ENDPOINTS.CLASS_SECTIONS.GET_DEPENDENCIES(classSectionId));
+  }
+
+  // 수업 계층적 삭제
+  async deleteClassSectionHierarchically(classSectionId: string): Promise<ApiResponse<ClassSectionHierarchicalDeleteResponse>> {
+    return this.request(API_ENDPOINTS.CLASS_SECTIONS.DELETE_HIERARCHICALLY(classSectionId), {
+      method: 'DELETE'
+    });
+  }
+
+  // 시간 충돌 검증
+  async validateTimeConflict(data: {
+    teacherId: string;
+    classroomId: string;
+    dayOfWeek: string;
+    startTime: string;
+    endTime: string;
+    excludeId?: string;
+  }): Promise<ApiResponse<{ hasConflict: boolean; message: string }>> {
+    return this.request<{ hasConflict: boolean; message: string }>('/api/class-sections/validate-time-conflict', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  // 시간표 통계 조회
+  async getScheduleStatistics(): Promise<ApiResponse<{
+    totalClasses: number;
+    classesByDay: Record<string, number>;
+    classesByTime: Record<string, number>;
+    mostBusyTime: string;
+    leastBusyTime: string;
+  }>> {
+    return this.request<{
+      totalClasses: number;
+      classesByDay: Record<string, number>;
+      classesByTime: Record<string, number>;
+      mostBusyTime: string;
+      leastBusyTime: string;
+    }>('/api/class-sections/schedule-statistics');
+  }
+
+  // ===== 새로운 단순화된 시간표 API (Frontend 전용) =====
+
+  // ClassSection의 schedule 정보를 기반으로 시간표 그리드 생성
+  // 기존 백엔드 라우트만 사용하도록 수정
+  async getTimetableFromClassSections(params?: {
+    dayOfWeek?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ApiResponse<ClassSection[]>> {
+    // 기존 백엔드의 /api/class-sections 엔드포인트 사용
+    return this.request<ClassSection[]>(API_ENDPOINTS.CLASS_SECTIONS.GET_ALL);
+  }
+
+  // ClassSection 기반 시간표 그리드 조회 (기존 getTimetableGrid 대체)
+  async getTimetableGrid(params?: {
+    dayOfWeek?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ApiResponse<ClassSection[]>> {
+    // ClassSection API를 사용하여 시간표 데이터 조회
+    return this.getTimetableFromClassSections(params);
+  }
+
+  // ===== 교사 관리 API =====
+
+  async getTeachers(): Promise<ApiResponse<Teacher[]>> {
+    return this.request<Teacher[]>(API_ENDPOINTS.TEACHERS.GET_ALL);
+  }
+
+  async getTeacherById(id: string): Promise<ApiResponse<Teacher>> {
+    return this.request<Teacher>(API_ENDPOINTS.TEACHERS.GET_BY_ID(id));
+  }
+
+  async createTeacher(data: any): Promise<ApiResponse<Teacher>> {
+    return this.request<Teacher>(API_ENDPOINTS.TEACHERS.CREATE, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async updateTeacher(id: string, data: any): Promise<ApiResponse<Teacher>> {
+    return this.request<Teacher>(API_ENDPOINTS.TEACHERS.UPDATE(id), {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async deleteTeacher(id: string): Promise<ApiResponse<void>> {
+    return this.request<void>(API_ENDPOINTS.TEACHERS.DELETE(id), {
+      method: 'DELETE'
+    });
+  }
+
+  async searchTeachers(params?: any): Promise<ApiResponse<Teacher[]>> {
+    let endpoint = API_ENDPOINTS.TEACHERS.SEARCH;
+    
+    if (params) {
+      const searchParams = new URLSearchParams();
+      
+      if (params.name) searchParams.append('name', params.name);
+      if (params.subject) searchParams.append('subject', params.subject);
+      if (params.status) searchParams.append('status', params.status);
+      
+      if (searchParams.toString()) {
+        endpoint += `?${searchParams.toString()}`;
+      }
+    }
+    
+    return this.request<Teacher[]>(endpoint);
+  }
+
+  // ===== 교사 계층적 삭제 API =====
+
+  // 교사 의존성 확인
+  async getTeacherDependencies(teacherId: string): Promise<ApiResponse<TeacherDependencies>> {
+    return this.request(API_ENDPOINTS.TEACHERS.GET_DEPENDENCIES(teacherId));
+  }
+
+  // 교사 계층적 삭제
+  async deleteTeacherHierarchically(teacherId: string): Promise<ApiResponse<TeacherHierarchicalDeleteResponse>> {
+    return this.request(API_ENDPOINTS.TEACHERS.DELETE_HIERARCHICALLY(teacherId), {
+      method: 'DELETE'
+    });
+  }
+
+  // ===== 강의 관리 API =====
+
+  async getCourses(): Promise<ApiResponse<Course[]>> {
+    return this.request<Course[]>(API_ENDPOINTS.COURSES.GET_ALL);
+  }
+
+  async getCourseById(id: string): Promise<ApiResponse<Course>> {
+    return this.request<Course>(API_ENDPOINTS.COURSES.GET_BY_ID(id));
+  }
+
+  async createCourse(data: any): Promise<ApiResponse<Course>> {
+    return this.request<Course>(API_ENDPOINTS.COURSES.CREATE, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async updateCourse(id: string, data: any): Promise<ApiResponse<Course>> {
+    return this.request<Course>(API_ENDPOINTS.COURSES.UPDATE(id), {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async deleteCourse(id: string): Promise<ApiResponse<void>> {
+    return this.request<void>(API_ENDPOINTS.COURSES.DELETE(id), {
+      method: 'DELETE'
+    });
+  }
+
+  async searchCourses(params?: any): Promise<ApiResponse<Course[]>> {
+    let endpoint = API_ENDPOINTS.COURSES.SEARCH;
+    
+    if (params) {
+      const searchParams = new URLSearchParams();
+      
+      if (params.name) searchParams.append('name', params.name);
+      if (params.grade) searchParams.append('grade', params.grade);
+      if (params.subject) searchParams.append('subject', params.subject);
+      
+      if (searchParams.toString()) {
+        endpoint += `?${searchParams.toString()}`;
+      }
+    }
+    
+    return this.request<Course[]>(endpoint);
+  }
+
+  // ===== 강의실 관리 API =====
+
+  async getClassrooms(): Promise<ApiResponse<Classroom[]>> {
+    return this.request<Classroom[]>(API_ENDPOINTS.CLASSROOMS.GET_ALL);
+  }
+
+  async getClassroomById(id: string): Promise<ApiResponse<Classroom>> {
+    return this.request<Classroom>(API_ENDPOINTS.CLASSROOMS.GET_BY_ID(id));
+  }
+
+  async createClassroom(data: any): Promise<ApiResponse<Classroom>> {
+    return this.request<Classroom>(API_ENDPOINTS.CLASSROOMS.CREATE, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async updateClassroom(id: string, data: any): Promise<ApiResponse<Classroom>> {
+    return this.request<Classroom>(API_ENDPOINTS.CLASSROOMS.UPDATE(id), {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async deleteClassroom(id: string): Promise<ApiResponse<void>> {
+    return this.request<void>(API_ENDPOINTS.CLASSROOMS.DELETE(id), {
+      method: 'DELETE'
+    });
+  }
+
+  async searchClassrooms(params?: any): Promise<ApiResponse<Classroom[]>> {
+    let endpoint = API_ENDPOINTS.CLASSROOMS.SEARCH;
+    
+    if (params) {
+      const searchParams = new URLSearchParams();
+      
+      if (params.name) searchParams.append('name', params.name);
+      if (params.capacity) searchParams.append('capacity', params.capacity);
+      if (params.status) searchParams.append('status', params.status);
+      
+      if (searchParams.toString()) {
+        endpoint += `?${searchParams.toString()}`;
+      }
+    }
+    
+    return this.request<Classroom[]>(endpoint);
+  }
+
+  // ===== 강의실 계층적 삭제 API =====
+
+  // 강의실 의존성 확인
+  async getClassroomDependencies(classroomId: string): Promise<ApiResponse<ClassroomDependencies>> {
+    return this.request(API_ENDPOINTS.CLASSROOMS.GET_DEPENDENCIES(classroomId));
+  }
+
+  // 강의실 계층적 삭제
+  async deleteClassroomHierarchically(classroomId: string): Promise<ApiResponse<ClassroomHierarchicalDeleteResponse>> {
+    return this.request(API_ENDPOINTS.CLASSROOMS.DELETE_HIERARCHICALLY(classroomId), {
+      method: 'DELETE'
+    });
+  }
+
+  // ===== 학생 계층적 삭제 API =====
+
+  // 학생 의존성 확인
+  async getStudentDependencies(studentId: string): Promise<ApiResponse<StudentDependencies>> {
+    return this.request(API_ENDPOINTS.STUDENTS.GET_DEPENDENCIES(studentId));
+  }
+
+  // 학생 계층적 삭제
+  async deleteStudentHierarchically(studentId: string): Promise<ApiResponse<HierarchicalDeleteResponse>> {
+    return this.request(API_ENDPOINTS.STUDENTS.DELETE_HIERARCHICALLY(studentId), {
+      method: 'DELETE'
+    });
+  }
+
+  // 수업에 학생 추가
+  async addStudentToClass(classSectionId: string, studentId: string): Promise<ApiResponse<any>> {
+    try {
+      return await this.request(
+        API_ENDPOINTS.CLASS_SECTIONS.ADD_STUDENT(classSectionId, studentId),
+        { 
+          method: 'POST',
+          body: JSON.stringify({ studentId })
+        }
+      );
+    } catch (error) {
+      throw normalizeError(error, '수업에 학생 추가 중 오류가 발생했습니다.');
+    }
+  }
+
+  // 수업에서 학생 제거
+  async removeStudentFromClass(classSectionId: string, studentId: string): Promise<ApiResponse<any>> {
+    try {
+      return await this.request(
+        API_ENDPOINTS.CLASS_SECTIONS.REMOVE_STUDENT(classSectionId, studentId),
+        { 
+          method: 'DELETE'
+        }
+      );
+    } catch (error) {
+      throw normalizeError(error, '수업에서 학생 제거 중 오류가 발생했습니다.');
+    }
+  }
+
+  // 수업에 등록된 학생 목록 조회
+  async getEnrolledStudents(classSectionId: string): Promise<ApiResponse<Student[]>> {
+    try {
+      return await this.request(
+        API_ENDPOINTS.CLASS_SECTIONS.GET_ENROLLED_STUDENTS(classSectionId)
+      );
+    } catch (error) {
+      throw normalizeError(error, '등록된 학생 목록 조회 중 오류가 발생했습니다.');
+    }
   }
 }
 
+// 싱글톤 인스턴스 생성
 export const apiService = new ApiService(); 

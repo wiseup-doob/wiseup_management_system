@@ -4,10 +4,9 @@ export const ROUTES = {
   
   // 관리 시스템 페이지들
   ATTENDANCE: '/attendance',
-  TIMETABLE: '/timetable',
   STUDENTS: '/students',
-  LEARNING: '/learning',
-  GRADES: '/grades'
+  CLASS: '/class',
+  SCHEDULE: '/schedule'
 }
 
 // 페이지별 메타데이터 정의
@@ -20,20 +19,16 @@ export const PAGE_METADATA = {
     title: '출결 관리',
     description: '원생 출결 현황 관리'
   },
-  [ROUTES.TIMETABLE]: {
-    title: '시간표 관리',
-    description: '수업 시간표 관리'
-  },
   [ROUTES.STUDENTS]: {
     title: '원생 관리',
     description: '원생 정보 관리'
   },
-  [ROUTES.LEARNING]: {
-    title: '학습데이터 관리',
-    description: '학습 진도 및 성과 관리'
+  [ROUTES.CLASS]: {
+    title: '클래스 관리',
+    description: '수업 클래스 관리'
   },
-  [ROUTES.GRADES]: {
-    title: '성적 분석 시스템',
-    description: '성적 분석 및 통계'
+  [ROUTES.SCHEDULE]: {
+    title: '시간표 관리',
+    description: '학생 시간표 관리'
   }
 }

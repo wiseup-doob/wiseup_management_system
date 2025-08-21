@@ -1,446 +1,422 @@
-import { BaseController } from './BaseController';
-import { AttendanceService } from '../services/attendance/AttendanceService';
-import type { 
-  AttendanceRecord,
-  ApiResponse,
-  CreateAttendanceRecordRequest,
-  UpdateAttendanceRecordRequest
-} from '@shared/types';
-import { 
-  AppError, 
-  ERROR_CODES, 
-  createErrorResponse, 
-  logError 
-} from '@shared/utils/error.utils';
+import { Request, Response } from 'express';
+import * as admin from 'firebase-admin';
+import { AttendanceService } from '../services/AttendanceService';
+import type { CreateAttendanceRecordRequest, UpdateAttendanceRecordRequest, AttendanceSearchParams } from '@shared/types';
 
-export class AttendanceController extends BaseController {
-  constructor(
-    private attendanceService: AttendanceService
-  ) {
-    super();
+export class AttendanceController {
+  private attendanceService: AttendanceService;
+
+  constructor() {
+    this.attendanceService = new AttendanceService();
   }
 
-  async initializeAttendanceData(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    
+  // 출석 기록 생성
+  async createAttendanceRecord(req: Request, res: Response): Promise<void> {
     try {
-      // 먼저 학생 데이터가 있는지 확인
-      const { studentIds, seatIds } = request.body;
-      
-      if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
-        const appError = AppError.validation(ERROR_CODES.MISSING_REQUIRED_FIELD, '출석 데이터 초기화를 위해서는 학생 ID 배열이 필요합니다.', null, requestId);
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
-        return;
-      }
-      
-      const result = await this.attendanceService.initializeAttendanceData(studentIds, seatIds);
-      
-      const apiResponse: ApiResponse<{ count: number; message: string }> = {
-        success: true,
-        data: {
-          count: result.count,
-          message: result.message
-        },
-        message: '출석 데이터가 성공적으로 초기화되었습니다.',
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId,
-          count: result.count
-        }
-      };
-      
-      response.json(apiResponse);
-    } catch (error) {
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, '출석 데이터 초기화 중 오류가 발생했습니다.', error, requestId);
-      logError(appError, { component: 'AttendanceController', action: 'initializeAttendanceData' });
-      
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
-    }
-  }
+      const attendanceData: CreateAttendanceRecordRequest = req.body;
+      const attendanceId = await this.attendanceService.createAttendanceRecord(attendanceData);
 
-  async initializeTodayAttendanceData(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    
-    try {
-      const { studentIds, seatIds } = request.body;
-      
-      if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
-        const appError = AppError.validation(ERROR_CODES.MISSING_REQUIRED_FIELD, '오늘 출석 데이터 초기화를 위해서는 학생 ID 배열이 필요합니다.', null, requestId);
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
-        return;
-      }
-      
-      const result = await this.attendanceService.initializeTodayAttendanceData(studentIds, seatIds);
-      
-      const apiResponse: ApiResponse<{ count: number; message: string }> = {
+      res.status(201).json({
         success: true,
-        data: {
-          count: result.count,
-          message: result.message
-        },
-        message: '오늘 출석 데이터가 성공적으로 초기화되었습니다.',
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId,
-          count: result.count
-        }
-      };
-      
-      response.json(apiResponse);
-    } catch (error) {
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, '오늘 출석 데이터 초기화 중 오류가 발생했습니다.', error, requestId);
-      logError(appError, { component: 'AttendanceController', action: 'initializeTodayAttendanceData' });
-      
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
-    }
-  }
-
-  async getAttendanceRecords(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    
-    try {
-      const filters = request.query;
-      const records = await this.attendanceService.getAttendanceRecords(filters);
-      
-      const apiResponse: ApiResponse<AttendanceRecord[]> = {
-        success: true,
-        data: records,
-        message: '출석 기록을 성공적으로 조회했습니다.',
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId,
-          count: records.length
-        }
-      };
-      
-      response.json(apiResponse);
-    } catch (error) {
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, '출석 기록 조회 중 오류가 발생했습니다.', error, requestId);
-      logError(appError, { component: 'AttendanceController', action: 'getAttendanceRecords' });
-      
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
-    }
-  }
-
-  async getAttendanceRecordById(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    const { id } = request.params;
-    
-    try {
-      if (!id) {
-        const appError = AppError.validation(ERROR_CODES.MISSING_REQUIRED_FIELD, '출석 기록 ID가 필요합니다.', null, requestId);
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
-        return;
-      }
-      
-      const record = await this.attendanceService.getAttendanceRecordById(id);
-      
-      if (!record) {
-        const appError = AppError.notFound(ERROR_CODES.ATTENDANCE_RECORD_NOT_FOUND, `출석 기록 ID ${id}를 찾을 수 없습니다.`, null, requestId);
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
-        return;
-      }
-      
-      const apiResponse: ApiResponse<AttendanceRecord> = {
-        success: true,
-        data: record,
-        message: '출석 기록을 성공적으로 조회했습니다.',
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId
-        }
-      };
-      
-      response.json(apiResponse);
-    } catch (error) {
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, '출석 기록 조회 중 오류가 발생했습니다.', error, requestId);
-      logError(appError, { component: 'AttendanceController', action: 'getAttendanceRecordById', recordId: id });
-      
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
-    }
-  }
-
-  async createAttendanceRecord(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    
-    try {
-      const data = request.body as CreateAttendanceRecordRequest;
-      
-      if (!data.studentId || !data.date || !data.status) {
-        const appError = AppError.validation(ERROR_CODES.MISSING_REQUIRED_FIELD, '필수 필드가 누락되었습니다.', null, requestId);
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
-        return;
-      }
-      
-      const record = await this.attendanceService.createAttendanceRecord(data);
-      
-      const apiResponse: ApiResponse<AttendanceRecord> = {
-        success: true,
-        data: record,
         message: '출석 기록이 성공적으로 생성되었습니다.',
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId
-        }
-      };
-      
-      response.status(201).json(apiResponse);
+        data: { id: attendanceId }
+      });
     } catch (error) {
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, '출석 기록 생성 중 오류가 발생했습니다.', error, requestId);
-      logError(appError, { component: 'AttendanceController', action: 'createAttendanceRecord' });
-      
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
+      console.error('출석 기록 생성 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '출석 기록 생성 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
     }
   }
 
-  async updateAttendanceRecord(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    const { id } = request.params;
-    
+  // 출석 기록 조회 (ID로)
+  async getAttendanceRecordById(req: Request, res: Response): Promise<void> {
     try {
-      if (!id) {
-        const appError = AppError.validation(ERROR_CODES.MISSING_REQUIRED_FIELD, '출석 기록 ID가 필요합니다.', null, requestId);
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
+      const { id } = req.params;
+      const attendance = await this.attendanceService.getAttendanceRecordById(id);
+
+      if (!attendance) {
+        res.status(404).json({
+          success: false,
+          message: '출석 기록을 찾을 수 없습니다.'
+        });
         return;
       }
-      
-      const updateData = request.body as UpdateAttendanceRecordRequest;
-      
-      if (Object.keys(updateData).length === 0) {
-        const appError = AppError.validation(ERROR_CODES.MISSING_REQUIRED_FIELD, '업데이트할 데이터가 없습니다.', null, requestId);
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
-        return;
-      }
-      
-      const record = await this.attendanceService.updateAttendanceRecord(id, updateData);
-      
-      if (!record) {
-        const appError = AppError.notFound(ERROR_CODES.ATTENDANCE_RECORD_NOT_FOUND, `출석 기록 ID ${id}를 찾을 수 없습니다.`, null, requestId);
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
-        return;
-      }
-      
-      const apiResponse: ApiResponse<AttendanceRecord> = {
+
+      res.json({
         success: true,
-        data: record,
-        message: '출석 기록이 성공적으로 업데이트되었습니다.',
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId
-        }
-      };
-      
-      response.json(apiResponse);
+        data: attendance
+      });
     } catch (error) {
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, '출석 기록 업데이트 중 오류가 발생했습니다.', error, requestId);
-      logError(appError, { component: 'AttendanceController', action: 'updateAttendanceRecord', recordId: id });
-      
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
+      console.error('출석 기록 조회 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '출석 기록 조회 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
     }
   }
 
-  async deleteAttendanceRecord(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    const { id } = request.params;
-    
+  // 출석 기록 수정
+  async updateAttendanceRecord(req: Request, res: Response): Promise<void> {
     try {
-      if (!id) {
-        const appError = AppError.validation(ERROR_CODES.MISSING_REQUIRED_FIELD, '출석 기록 ID가 필요합니다.', null, requestId);
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
-        return;
-      }
-      
-      const success = await this.attendanceService.deleteAttendanceRecord(id);
-      
-      if (!success) {
-        const appError = AppError.notFound(ERROR_CODES.ATTENDANCE_RECORD_NOT_FOUND, `출석 기록 ID ${id}를 찾을 수 없습니다.`, null, requestId);
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
-        return;
-      }
-      
-      const apiResponse: ApiResponse<{ message: string }> = {
+      const { id } = req.params;
+      const updateData: UpdateAttendanceRecordRequest = req.body;
+
+      await this.attendanceService.updateAttendanceRecord(id, updateData);
+
+      res.json({
         success: true,
-        data: {
-          message: '출석 기록이 성공적으로 삭제되었습니다.'
-        },
-        message: '출석 기록 삭제 완료',
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId
-        }
-      };
-      
-      response.json(apiResponse);
+        message: '출석 기록이 성공적으로 수정되었습니다.'
+      });
     } catch (error) {
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, '출석 기록 삭제 중 오류가 발생했습니다.', error, requestId);
-      logError(appError, { component: 'AttendanceController', action: 'deleteAttendanceRecord', recordId: id });
-      
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
+      console.error('출석 기록 수정 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '출석 기록 수정 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
     }
   }
 
-  async getAttendanceByStudent(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    const { studentId } = request.params;
-    
+  // 출석 기록 삭제
+  async deleteAttendanceRecord(req: Request, res: Response): Promise<void> {
     try {
-      if (!studentId) {
-        const appError = AppError.validation(ERROR_CODES.MISSING_REQUIRED_FIELD, '학생 ID가 필요합니다.', null, requestId);
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
-        return;
-      }
-      
-      const { startDate, endDate } = request.query;
-      const dateRange = startDate && endDate ? { start: startDate, end: endDate } : undefined;
-      
-      const records = await this.attendanceService.getAttendanceByStudent(studentId, dateRange);
-      
-      const apiResponse: ApiResponse<AttendanceRecord[]> = {
+      const { id } = req.params;
+      await this.attendanceService.deleteAttendanceRecord(id);
+
+      res.json({
+        success: true,
+        message: '출석 기록이 성공적으로 삭제되었습니다.'
+      });
+    } catch (error) {
+      console.error('출석 기록 삭제 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '출석 기록 삭제 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    }
+  }
+
+  // 모든 출석 기록 조회
+  async getAllAttendanceRecords(req: Request, res: Response): Promise<void> {
+    try {
+      const records = await this.attendanceService.getAllAttendanceRecords();
+
+      res.json({
         success: true,
         data: records,
-        message: '학생의 출석 기록을 성공적으로 조회했습니다.',
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId,
-          count: records.length
-        }
-      };
-      
-      response.json(apiResponse);
+        count: records.length
+      });
     } catch (error) {
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, '학생 출석 기록 조회 중 오류가 발생했습니다.', error, requestId);
-      logError(appError, { component: 'AttendanceController', action: 'getAttendanceByStudent', studentId });
-      
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
+      console.error('출석 기록 목록 조회 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '출석 기록 목록 조회 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
     }
   }
 
-  async getAttendanceByDate(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    const { date } = request.params;
-    
+  // 학생별 출석 기록 조회
+  async getAttendanceRecordsByStudentId(req: Request, res: Response): Promise<void> {
     try {
-      if (!date) {
-        const appError = AppError.validation(ERROR_CODES.MISSING_REQUIRED_FIELD, '날짜가 필요합니다.', null, requestId);
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
-        return;
-      }
-      
-      const records = await this.attendanceService.getAttendanceByDate(date);
-      
-      const apiResponse: ApiResponse<AttendanceRecord[]> = {
+      const { studentId } = req.params;
+      const records = await this.attendanceService.getAttendanceRecordsByStudentId(studentId);
+
+      res.json({
         success: true,
         data: records,
-        message: '해당 날짜의 출석 기록을 성공적으로 조회했습니다.',
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId,
-          count: records.length
-        }
-      };
-      
-      response.json(apiResponse);
+        count: records.length
+      });
     } catch (error) {
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, '날짜별 출석 기록 조회 중 오류가 발생했습니다.', error, requestId);
-      logError(appError, { component: 'AttendanceController', action: 'getAttendanceByDate', date });
-      
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
+      console.error('학생별 출석 기록 조회 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '학생별 출석 기록 조회 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
     }
   }
 
-  async getAttendanceStatistics(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    
+  // 특정 날짜의 출석 기록 조회
+  async getAttendanceRecordsByDate(req: Request, res: Response): Promise<void> {
     try {
-      const { startDate, endDate } = request.query;
-      const dateRange = startDate && endDate ? { start: startDate, end: endDate } : undefined;
-      
-      const statistics = await this.attendanceService.getAttendanceStatistics(dateRange);
-      
-      const apiResponse: ApiResponse<any> = {
+      const { date } = req.params;
+      const timestamp = admin.firestore.Timestamp.fromDate(new Date(date));
+      const records = await this.attendanceService.getAttendanceRecordsByDate(timestamp);
+
+      res.json({
         success: true,
-        data: statistics,
-        message: '출석 통계를 성공적으로 조회했습니다.',
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId
-        }
-      };
-      
-      response.json(apiResponse);
+        data: records,
+        count: records.length
+      });
     } catch (error) {
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, '출석 통계 조회 중 오류가 발생했습니다.', error, requestId);
-      logError(appError, { component: 'AttendanceController', action: 'getAttendanceStatistics' });
-      
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
+      console.error('날짜별 출석 기록 조회 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '날짜별 출석 기록 조회 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
     }
   }
 
-  async bulkUpdateAttendance(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    
+  // 날짜 범위의 출석 기록 조회
+  async getAttendanceRecordsByDateRange(req: Request, res: Response): Promise<void> {
     try {
-      const { records } = request.body;
+      const { startDate, endDate } = req.query;
       
-      if (!records || !Array.isArray(records) || records.length === 0) {
-        const appError = AppError.validation(ERROR_CODES.MISSING_REQUIRED_FIELD, '출석 기록 배열이 필요합니다.', null, requestId);
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
+      if (!startDate || !endDate) {
+        res.status(400).json({
+          success: false,
+          message: '시작 날짜와 종료 날짜를 모두 제공해야 합니다.'
+        });
         return;
       }
+
+      const startTimestamp = admin.firestore.Timestamp.fromDate(new Date(startDate as string));
+      const endTimestamp = admin.firestore.Timestamp.fromDate(new Date(endDate as string));
       
-      const result = await this.attendanceService.bulkUpdateAttendance(records);
-      
-      const apiResponse: ApiResponse<any> = {
+      const records = await this.attendanceService.getAttendanceRecordsByDateRange(startTimestamp, endTimestamp);
+
+      res.json({
         success: true,
-        data: result,
-        message: '출석 기록 일괄 업데이트가 완료되었습니다.',
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId
-        }
-      };
-      
-      response.json(apiResponse);
+        data: records,
+        count: records.length
+      });
     } catch (error) {
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, '출석 기록 일괄 업데이트 중 오류가 발생했습니다.', error, requestId);
-      logError(appError, { component: 'AttendanceController', action: 'bulkUpdateAttendance' });
+      console.error('날짜 범위별 출석 기록 조회 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '날짜 범위별 출석 기록 조회 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    }
+  }
+
+  // 출석 기록 검색
+  async searchAttendanceRecords(req: Request, res: Response): Promise<void> {
+    try {
+      const searchParams: AttendanceSearchParams = req.query as any;
       
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
+      // 날짜 범위 문자열을 Timestamp로 변환
+      if (searchParams.dateRange) {
+        if (typeof searchParams.dateRange.start === 'string') {
+          searchParams.dateRange.start = admin.firestore.Timestamp.fromDate(new Date(searchParams.dateRange.start));
+        }
+        if (typeof searchParams.dateRange.end === 'string') {
+          searchParams.dateRange.end = admin.firestore.Timestamp.fromDate(new Date(searchParams.dateRange.end));
+        }
+      }
+
+      // 특정 날짜 문자열을 Timestamp로 변환
+      if (searchParams.date && typeof searchParams.date === 'string') {
+        searchParams.date = admin.firestore.Timestamp.fromDate(new Date(searchParams.date));
+      }
+
+      const records = await this.attendanceService.searchAttendanceRecords(searchParams);
+
+      res.json({
+        success: true,
+        data: records,
+        count: records.length
+      });
+    } catch (error) {
+      console.error('출석 기록 검색 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '출석 기록 검색 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    }
+  }
+
+  // 학생별 출석 통계 조회
+  async getStudentAttendanceStatistics(req: Request, res: Response): Promise<void> {
+    try {
+      const { studentId } = req.params;
+      const statistics = await this.attendanceService.getStudentAttendanceStatistics(studentId);
+
+      res.json({
+        success: true,
+        data: statistics
+      });
+    } catch (error) {
+      console.error('학생별 출석 통계 조회 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '학생별 출석 통계 조회 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    }
+  }
+
+  // 일별 출석 현황 요약
+  async getDailyAttendanceSummary(req: Request, res: Response): Promise<void> {
+    try {
+      const { date } = req.params;
+      const timestamp = admin.firestore.Timestamp.fromDate(new Date(date));
+      const summary = await this.attendanceService.getDailyAttendanceSummary(timestamp);
+
+      res.json({
+        success: true,
+        data: summary
+      });
+    } catch (error) {
+      console.error('일별 출석 현황 요약 조회 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '일별 출석 현황 요약 조회 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    }
+  }
+
+  // 월별 출석 통계
+  async getMonthlyAttendanceStatistics(req: Request, res: Response): Promise<void> {
+    try {
+      const { year, month } = req.params;
+      const yearNum = parseInt(year);
+      const monthNum = parseInt(month);
+
+      if (isNaN(yearNum) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+        res.status(400).json({
+          success: false,
+          message: '유효한 년도와 월을 제공해야 합니다.'
+        });
+        return;
+      }
+
+      const statistics = await this.attendanceService.getMonthlyAttendanceStatistics(yearNum, monthNum);
+
+      res.json({
+        success: true,
+        data: statistics
+      });
+    } catch (error) {
+      console.error('월별 출석 통계 조회 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '월별 출석 통계 조회 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    }
+  }
+
+  // 출석 상태별 통계
+  async getAttendanceStatusStatistics(req: Request, res: Response): Promise<void> {
+    try {
+      const statistics = await this.attendanceService.getAttendanceStatusStatistics();
+
+      res.json({
+        success: true,
+        data: statistics
+      });
+    } catch (error) {
+      console.error('출석 상태별 통계 조회 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '출석 상태별 통계 조회 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    }
+  }
+
+  // 지각/조퇴 학생 목록
+  async getStudentsWithAttendanceIssues(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        res.status(400).json({
+          success: false,
+          message: '시작 날짜와 종료 날짜를 모두 제공해야 합니다.'
+        });
+        return;
+      }
+
+      const startTimestamp = admin.firestore.Timestamp.fromDate(new Date(startDate as string));
+      const endTimestamp = admin.firestore.Timestamp.fromDate(new Date(endDate as string));
+      
+      const issues = await this.attendanceService.getStudentsWithAttendanceIssues(startTimestamp, endTimestamp);
+
+      res.json({
+        success: true,
+        data: issues
+      });
+    } catch (error) {
+      console.error('지각/조퇴 학생 목록 조회 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '지각/조퇴 학생 목록 조회 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    }
+  }
+
+  // 일괄 출석 기록 생성
+  async createBulkAttendanceRecords(req: Request, res: Response): Promise<void> {
+    try {
+      const { records } = req.body;
+      
+      if (!Array.isArray(records) || records.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: '출석 기록 배열을 제공해야 합니다.'
+        });
+        return;
+      }
+
+      const attendanceIds = await this.attendanceService.createBulkAttendanceRecords(records);
+
+      res.status(201).json({
+        success: true,
+        message: `${attendanceIds.length}개의 출석 기록이 성공적으로 생성되었습니다.`,
+        data: { ids: attendanceIds }
+      });
+    } catch (error) {
+      console.error('일괄 출석 기록 생성 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '일괄 출석 기록 생성 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    }
+  }
+
+  // 출석 기록 복사
+  async copyAttendanceRecords(req: Request, res: Response): Promise<void> {
+    try {
+      const { sourceDate, targetDate } = req.body;
+      
+      if (!sourceDate || !targetDate) {
+        res.status(400).json({
+          success: false,
+          message: '원본 날짜와 대상 날짜를 모두 제공해야 합니다.'
+        });
+        return;
+      }
+
+      const sourceTimestamp = admin.firestore.Timestamp.fromDate(new Date(sourceDate));
+      const targetTimestamp = admin.firestore.Timestamp.fromDate(new Date(targetDate));
+      
+      const copiedIds = await this.attendanceService.copyAttendanceRecords(sourceTimestamp, targetTimestamp);
+
+      res.json({
+        success: true,
+        message: `${copiedIds.length}개의 출석 기록이 성공적으로 복사되었습니다.`,
+        data: { ids: copiedIds }
+      });
+    } catch (error) {
+      console.error('출석 기록 복사 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '출석 기록 복사 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
     }
   }
 }

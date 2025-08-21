@@ -1,6 +1,24 @@
 export const API_ENDPOINTS = {
   ATTENDANCE: '/api/attendance',
   STUDENTS: '/api/students',
+  SEATS: {
+    GET_ALL: '/api/seats',
+    GET_BY_ID: (seatId: string) => `/api/seats/${seatId}`,
+    GET_BY_STUDENT: (studentId: string) => `/api/seats/student/${studentId}`,
+    GET_STATS: '/api/seats/stats',
+    ASSIGN_STUDENT: '/api/seats/assign',
+    UNASSIGN_STUDENT: '/api/seats/unassign',
+    UPDATE_STATUS: '/api/seats/status',
+    INITIALIZE: '/api/seats/initialize'
+  },
+  ASSIGNMENTS: {
+    GET_ALL: '/api/assignments/all',
+    GET_BY_SEAT: (seatId: string) => `/api/assignments/seat/${seatId}`,
+    GET_BY_STUDENT: (studentId: string) => `/api/assignments/student/${studentId}`,
+    ASSIGN: '/api/assignments/assign',
+    UNASSIGN: '/api/assignments/unassign',
+    SWAP: '/api/assignments/swap'
+  },
   REPORTS: '/api/reports',
   USERS: '/api/users',
   AUTH: '/api/auth'

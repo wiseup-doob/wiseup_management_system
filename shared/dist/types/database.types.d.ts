@@ -1,67 +1,6 @@
-import type { BaseEntity, DateString, TimeString, DateTimeString, DateRange, TimeRange, StudentId, SeatId, AttendanceRecordId, AttendanceStatus } from './common.types';
-export interface Seat extends BaseEntity {
-    seatId: SeatId;
-    seatNumber: number;
-    row: number;
-    col: number;
-    status: AttendanceStatus;
-    lastUpdated: DateTimeString;
-    notes?: string;
-}
-export interface SeatAssignment extends BaseEntity {
-    seatId: SeatId;
-    studentId: StudentId;
-    assignedDate: DateString;
-    assignedBy?: string;
-    notes?: string;
-}
-export interface StudentBasicInfo extends BaseEntity {
-    id: StudentId;
-    name: string;
-    grade: string;
-    className: string;
-    status: 'active' | 'inactive';
-    enrollmentDate: DateString;
-    graduationDate?: DateString;
-    contactInfo?: {
-        phone?: string;
-        email?: string;
-        address?: string;
-    };
-    parentInfo?: {
-        name?: string;
-        phone?: string;
-        email?: string;
-    };
-}
-export interface StudentCurrentStatus {
-    currentAttendance?: AttendanceStatus;
-    lastAttendanceUpdate?: DateTimeString;
-    firstAttendanceDate?: DateString;
-    totalAttendanceDays?: number;
-    averageCheckInTime?: TimeString;
-    averageCheckOutTime?: TimeString;
-}
-export interface Student extends StudentBasicInfo {
-    currentStatus: StudentCurrentStatus;
-}
-export interface AttendanceRecord extends BaseEntity {
-    id: AttendanceRecordId;
-    studentId: StudentId;
-    seatId?: SeatId;
-    date: DateString;
-    status: AttendanceStatus;
-    timestamp: DateTimeString;
-    updatedBy?: string;
-    checkInTime?: TimeString;
-    checkOutTime?: TimeString;
-    totalHours?: number;
-    location?: string;
-    notes?: string;
-    isLate?: boolean;
-    isEarlyLeave?: boolean;
-}
-export interface DailySummary extends BaseEntity {
+import type { DateString, TimeString } from './common.types';
+export interface DailySummary {
+    id: string;
     date: DateString;
     totalStudents: number;
     presentCount: number;
@@ -83,15 +22,16 @@ export interface DailySummary extends BaseEntity {
         };
     };
     seatStats?: {
-        [seatId: SeatId]: {
-            studentId?: StudentId;
-            status: AttendanceStatus;
+        [seatId: string]: {
+            studentId?: string;
+            status: string;
             checkInTime?: TimeString;
             checkOutTime?: TimeString;
         };
     };
 }
-export interface MonthlyReport extends BaseEntity {
+export interface MonthlyReport {
+    id: string;
     year: number;
     month: number;
     totalStudents: number;
@@ -105,7 +45,7 @@ export interface MonthlyReport extends BaseEntity {
         notEnrolled: number;
     };
     studentStats?: {
-        [studentId: StudentId]: {
+        [studentId: string]: {
             totalDays: number;
             presentDays: number;
             attendanceRate: number;
@@ -116,40 +56,17 @@ export interface MonthlyReport extends BaseEntity {
         };
     };
 }
-export interface StudentSearchParams {
-    name?: string;
-    grade?: string;
-    className?: string;
-    status?: 'active' | 'inactive';
-    currentAttendance?: AttendanceStatus;
-    enrollmentDateRange?: DateRange;
-}
-export interface AttendanceSearchParams {
-    studentId?: StudentId;
-    studentName?: string;
-    seatId?: SeatId;
-    date?: DateString;
-    startDate?: DateString;
-    endDate?: DateString;
-    status?: AttendanceStatus;
-    checkInTimeRange?: TimeRange;
-    totalHoursRange?: {
-        min: number;
-        max: number;
-    };
-}
-export interface SeatSearchParams {
-    seatNumber?: number;
-    row?: number;
-    col?: number;
-    studentId?: StudentId;
-    status?: AttendanceStatus;
-    isAssigned?: boolean;
-}
 export declare const COLLECTION_NAMES: {
     readonly STUDENTS: "students";
+    readonly PARENTS: "parents";
+    readonly TEACHERS: "teachers";
+    readonly COURSES: "courses";
+    readonly CLASS_SECTIONS: "class_sections";
+    readonly CLASSROOMS: "classrooms";
     readonly SEATS: "seats";
     readonly SEAT_ASSIGNMENTS: "seat_assignments";
+    readonly STUDENT_TIMETABLES: "student_timetables";
+    readonly STUDENT_SUMMARIES: "student_summaries";
     readonly ATTENDANCE_RECORDS: "attendance_records";
     readonly DAILY_SUMMARIES: "daily_summaries";
     readonly MONTHLY_REPORTS: "monthly_reports";
@@ -158,13 +75,21 @@ export declare const REQUIRED_INDEXES: {
     readonly STUDENTS_BY_NAME: "students/name/Ascending";
     readonly STUDENTS_BY_GRADE: "students/grade/Ascending";
     readonly STUDENTS_BY_CLASS: "students/className/Ascending";
-    readonly STUDENTS_BY_SEAT: "students/seatNumber/Ascending";
     readonly STUDENTS_BY_STATUS: "students/status/Ascending";
     readonly STUDENTS_BY_ENROLLMENT_DATE: "students/enrollmentDate/Descending";
+    readonly PARENTS_BY_NAME: "parents/name/Ascending";
+    readonly PARENTS_BY_PHONE: "parents/phone/Ascending";
+    readonly PARENTS_BY_EMAIL: "parents/email/Ascending";
+    readonly TEACHERS_BY_NAME: "teachers/name/Ascending";
+    readonly TEACHERS_BY_SUBJECT: "teachers/subjects/Ascending";
+    readonly TEACHERS_BY_EMAIL: "teachers/email/Ascending";
+    readonly COURSES_BY_SUBJECT: "courses/subject/Ascending";
+    readonly COURSES_BY_DIFFICULTY: "courses/difficulty/Ascending";
+    readonly CLASS_SECTIONS_BY_TEACHER: "class_sections/teacherId/Ascending";
+    readonly CLASS_SECTIONS_BY_CLASSROOM: "class_sections/classroomId/Ascending";
+    readonly CLASS_SECTIONS_BY_SUBJECT: "class_sections/subject/Ascending";
     readonly SEATS_BY_NUMBER: "seats/seatNumber/Ascending";
-    readonly SEATS_BY_STUDENT: "seats/studentId/Ascending";
     readonly SEATS_BY_STATUS: "seats/status/Ascending";
-    readonly SEATS_BY_ROW_COL: "seats/row/Ascending/col/Ascending";
     readonly SEAT_ASSIGNMENTS_BY_STUDENT: "seat_assignments/studentId/Ascending";
     readonly SEAT_ASSIGNMENTS_BY_SEAT: "seat_assignments/seatId/Ascending";
     readonly SEAT_ASSIGNMENTS_BY_DATE: "seat_assignments/assignedDate/Descending";

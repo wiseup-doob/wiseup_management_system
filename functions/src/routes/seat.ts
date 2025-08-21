@@ -1,70 +1,55 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { container } from '../config/container';
+import { Router } from 'express';
 import { SeatController } from '../controllers/SeatController';
 
-// Express Router 생성
 const router = Router();
+const seatController = new SeatController();
 
-// 컨트롤러 해결 함수
-const getSeatController = (): SeatController => {
-  return container.resolve<SeatController>('SeatController');
-};
+// 좌석 생성
+router.post('/', (req, res) => seatController.createSeat(req, res));
 
-// 에러 핸들링 래퍼
-const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-};
+// 좌석 조회 (ID로)
+router.get('/:id', (req, res) => seatController.getSeatById(req, res));
 
-// ===== 좌석 관리 라우트 =====
+// 좌석 수정
+router.put('/:id', (req, res) => seatController.updateSeat(req, res));
 
-// GET / - 좌석 목록 조회
-router.get('/', asyncHandler(async (req: Request, res: Response) => {
-  console.log('getAllSeats 함수 호출됨');
-  await getSeatController().getAllSeats(req, res);
-}));
+// 좌석 삭제
+router.delete('/:id', (req, res) => seatController.deleteSeat(req, res));
 
-// GET /stats - 좌석 통계 조회
-router.get('/stats', asyncHandler(async (req: Request, res: Response) => {
-  console.log('getSeatStats 함수 호출됨');
-  await getSeatController().getSeatStats(req, res);
-}));
+// 모든 좌석 조회
+router.get('/', (req, res) => seatController.getAllSeats(req, res));
 
-// GET /:seatId - 특정 좌석 조회
+// 활성 좌석만 조회
+router.get('/status/active', (req, res) => seatController.getActiveSeats(req, res));
 
-router.get('/:seatId', asyncHandler(async (req: Request, res: Response) => {
-  console.log('getSeatById 함수 호출됨');
-  await getSeatController().getSeatById(req, res);
-}));
+// 사용 가능한 좌석만 조회
+router.get('/status/available', (req, res) => seatController.getAvailableSeats(req, res));
 
-// PUT /status - 좌석 상태 업데이트
-router.put('/status', asyncHandler(async (req: Request, res: Response) => {
-  console.log('updateSeatStatus 함수 호출됨');
-  await getSeatController().updateSeatStatus(req, res);
-}));
+// 좌석 번호별로 정렬된 조회
+router.get('/order/by-number', (req, res) => seatController.getSeatsByNumber(req, res));
 
-// POST /swap - 좌석 배치(번호) 교환
-router.post('/swap', asyncHandler(async (req: Request, res: Response) => {
-  await getSeatController().swapSeatPositions(req, res);
-}));
+// 상태별 좌석 조회
+router.get('/status/:status', (req, res) => seatController.getSeatsByStatus(req, res));
 
-// GET /health - 좌석 데이터 헬스체크
-router.get('/health', asyncHandler(async (req: Request, res: Response) => {
-  await getSeatController().checkSeatHealth(req, res);
-}));
+// 좌석 검색
+router.get('/search/query', (req, res) => seatController.searchSeats(req, res));
 
-// POST /repair - 좌석 데이터 자동 복구
-router.post('/repair', asyncHandler(async (req: Request, res: Response) => {
-  await getSeatController().autoRepairSeats(req, res);
-}));
+// 좌석 통계 조회
+router.get('/stats/overview', (req, res) => seatController.getSeatStatistics(req, res));
 
-// ===== 초기화 라우트 =====
+// 좌석 상태 변경
+router.patch('/:id/status', (req, res) => seatController.updateSeatStatus(req, res));
 
-// POST /initialize - 좌석 데이터 초기화
-router.post('/initialize', asyncHandler(async (req: Request, res: Response) => {
-  console.log('initializeSeats 함수 호출됨');
-  await getSeatController().initializeSeats(req, res);
-}));
+// 좌석 활성화/비활성화
+router.patch('/:id/active', (req, res) => seatController.toggleSeatActive(req, res));
 
-export const seatRouter: Router = router;
+// 다음 사용 가능한 좌석 번호 찾기
+router.get('/next/available-number', (req, res) => seatController.getNextAvailableSeatNumber(req, res));
+
+// 좌석 일괄 생성
+router.post('/batch/create', (req, res) => seatController.createMultipleSeats(req, res));
+
+// 좌석 일괄 비활성화
+router.post('/batch/deactivate', (req, res) => seatController.deactivateMultipleSeats(req, res));
+
+export { router as seatRoutes };

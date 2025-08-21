@@ -25,33 +25,61 @@
 }
 
 .seat-student-name {
-  font-size: 0.9rem;
-  line-height: 1.2;
+  font-size: var(--body-large-font-size);
+  font-weight: var(--body-large-font-weight);
+  line-height: var(--body-large-line-height);
   word-break: keep-all;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  color: white;
-  font-weight: 600;
+  color: var(--color-font-primary);
 }
 
 /* 출석 상태별 기본 색깔 (JavaScript에서 동적으로 설정됨) */
 .seat-button[data-status="present"] {
-  background-color: var(--color-present);
+  background-color: var(--color-present-button-bg);
+  color:var(--color-present-button-font);
 }
 
 .seat-button[data-status="dismissed"] {
-  background-color: var(--color-dismissed);
+  background-color: var(--color-dismissed-button-bg);
+  color:var(--color-dismissed-button-font);
 }
 
 .seat-button[data-status="unauthorized_absent"] {
-  background-color: var(--color-unauthorized-absent);
+  background-color: var(--color-unauthorized-button-bg);
+  color:var(--color-unauthorized-button-font);
 }
 
 .seat-button[data-status="authorized_absent"] {
-  background-color: var(--color-authorized-absent);
+  background-color: var(--color-authorized-button-bg);
+  color:var(--color-authorized-button-font);
+}
+
+/* 할당되지 않은 좌석 스타일 */
+.seat-button.unassigned-seat {
+  background-color: #f8f9fa !important;
+  color: #6c757d !important;
+  border: 2px dashed #dee2e6;
+  cursor: not-allowed;
+}
+
+.seat-button.unassigned-seat:hover {
+  transform: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 비활성화된 좌석 스타일 */
+.seat-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.seat-button:disabled:hover {
+  transform: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* 반응형 디자인 */

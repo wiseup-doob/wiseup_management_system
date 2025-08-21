@@ -7,15 +7,11 @@ import { BaseTab } from '../../base/BaseTab'
 import { AttendanceCalendar } from '../attendance/AttendanceCalendar'
 import { AttendanceHorizontalTimeline } from '../attendance/AttendanceHorizontalTimeline'
 import type { Student, AttendanceRecord, AttendanceStatus } from '@shared/types'
-import type { AttendanceRecord as DatabaseAttendanceRecord } from '@shared/types/database.types'
+// import type { AttendanceRecord as DatabaseAttendanceRecord } from '@shared/types/database.types'
 import type { BaseWidgetProps } from '../../../types/components'
 import type { AttendanceTimelineItem } from '@shared/types/attendance.types'
-import { ATTENDANCE_STATUS_STYLES, DEFAULT_ATTENDANCE_ACTIVITIES } from '@shared/types/attendance.types'
+import { ATTENDANCE_STATUS_STYLES, DEFAULT_ATTENDANCE_ACTIVITIES } from '@shared/constants'
 import { apiService } from '../../../services/api'
-import { timetableService } from '../../../services/timetableService'
-import { TimeTable } from '../../business/timetable/TimeTable'
-import type { TimetableBlock } from '@shared/types/timetable.types'
-import type { TimetableItem, TimeSlot, Class, Teacher } from '@shared/types'
 import './StudentInfoPanel.css'
 
 export interface StudentInfoPanelProps extends BaseWidgetProps {
@@ -42,23 +38,21 @@ export const StudentInfoPanel = forwardRef<HTMLDivElement, StudentInfoPanelProps
     const [timelineItems, setTimelineItems] = useState<AttendanceTimelineItem[]>([])
     const [loading, setLoading] = useState<boolean>(false)
     const [error, setError] = useState<string | null>(null)
-    // 시간표 전용 상태
-    const [ttLoading, setTtLoading] = useState<boolean>(false)
-    const [ttError, setTtError] = useState<string | null>(null)
-    const [timetableId, setTimetableId] = useState<string | null>(null)
-    const [ttBlocks, setTtBlocks] = useState<TimetableBlock[]>([])
     
     console.log('=== StudentInfoPanel 렌더링 ===')
     console.log('isOpen:', isOpen)
     console.log('student:', student)
     console.log('패널 표시 여부:', isOpen && student)
+
+    // 닫기 핸들러 - 즉시 닫기
+    const handleClose = () => {
+      onClose()
+    }
     
     // 학생이 변경될 때마다 출결 데이터 로드
     useEffect(() => {
       if (student) {
         loadStudentAttendanceData(student)
-        // 시간표 탭 데이터도 동시 준비(탭 전환 시 지연 없도록 선로딩)
-        ensureAndLoadStudentTimetable(student.id)
       }
     }, [student])
 
@@ -88,79 +82,15 @@ export const StudentInfoPanel = forwardRef<HTMLDivElement, StudentInfoPanelProps
         }
       } catch (error) {
         console.error('❌ 출석 데이터 로드 오류:', error)
-        setError('출석 데이터를 불러오는데 실패했습니다.')
-        console.log('📝 오류로 인해 빈 배열로 설정합니다.')
-        // 오류 시 빈 배열로 설정
+        console.log('📝 오류로 인해 빈 배열로 설정하고 기본 정보만 표시합니다.')
+        // 오류 시에도 기본 정보는 표시하도록 빈 배열로 설정
         setAttendanceRecords([])
+        setError(null) // 오류 메시지 제거하여 기본 정보 표시
       } finally {
         setLoading(false)
       }
     }
 
-    // ===== 시간표 탭: 학생 개인 시간표 보장 및 로드 =====
-    const ensureAndLoadStudentTimetable = async (studentId: string) => {
-      if (!studentId) return
-      setTtLoading(true)
-      setTtError(null)
-      try {
-        // 1) 개인 시간표 보장
-        const ensured = await timetableService.ensureStudentTimetable(studentId)
-        if (!ensured.success || !ensured.data) throw new Error(ensured.error || '개인 시간표 보장 실패')
-        const ttId = (ensured.data as any).id as string
-        setTimetableId(ttId)
-
-        // 2) 마스터 데이터와 항목 병렬 로드
-        const [slotsRes, classesRes, teachersRes, itemsRes] = await Promise.all([
-          timetableService.getAllTimeSlots(),
-          timetableService.getAllClasses(),
-          timetableService.getAllTeachers(),
-          timetableService.getTimetableItems(ttId)
-        ])
-
-        const timeSlots: TimeSlot[] = slotsRes.success && slotsRes.data ? (slotsRes.data as any) : []
-        const classes: Class[] = classesRes.success && classesRes.data ? (classesRes.data as any) : []
-        const teachers: Teacher[] = teachersRes.success && teachersRes.data ? (teachersRes.data as any) : []
-        const items: TimetableItem[] = itemsRes.success && itemsRes.data ? (itemsRes.data as any) : []
-
-        const findSlot = (id: string) => timeSlots.find(s => (s as any).id === id)
-        const findClass = (id: string) => classes.find(c => (c as any).id === id)
-        const findTeacher = (id: string) => teachers.find(t => (t as any).id === id)
-
-        const blocks: TimetableBlock[] = items.map(item => {
-          const cls = findClass(item.classId)
-          const tch = findTeacher(item.teacherId)
-          const slot = findSlot(item.timeSlotId)
-          // 기본 시간 파싱: 슬롯 기반, 없으면 notes에서 09:00-10:00 패턴 탐색, 최종 기본값
-          let startTime = (slot as any)?.startTime || '09:00'
-          let endTime = (slot as any)?.endTime || '10:00'
-          if (item.notes) {
-            const m = item.notes.match(/(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})/)
-            if (m) {
-              const sH = m[1].padStart(2,'0'); const sM = m[2];
-              const eH = m[3].padStart(2,'0'); const eM = m[4];
-              startTime = `${sH}:${sM}`; endTime = `${eH}:${eM}`
-            }
-          }
-          const title = `${cls?.name || '수업'}${tch ? ` (${tch.name})` : ''}`
-          return {
-            id: item.id,
-            title,
-            dayOfWeek: item.dayOfWeek,
-            startTime,
-            endTime,
-            notes: item.notes,
-            type: 'class'
-          }
-        })
-        setTtBlocks(blocks)
-      } catch (e: any) {
-        console.error('학생 시간표 로드 실패', e)
-        setTtError(e?.message || '학생 시간표를 불러오지 못했습니다.')
-        setTtBlocks([])
-      } finally {
-        setTtLoading(false)
-      }
-    }
     // 타임라인 데이터 생성
     const generateTimelineData = (): AttendanceTimelineItem[] => {
       const items: AttendanceTimelineItem[] = []
@@ -342,7 +272,7 @@ export const StudentInfoPanel = forwardRef<HTMLDivElement, StudentInfoPanelProps
             </div>
           </div>
           
-          <button className="close-button" onClick={onClose}>
+          <button className="close-button" onClick={handleClose}>
             ✕
           </button>
         </div>
@@ -359,29 +289,7 @@ export const StudentInfoPanel = forwardRef<HTMLDivElement, StudentInfoPanelProps
                 label: '시간표',
                 content: (
                   <div className="timetable-section">
-                    {ttLoading ? (
-                      <div className="timetable-placeholder"><p>시간표 데이터를 불러오는 중...</p></div>
-                    ) : ttError ? (
-                      <div className="timetable-placeholder"><p style={{ color: 'red' }}>{ttError}</p></div>
-                    ) : (
-                      <TimeTable
-                        blocks={ttBlocks}
-                        eventHandlers={{
-                          onCellClick: (cell) => {
-                            if (!student?.id || !timetableId) return
-                            navigate('/timetable/edit', { state: { studentId: student.id, timetableId, seed: cell } })
-                          },
-                          onBlockClick: () => {}
-                        }}
-                        options={{
-                          responsive: true,
-                          startTime: '09:00' as any,
-                          endTime: '23:00' as any,
-                          slotMinutes: 60
-                        }}
-                        className="student-timetable"
-                      />
-                    )}
+                    <div className="timetable-placeholder"><p>시간표 기능은 현재 개발 중입니다.</p></div>
                   </div>
                 )
               },

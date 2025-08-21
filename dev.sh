@@ -103,8 +103,8 @@ firebase emulators:start --only functions,firestore,ui --project wiseupmanagemen
 FIREBASE_PID=$!
 
 # Emulator 시작 대기 (시간 감소)
-echo -e "${YELLOW}⏳ Firebase Emulator 시작 대기 중... (15초)${NC}"
-sleep 15
+echo -e "${YELLOW}⏳ Firebase Emulator 시작 대기 중... (5초)${NC}"
+sleep 5
 
 # Emulator 상태 확인 (더 정확한 확인)
 echo -e "${BLUE}🔍 [7/8] Emulator 상태 확인...${NC}"

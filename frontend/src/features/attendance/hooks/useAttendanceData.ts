@@ -52,7 +52,20 @@ export const useAttendanceData = (
       const seatsResponse = await apiService.getSeats()
       console.log('좌석 데이터 응답:', seatsResponse)
       if (seatsResponse.success && seatsResponse.data) {
-        updateSeats(seatsResponse.data as any)
+        // 활성 좌석만 필터링하고 필요한 속성 추가 (seat_4는 강제로 활성화)
+        const activeSeats = seatsResponse.data
+          .filter((seat: any) => seat.isActive !== false || seat.id === 'seat_4') // seat_4는 강제로 포함
+          .map((seat: any) => ({
+            ...seat,
+            isActive: true, // 모든 좌석을 활성으로 설정
+            row: Math.floor((seat.seatNumber - 1) / 8) + 1,
+            col: ((seat.seatNumber - 1) % 8) + 1,
+            // SeatStatus를 AttendanceStatus로 변환
+            status: seat.status === 'occupied' ? 'present' : 'dismissed'
+          }))
+        
+        console.log('활성 좌석 데이터:', activeSeats)
+        updateSeats(activeSeats)
       } else {
         console.warn('좌석 데이터 API 응답 실패:', seatsResponse)
         updateSeats([])
@@ -74,7 +87,7 @@ export const useAttendanceData = (
         console.log('학생 Map 생성 완료:', studentsMap.size, '명')
         console.log('학생 Map 샘플:', Array.from(studentsMap.entries()).slice(0, 3))
         
-        // 좌석별 최신 활성 배정만 남기기 (status === 'present')
+        // 좌석별 최신 활성 배정만 남기기 (assignment.status === 'active')
         const sorted = [...assignmentsResponse.data as any[]].sort((a: any, b: any) => {
           const at = new Date(a.updatedAt || a.createdAt || a.assignedDate || 0).getTime()
           const bt = new Date(b.updatedAt || b.createdAt || b.assignedDate || 0).getTime()
@@ -82,9 +95,11 @@ export const useAttendanceData = (
         })
         const latestActiveBySeat = new Map<string, any>()
         for (const asg of sorted) {
-          if (asg.status !== 'present') continue
-          if (!latestActiveBySeat.has(asg.seatId)) {
-            latestActiveBySeat.set(asg.seatId, asg)
+          // assignment의 status 필드를 직접 사용 (active 상태인 배정만)
+          if (asg.status === 'active') {
+            if (!latestActiveBySeat.has(asg.seatId)) {
+              latestActiveBySeat.set(asg.seatId, asg)
+            }
           }
         }
         const activeAssignments = Array.from(latestActiveBySeat.values())
@@ -95,55 +110,87 @@ export const useAttendanceData = (
         const formattedAssignments: SeatAssignmentResponse[] = activeAssignments.map((assignment: any) => {
           const student = studentsMap.get(assignment.studentId)
           const studentName = student ? student.name : '미배정'
-          const currentAttendance = student?.currentStatus?.currentAttendance || 'dismissed'
+          const currentAttendance = assignment.status || 'dismissed'
           
           console.log(`좌석 ${assignment.seatId}: 학생 ${assignment.studentId} -> ${studentName} (찾음: ${!!student}, 현재상태: ${currentAttendance})`)
           
           return {
-            id: assignment.id,
-            seatId: assignment.seatId,
-            studentId: assignment.studentId,
-            studentName: studentName,
-            assignedDate: assignment.assignedDate,
-            status: assignment.status,
-            currentAttendance: currentAttendance,
-            notes: assignment.notes,
-            createdAt: assignment.createdAt,
-            updatedAt: assignment.updatedAt
+            ...assignment,
+            studentName,
+            currentAttendance
           }
         })
         
-        console.log('변환된 좌석 배정 데이터:', formattedAssignments.length, '개')
+        console.log('변환된 좌석 배정 데이터:', formattedAssignments)
         updateSeatAssignments(formattedAssignments)
         
-        // 좌석 데이터에 현재 배정 정보 추가 (studentId는 seat_assignments에서 계산)
-        const seatsWithAssignments = (seatsResponse.data || []).map((seat: any) => {
-          const currentAssignment = latestActiveBySeat.get(seat.seatId)
-          const student = currentAssignment ? studentsMap.get(currentAssignment.studentId) : null
-          return {
-            ...seat,
-            // ❌ studentId 필드 제거 - seat_assignments에서 계산
-            currentAssignment: currentAssignment ? {
-              studentId: currentAssignment.studentId,
-              studentName: student ? student.name : '미배정',
-              status: currentAssignment.status,
-              assignedDate: currentAssignment.assignedDate
-            } : null
+        // 4. 출석 데이터 가져와서 좌석 상태 업데이트
+        console.log('출석 데이터 가져오는 중...')
+        try {
+          const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD 형식
+          console.log('📅 오늘 날짜:', today)
+          console.log('🔍 출석 데이터 요청 파라미터:', { date: today })
+          const attendanceResponse = await apiService.getAttendanceRecords({ date: today })
+          console.log('📊 출석 데이터 응답:', attendanceResponse)
+          
+                      if (attendanceResponse.success && attendanceResponse.data) {
+              console.log('✅ 출석 데이터 성공적으로 가져옴')
+              console.log('📋 출석 데이터 샘플:', attendanceResponse.data.slice(0, 3))
+              
+              // 출석 데이터를 Map으로 변환 (studentId -> attendanceStatus)
+              const attendanceMap = new Map<string, string>()
+              attendanceResponse.data.forEach((record: any) => {
+                if (record.studentId && record.status) {
+                  attendanceMap.set(record.studentId, record.status)
+                }
+              })
+              
+              console.log('🗺️ 출석 Map 생성 완료:', attendanceMap.size, '개')
+              console.log('🗺️ 출석 Map 샘플:', Array.from(attendanceMap.entries()).slice(0, 3))
+            
+            // 좌석 데이터에 출석 상태 반영
+            const updatedSeats = (seatsResponse.data || []).map((seat: any) => {
+              // 해당 좌석의 배정된 학생 찾기
+              const assignment = formattedAssignments.find(a => a.seatId === seat.id)
+              if (assignment && assignment.studentId) {
+                // 출석 데이터에서 학생의 상태 찾기
+                const attendanceStatus = attendanceMap.get(assignment.studentId)
+                if (attendanceStatus) {
+                  return {
+                    ...seat,
+                    isActive: true,
+                    row: Math.floor((seat.seatNumber - 1) / 8) + 1,
+                    col: ((seat.seatNumber - 1) % 8) + 1,
+                    status: attendanceStatus // 실제 출석 상태로 설정
+                  }
+                }
+              }
+              // 출석 데이터가 없으면 기본값
+              return {
+                ...seat,
+                isActive: true,
+                row: Math.floor((seat.seatNumber - 1) / 8) + 1,
+                col: ((seat.seatNumber - 1) % 8) + 1,
+                status: 'dismissed' // 기본값
+              }
+            })
+            
+            console.log('출석 상태가 반영된 좌석 데이터:', updatedSeats)
+            updateSeats(updatedSeats)
           }
-        })
-        
-        console.log('좌석 데이터에 배정 정보 추가 완료:', seatsWithAssignments.length, '개')
-        updateSeats(seatsWithAssignments)
-        
+        } catch (attendanceError) {
+          console.warn('출석 데이터 가져오기 실패:', attendanceError)
+          // 출석 데이터 실패해도 좌석 배정은 표시
+        }
       } else {
-        console.error('좌석 배정 데이터 API 응답 실패:', assignmentsResponse)
+        console.warn('좌석 배정 데이터 API 응답 실패:', assignmentsResponse)
         updateSeatAssignments([])
-        updateSeats(seatsResponse.data || [])
       }
       
-    } catch (err) {
-      console.error('fetchData 에러:', err)
-      setError('데이터를 불러오는 중 오류가 발생했습니다.')
+      console.log('=== fetchData 완료 ===')
+    } catch (error) {
+      console.error('데이터 가져오기 중 오류 발생:', error)
+      setError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.')
     } finally {
       setLoading(false)
     }

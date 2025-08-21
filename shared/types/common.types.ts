@@ -1,9 +1,46 @@
+// ===== Firebase Timestamp 타입 =====
+// TODO: firebase-admin/firestore 모듈이 설치되면 실제 Timestamp 타입 사용
+// import { Timestamp } from 'firebase-admin/firestore';
+
+// Firebase Timestamp 타입 (백엔드 전용)
+export type FirestoreTimestamp = any; // 임시로 any 사용
+
 // ===== 기본 엔티티 타입 =====
 export interface BaseEntity {
   id: string;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt?: FirestoreTimestamp;  // DateTimeString → FirestoreTimestamp
+  updatedAt?: FirestoreTimestamp;  // DateTimeString → FirestoreTimestamp
 }
+
+// ===== 공통 도메인 타입들 =====
+
+// 과목 타입
+export type SubjectType = 
+  | 'mathematics'      // 수학
+  | 'english'          // 영어
+  | 'korean'           // 국어
+  | 'other';           // 기타
+
+// 난이도 레벨
+export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
+
+// 출석 상태
+export type AttendanceStatus = 
+  | 'present'              // 등원
+  | 'dismissed'            // 하원
+  | 'unauthorized_absent'  // 무단결석
+  | 'authorized_absent'    // 사유결석
+  | 'not_enrolled';        // 미등록
+
+// 요일 타입
+export type DayOfWeek = 
+  | 'monday'      // 월요일
+  | 'tuesday'     // 화요일
+  | 'wednesday'   // 수요일
+  | 'thursday'    // 목요일
+  | 'friday'      // 금요일
+  | 'saturday'    // 토요일
+  | 'sunday';     // 일요일
 
 // ===== ID 타입 정의 =====
 
@@ -47,14 +84,6 @@ export interface IdGenerator {
 // 기본 엔티티 상태
 export type EntityStatus = 'active' | 'inactive';
 
-// 출석 상태
-export type AttendanceStatus = 
-  | 'present'              // 등원
-  | 'dismissed'            // 하원
-  | 'unauthorized_absent'  // 무단결석
-  | 'authorized_absent'    // 사유결석
-  | 'not_enrolled';        // 미등록
-
 // 수업 상태
 export type ClassStatus = 
   | 'scheduled'        // 예정
@@ -95,8 +124,11 @@ export type DateString = string; // "2024-01-15"
 // 시간 형식 (HH:MM)
 export type TimeString = string; // "09:30"
 
-// 날짜시간 형식 (ISO 8601)
+// 날짜시간 형식 (ISO 8601) - 프론트엔드 호환성을 위해 유지
 export type DateTimeString = string; // "2024-01-15T09:30:00.000Z"
+
+// Firebase Timestamp를 위한 별칭 (백엔드에서 주로 사용)
+export type Timestamp = FirestoreTimestamp;
 
 // 날짜 범위
 export interface DateRange {
@@ -108,6 +140,32 @@ export interface DateRange {
 export interface TimeRange {
   start: TimeString;
   end: TimeString;
+}
+
+// ===== Timestamp 유틸리티 타입 =====
+
+// Timestamp 변환 유틸리티 인터페이스
+export interface TimestampUtils {
+  // 현재 시간
+  now(): FirestoreTimestamp;
+  
+  // Date 객체를 Timestamp로 변환
+  fromDate(date: Date): FirestoreTimestamp;
+  
+  // ISO 문자열을 Timestamp로 변환
+  fromISOString(isoString: string): FirestoreTimestamp;
+  
+  // Timestamp를 Date로 변환
+  toDate(timestamp: FirestoreTimestamp): Date;
+  
+  // Timestamp를 ISO 문자열로 변환
+  toISOString(timestamp: FirestoreTimestamp): string;
+  
+  // Unix timestamp (초)를 Timestamp로 변환
+  fromSeconds(seconds: number): FirestoreTimestamp;
+  
+  // Unix timestamp (밀리초)를 Timestamp로 변환
+  fromMillis(millis: number): FirestoreTimestamp;
 }
 
 // ===== API 응답 타입 =====

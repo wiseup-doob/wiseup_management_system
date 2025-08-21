@@ -1,319 +1,426 @@
-import { BaseController } from './BaseController';
-import { SeatAssignmentService, AssignStudentRequest, UnassignStudentRequest } from '../services/assignment/SeatAssignmentService';
+import { Request, Response } from 'express';
+import { SeatAssignmentService } from '../services/SeatAssignmentService';
 import type { 
-  ApiResponse
+  CreateSeatAssignmentRequest, 
+  UpdateSeatAssignmentRequest, 
+  SeatAssignmentSearchParams 
 } from '@shared/types';
-import { 
-  AppError, 
-  ERROR_CODES, 
-  createErrorResponse, 
-  logError 
-} from '@shared/utils/error.utils';
 
-export class SeatAssignmentController extends BaseController {
-  constructor(
-    private seatAssignmentService: SeatAssignmentService
-  ) {
-    super();
+export class SeatAssignmentController {
+  private seatAssignmentService: SeatAssignmentService;
+
+  constructor() {
+    this.seatAssignmentService = new SeatAssignmentService();
   }
 
-  /**
-   * 학생을 좌석에 배정
-   */
-  async assignStudentToSeat(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    
+  // 좌석 배정 생성
+  async createSeatAssignment(req: Request, res: Response): Promise<void> {
     try {
-      const { seatId, studentId, assignedBy, notes } = request.body;
-      
-      if (!seatId || !studentId) {
-        const appError = AppError.badRequest(ERROR_CODES.INVALID_INPUT, '좌석 ID와 학생 ID는 필수입니다.');
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
+      const data: CreateSeatAssignmentRequest = req.body;
+
+      // 필수 필드 검증
+      if (!data.seatId || !data.studentId || !data.assignedDate) {
+        res.status(400).json({ 
+          error: '필수 필드가 누락되었습니다. seatId, studentId, assignedDate는 필수입니다.' 
+        });
         return;
       }
 
-      const assignRequest: AssignStudentRequest = {
-        seatId,
-        studentId,
-        assignedBy,
-        notes
-      };
-
-      const assignment = await this.seatAssignmentService.assignStudentToSeat(assignRequest);
+      const assignmentId = await this.seatAssignmentService.createSeatAssignmentWithValidation(data);
       
-      const apiResponse: ApiResponse<any> = {
-        success: true,
-        data: assignment,
-        message: '학생이 좌석에 성공적으로 배정되었습니다.',
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId
-        }
-      };
-      
-      response.json(apiResponse);
-    } catch (error) {
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, '학생 좌석 배정 중 오류가 발생했습니다.', error, requestId);
-      logError(appError, { component: 'SeatAssignmentController', action: 'assignStudentToSeat' });
-      
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
-    }
-  }
-
-  /**
-   * 좌석에서 학생 배정 해제
-   */
-  async unassignStudentFromSeat(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    
-    try {
-      console.log('🔍 unassignStudentFromSeat 시작:', { requestId, body: request.body });
-      
-      const { seatId, studentId, unassignedBy, notes } = request.body;
-      
-      // studentId도 필수로 검증
-      if (!seatId || !studentId) {
-        const appError = AppError.badRequest(ERROR_CODES.INVALID_INPUT, '좌석 ID와 학생 ID는 필수입니다.');
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
-        return;
-      }
-
-      console.log('📋 요청 데이터 검증 완료:', { seatId, studentId, unassignedBy, notes });
-
-      const unassignRequest: UnassignStudentRequest = {
-        seatId,
-        studentId,  // studentId 추가
-        unassignedBy,
-        notes
-      };
-
-      console.log('🚀 SeatAssignmentService 호출 시작');
-      const result = await this.seatAssignmentService.unassignStudentFromSeat(unassignRequest);
-      console.log('✅ SeatAssignmentService 호출 완료:', result);
-      
-      const apiResponse: ApiResponse<any> = {
-        success: true,
-        data: { 
-          success: result,
-          seatId: request.seatId,
-          studentId: request.studentId,
-          action: 'unassigned'
-        },
-        message: `학생 ${request.studentId}의 좌석 ${request.seatId} 배정이 성공적으로 해제되었습니다.`,
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId
-        }
-      };
-      
-      console.log('📤 응답 전송:', apiResponse);
-      response.json(apiResponse);
-    } catch (error) {
-      console.error('❌ unassignStudentFromSeat 오류 발생:', {
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-        requestId,
-        body: request.body,
-        errorType: error instanceof Error ? error.constructor.name : typeof error
+      res.status(201).json({ 
+        message: '좌석 배정이 성공적으로 생성되었습니다.',
+        assignmentId 
       });
+    } catch (error) {
+      console.error('좌석 배정 생성 오류:', error);
       
-      // 구체적인 에러 메시지 추출
-      let errorMessage = '학생 좌석 배정 해제 중 오류가 발생했습니다.';
       if (error instanceof Error) {
-        errorMessage = error.message;
+        if (error.message.includes('이미 배정되어 있습니다')) {
+          res.status(409).json({ error: error.message });
+          return;
+        }
       }
       
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, errorMessage, error, requestId);
-      logError(appError, { component: 'SeatAssignmentController', action: 'unassignStudentFromSeat' });
-      
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
+      res.status(500).json({ 
+        error: '좌석 배정 생성 중 오류가 발생했습니다.' 
+      });
     }
   }
 
-  /**
-   * 학생들을 좌석에 일괄 배정
-   */
-  async bulkAssignStudents(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    
+  // 좌석 배정 조회 (ID로)
+  async getSeatAssignmentById(req: Request, res: Response): Promise<void> {
     try {
-      const { studentIds } = request.body;
+      const { id } = req.params;
       
-      if (!studentIds || !Array.isArray(studentIds)) {
-        const appError = AppError.badRequest(ERROR_CODES.INVALID_INPUT, '학생 ID 배열은 필수입니다.');
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
+      if (!id) {
+        res.status(400).json({ error: '좌석 배정 ID가 필요합니다.' });
         return;
       }
 
-      const assignments = await this.seatAssignmentService.bulkAssignStudents(studentIds);
+      const assignment = await this.seatAssignmentService.getSeatAssignmentById(id);
       
-      const apiResponse: ApiResponse<any> = {
-        success: true,
-        data: {
-          assignments,
-          count: assignments.length
-        },
-        message: `${assignments.length}명의 학생이 좌석에 성공적으로 배정되었습니다.`,
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId
-        }
-      };
-      
-      response.json(apiResponse);
+      if (!assignment) {
+        res.status(404).json({ error: '해당 좌석 배정을 찾을 수 없습니다.' });
+        return;
+      }
+
+      res.status(200).json(assignment);
     } catch (error) {
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, '학생 일괄 좌석 배정 중 오류가 발생했습니다.', error, requestId);
-      logError(appError, { component: 'SeatAssignmentController', action: 'bulkAssignStudents' });
-      
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
+      console.error('좌석 배정 조회 오류:', error);
+      res.status(500).json({ 
+        error: '좌석 배정 조회 중 오류가 발생했습니다.' 
+      });
     }
   }
 
-  /**
-   * 좌석 ID로 배정 정보 조회
-   */
-  async getAssignmentBySeatId(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    
+  // 좌석 배정 수정
+  async updateSeatAssignment(req: Request, res: Response): Promise<void> {
     try {
-      const { seatId } = request.params;
+      const { id } = req.params;
+      const data: UpdateSeatAssignmentRequest = req.body;
+      
+      if (!id) {
+        res.status(400).json({ error: '좌석 배정 ID가 필요합니다.' });
+        return;
+      }
+
+      // 기존 좌석 배정 확인
+      const existingAssignment = await this.seatAssignmentService.getSeatAssignmentById(id);
+      if (!existingAssignment) {
+        res.status(404).json({ error: '해당 좌석 배정을 찾을 수 없습니다.' });
+        return;
+      }
+
+      await this.seatAssignmentService.updateSeatAssignmentWithValidation(id, data);
+      
+      res.status(200).json({ 
+        message: '좌석 배정이 성공적으로 수정되었습니다.' 
+      });
+    } catch (error) {
+      console.error('좌석 배정 수정 오류:', error);
+      
+      if (error instanceof Error) {
+        if (error.message.includes('이미 배정되어 있습니다')) {
+          res.status(409).json({ error: error.message });
+          return;
+        }
+      }
+      
+      res.status(500).json({ 
+        error: '좌석 배정 수정 중 오류가 발생했습니다.' 
+      });
+    }
+  }
+
+  // 좌석 배정 삭제
+  async deleteSeatAssignment(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      
+      if (!id) {
+        res.status(400).json({ error: '좌석 배정 ID가 필요합니다.' });
+        return;
+      }
+
+      // 기존 좌석 배정 확인
+      const existingAssignment = await this.seatAssignmentService.getSeatAssignmentById(id);
+      if (!existingAssignment) {
+        res.status(404).json({ error: '해당 좌석 배정을 찾을 수 없습니다.' });
+        return;
+      }
+
+      await this.seatAssignmentService.deleteSeatAssignment(id);
+      
+      res.status(200).json({ 
+        message: '좌석 배정이 성공적으로 삭제되었습니다.' 
+      });
+    } catch (error) {
+      console.error('좌석 배정 삭제 오류:', error);
+      res.status(500).json({ 
+        error: '좌석 배정 삭제 중 오류가 발생했습니다.' 
+      });
+    }
+  }
+
+  // 모든 좌석 배정 조회
+  async getAllSeatAssignments(req: Request, res: Response): Promise<void> {
+    try {
+      const assignments = await this.seatAssignmentService.getAllSeatAssignments();
+      res.status(200).json(assignments);
+    } catch (error) {
+      console.error('좌석 배정 조회 오류:', error);
+      res.status(500).json({ 
+        error: '좌석 배정 조회 중 오류가 발생했습니다.' 
+      });
+    }
+  }
+
+  // 활성 좌석 배정만 조회
+  async getActiveSeatAssignments(req: Request, res: Response): Promise<void> {
+    try {
+      const assignments = await this.seatAssignmentService.getActiveSeatAssignments();
+      res.status(200).json(assignments);
+    } catch (error) {
+      console.error('활성 좌석 배정 조회 오류:', error);
+      res.status(500).json({ 
+        error: '활성 좌석 배정 조회 중 오류가 발생했습니다.' 
+      });
+    }
+  }
+
+  // 특정 좌석의 배정 조회
+  async getSeatAssignmentsBySeatId(req: Request, res: Response): Promise<void> {
+    try {
+      const { seatId } = req.params;
       
       if (!seatId) {
-        const appError = AppError.badRequest(ERROR_CODES.INVALID_INPUT, '좌석 ID는 필수입니다.');
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
+        res.status(400).json({ error: '좌석 ID가 필요합니다.' });
         return;
       }
 
-      const assignment = await this.seatAssignmentService.getAssignmentBySeatId(seatId);
-      
-      const apiResponse: ApiResponse<any> = {
-        success: true,
-        data: assignment,
-        message: assignment ? '배정 정보를 성공적으로 조회했습니다.' : '배정된 학생이 없습니다.',
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId
-        }
-      };
-      
-      response.json(apiResponse);
+      const assignments = await this.seatAssignmentService.getSeatAssignmentsBySeatId(seatId);
+      res.status(200).json(assignments);
     } catch (error) {
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, '배정 정보 조회 중 오류가 발생했습니다.', error, requestId);
-      logError(appError, { component: 'SeatAssignmentController', action: 'getAssignmentBySeatId' });
-      
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
+      console.error('좌석별 배정 조회 오류:', error);
+      res.status(500).json({ 
+        error: '좌석별 배정 조회 중 오류가 발생했습니다.' 
+      });
     }
   }
 
-  /**
-   * 학생 ID로 배정 정보 조회
-   */
-  async getAssignmentByStudentId(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    
+  // 특정 학생의 좌석 배정 조회
+  async getSeatAssignmentsByStudentId(req: Request, res: Response): Promise<void> {
     try {
-      const { studentId } = request.params;
+      const { studentId } = req.params;
       
       if (!studentId) {
-        const appError = AppError.badRequest(ERROR_CODES.INVALID_INPUT, '학생 ID는 필수입니다.');
-        const errorResponse = createErrorResponse(appError);
-        response.status(appError.statusCode).json(errorResponse);
+        res.status(400).json({ error: '학생 ID가 필요합니다.' });
         return;
       }
 
-      const assignment = await this.seatAssignmentService.getAssignmentByStudentId(studentId);
-      
-      const apiResponse: ApiResponse<any> = {
-        success: true,
-        data: assignment,
-        message: assignment ? '배정 정보를 성공적으로 조회했습니다.' : '배정된 좌석이 없습니다.',
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId
-        }
-      };
-      
-      response.json(apiResponse);
+      const assignments = await this.seatAssignmentService.getSeatAssignmentsByStudentId(studentId);
+      res.status(200).json(assignments);
     } catch (error) {
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, '배정 정보 조회 중 오류가 발생했습니다.', error, requestId);
-      logError(appError, { component: 'SeatAssignmentController', action: 'getAssignmentByStudentId' });
-      
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
+      console.error('학생별 배정 조회 오류:', error);
+      res.status(500).json({ 
+        error: '학생별 배정 조회 중 오류가 발생했습니다.' 
+      });
     }
   }
 
-  /**
-   * 모든 배정 정보 조회
-   */
-  async getAllAssignments(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    
+  // 특정 날짜의 좌석 배정 조회
+  async getSeatAssignmentsByDate(req: Request, res: Response): Promise<void> {
     try {
-      const assignments = await this.seatAssignmentService.getAllAssignments();
+      const { date } = req.params;
       
-      const apiResponse: ApiResponse<any> = {
-        success: true,
-        data: assignments,
-        message: `${assignments.length}개의 배정 정보를 성공적으로 조회했습니다.`,
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId,
-          count: assignments.length
-        }
-      };
-      
-      response.json(apiResponse);
+      if (!date) {
+        res.status(400).json({ error: '날짜가 필요합니다.' });
+        return;
+      }
+
+      // ISO 문자열을 Timestamp로 변환
+      const dateObj = new Date(date);
+      if (isNaN(dateObj.getTime())) {
+        res.status(400).json({ error: '유효한 날짜 형식이 아닙니다.' });
+        return;
+      }
+
+      const timestamp = require('firebase-admin/firestore').Timestamp.fromDate(dateObj);
+      const assignments = await this.seatAssignmentService.getSeatAssignmentsByDate(timestamp);
+      res.status(200).json(assignments);
     } catch (error) {
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, '배정 정보 조회 중 오류가 발생했습니다.', error, requestId);
-      logError(appError, { component: 'SeatAssignmentController', action: 'getAllAssignments' });
-      
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
+      console.error('날짜별 배정 조회 오류:', error);
+      res.status(500).json({ 
+        error: '날짜별 배정 조회 중 오류가 발생했습니다.' 
+      });
     }
   }
 
-  /**
-   * 배정 통계 조회
-   */
-  async getAssignmentStats(request: any, response: any): Promise<void> {
-    const requestId = request.headers['x-request-id'];
-    
+  // 좌석 배정 검색
+  async searchSeatAssignments(req: Request, res: Response): Promise<void> {
     try {
-      const stats = await this.seatAssignmentService.getAssignmentStats();
-      
-      const apiResponse: ApiResponse<any> = {
-        success: true,
-        data: stats,
-        message: '배정 통계를 성공적으로 조회했습니다.',
-        meta: {
-          timestamp: new Date().toISOString(),
-          version: 'v2',
-          requestId
-        }
-      };
-      
-      response.json(apiResponse);
+      const params: SeatAssignmentSearchParams = req.query as any;
+      const assignments = await this.seatAssignmentService.searchSeatAssignments(params);
+      res.status(200).json(assignments);
     } catch (error) {
-      const appError = AppError.internal(ERROR_CODES.INTERNAL_SERVER_ERROR, '배정 통계 조회 중 오류가 발생했습니다.', error, requestId);
-      logError(appError, { component: 'SeatAssignmentController', action: 'getAssignmentStats' });
+      console.error('좌석 배정 검색 오류:', error);
+      res.status(500).json({ 
+        error: '좌석 배정 검색 중 오류가 발생했습니다.' 
+      });
+    }
+  }
+
+  // 좌석 배정 통계 조회
+  async getSeatAssignmentStatistics(req: Request, res: Response): Promise<void> {
+    try {
+      const statistics = await this.seatAssignmentService.getSeatAssignmentStatistics();
+      res.status(200).json(statistics);
+    } catch (error) {
+      console.error('좌석 배정 통계 조회 오류:', error);
+      res.status(500).json({ 
+        error: '좌석 배정 통계 조회 중 오류가 발생했습니다.' 
+      });
+    }
+  }
+
+  // 좌석 배정 상태 변경
+  async updateSeatAssignmentStatus(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
       
-      const errorResponse = createErrorResponse(appError);
-      response.status(appError.statusCode).json(errorResponse);
+      if (!id) {
+        res.status(400).json({ error: '좌석 배정 ID가 필요합니다.' });
+        return;
+      }
+
+      if (!status || !['active', 'released'].includes(status)) {
+        res.status(400).json({ 
+          error: '유효한 상태값이 필요합니다. (active, released)' 
+        });
+        return;
+      }
+
+      // 기존 좌석 배정 확인
+      const existingAssignment = await this.seatAssignmentService.getSeatAssignmentById(id);
+      if (!existingAssignment) {
+        res.status(404).json({ error: '해당 좌석 배정을 찾을 수 없습니다.' });
+        return;
+      }
+
+      await this.seatAssignmentService.updateSeatAssignmentStatus(id, status);
+      
+      res.status(200).json({ 
+        message: '좌석 배정 상태가 성공적으로 변경되었습니다.' 
+      });
+    } catch (error) {
+      console.error('좌석 배정 상태 변경 오류:', error);
+      res.status(500).json({ 
+        error: '좌석 배정 상태 변경 중 오류가 발생했습니다.' 
+      });
+    }
+  }
+
+  // 좌석 배정 해제
+  async releaseSeatAssignment(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      
+      if (!id) {
+        res.status(400).json({ error: '좌석 배정 ID가 필요합니다.' });
+        return;
+      }
+
+      // 기존 좌석 배정 확인
+      const existingAssignment = await this.seatAssignmentService.getSeatAssignmentById(id);
+      if (!existingAssignment) {
+        res.status(404).json({ error: '해당 좌석 배정을 찾을 수 없습니다.' });
+        return;
+      }
+
+      await this.seatAssignmentService.releaseSeatAssignment(id);
+      
+      res.status(200).json({ 
+        message: '좌석 배정이 성공적으로 해제되었습니다.' 
+      });
+    } catch (error) {
+      console.error('좌석 배정 해제 오류:', error);
+      res.status(500).json({ 
+        error: '좌석 배정 해제 중 오류가 발생했습니다.' 
+      });
+    }
+  }
+
+  // 학생의 현재 활성 좌석 배정 조회
+  async getCurrentSeatAssignment(req: Request, res: Response): Promise<void> {
+    try {
+      const { studentId } = req.params;
+      
+      if (!studentId) {
+        res.status(400).json({ error: '학생 ID가 필요합니다.' });
+        return;
+      }
+
+      const assignment = await this.seatAssignmentService.getCurrentSeatAssignment(studentId);
+      
+      if (!assignment) {
+        res.status(404).json({ error: '해당 학생의 활성 좌석 배정을 찾을 수 없습니다.' });
+        return;
+      }
+
+      res.status(200).json(assignment);
+    } catch (error) {
+      console.error('현재 좌석 배정 조회 오류:', error);
+      res.status(500).json({ 
+        error: '현재 좌석 배정 조회 중 오류가 발생했습니다.' 
+      });
+    }
+  }
+
+  // 좌석의 현재 활성 배정 조회
+  async getCurrentSeatAssignmentBySeat(req: Request, res: Response): Promise<void> {
+    try {
+      const { seatId } = req.params;
+      
+      if (!seatId) {
+        res.status(400).json({ error: '좌석 ID가 필요합니다.' });
+        return;
+      }
+
+      const assignment = await this.seatAssignmentService.getCurrentSeatAssignmentBySeat(seatId);
+      
+      if (!assignment) {
+        res.status(404).json({ error: '해당 좌석의 활성 배정을 찾을 수 없습니다.' });
+        return;
+      }
+
+      res.status(200).json(assignment);
+    } catch (error) {
+      console.error('좌석별 현재 배정 조회 오류:', error);
+      res.status(500).json({ 
+        error: '좌석별 현재 배정 조회 중 오류가 발생했습니다.' 
+      });
+    }
+  }
+
+  // 학생의 좌석 배정 기록 조회
+  async getStudentSeatAssignmentHistory(req: Request, res: Response): Promise<void> {
+    try {
+      const { studentId } = req.params;
+      
+      if (!studentId) {
+        res.status(400).json({ error: '학생 ID가 필요합니다.' });
+        return;
+      }
+
+      const assignments = await this.seatAssignmentService.getStudentSeatAssignmentHistory(studentId);
+      res.status(200).json(assignments);
+    } catch (error) {
+      console.error('학생 좌석 배정 기록 조회 오류:', error);
+      res.status(500).json({ 
+        error: '학생 좌석 배정 기록 조회 중 오류가 발생했습니다.' 
+      });
+    }
+  }
+
+  // 좌석의 배정 기록 조회
+  async getSeatAssignmentHistory(req: Request, res: Response): Promise<void> {
+    try {
+      const { seatId } = req.params;
+      
+      if (!seatId) {
+        res.status(400).json({ error: '좌석 ID가 필요합니다.' });
+        return;
+      }
+
+      const assignments = await this.seatAssignmentService.getSeatAssignmentHistory(seatId);
+      res.status(200).json(assignments);
+    } catch (error) {
+      console.error('좌석 배정 기록 조회 오류:', error);
+      res.status(500).json({ 
+        error: '좌석 배정 기록 조회 중 오류가 발생했습니다.' 
+      });
     }
   }
 }

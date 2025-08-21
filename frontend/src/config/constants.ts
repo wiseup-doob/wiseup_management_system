@@ -1,12 +1,15 @@
+import { config } from './environment';
+
 export const APP_CONFIG = {
   NAME: 'WiseUp Management System',
   VERSION: '1.0.0',
   ENVIRONMENT: import.meta.env.MODE || 'development'
 };
 
-export const API_CONFIG = {
-  BASE_URL: 'https://us-central1-wiseupmanagementsystem-a6189.cloudfunctions.net/wiseupApi',
-  TIMEOUT: 10000
+export const API_CONSTANTS = {
+  BASE_URL: config.api.baseURL,
+  TIMEOUT: 30000,
+  MAX_RETRIES: 3,
 };
 
 export const ATTENDANCE_CONFIG = {

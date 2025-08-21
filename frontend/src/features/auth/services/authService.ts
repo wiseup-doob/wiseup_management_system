@@ -6,9 +6,10 @@ import type {
   PasswordResetRequest,
   ChangePasswordRequest 
 } from '../types/auth.types'
+import { config } from '../../../config/environment';
 
 // Firebase Functions API 서비스
-const FIREBASE_FUNCTIONS_BASE_URL = 'http://127.0.0.1:5001/wiseupmanagementsystem/us-central1'
+const FIREBASE_FUNCTIONS_BASE_URL = config.api.baseURL;
 
 export interface ApiResponse<T> {
   success: boolean

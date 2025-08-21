@@ -77,3 +77,65 @@ export const ATTENDANCE_MESSAGES = {
     DUPLICATE_UPDATE: '이미 출석이 기록되었습니다.'
   }
 } as const 
+
+// 출석 상태별 스타일 정의
+export const ATTENDANCE_STATUS_STYLES = {
+  present: {
+    text: '등원',
+    className: 'attendance-present',
+    backgroundColor: '#e8f5e8',
+    color: '#2e7d32',
+    borderColor: '#4caf50',
+    dotColor: '#4CAF50'
+  },
+  dismissed: {
+    text: '하원',
+    className: 'attendance-dismissed',
+    backgroundColor: '#f5f5f5',
+    color: '#666666',
+    borderColor: '#9e9e9e',
+    dotColor: '#9E9E9E'
+  },
+  unauthorized_absent: {
+    text: '무단결석',
+    className: 'attendance-unauthorized',
+    backgroundColor: '#ffebee',
+    color: '#c62828',
+    borderColor: '#f44336',
+    dotColor: '#F44336'
+  },
+  authorized_absent: {
+    text: '사유결석',
+    className: 'attendance-authorized',
+    backgroundColor: '#fff3e0',
+    color: '#ef6c00',
+    borderColor: '#ff9800',
+    dotColor: '#FF9800'
+  },
+  not_enrolled: {
+    text: '미등록',
+    className: 'attendance-not-enrolled',
+    backgroundColor: '#f5f5f5',
+    color: '#9e9e9e',
+    borderColor: '#bdbdbd',
+    dotColor: '#BDBDBD'
+  }
+} as const 
+
+// 출석 상태를 타임라인 상태로 변환하는 매핑
+export const ATTENDANCE_TO_TIMELINE_STATUS = {
+  present: 'success',
+  dismissed: 'info',
+  unauthorized_absent: 'error',
+  authorized_absent: 'warning',
+  not_enrolled: 'default'
+} as const 
+
+// 기본 출석 활동 목록
+export const DEFAULT_ATTENDANCE_ACTIVITIES = [
+  { id: '1', activity: '수업', description: '정규 수업 참여' },
+  { id: '2', activity: '자습', description: '자율 학습' },
+  { id: '3', activity: '보충', description: '보충 수업' },
+  { id: '4', activity: '특별활동', description: '동아리, 봉사활동 등' },
+  { id: '5', activity: '기타', description: '기타 활동' }
+] as const 

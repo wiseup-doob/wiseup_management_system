@@ -1,0 +1,78 @@
+.empty-timetable-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.empty-timetable-state h4 {
+  margin: 0 0 8px 0;
+  color: #495057;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.empty-timetable-state p {
+  margin: 0 0 24px 0;
+  color: #6c757d;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.empty-actions {
+  margin-top: 16px;
+}
+
+.empty-action-button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.empty-action-button:hover {
+  background: #0056b3;
+}
+
+.empty-action-button:active {
+  background: #004085;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .empty-timetable-state {
+    padding: 30px 16px;
+    min-height: 250px;
+  }
+  
+  .empty-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+  }
+  
+  .empty-timetable-state h4 {
+    font-size: 16px;
+  }
+  
+  .empty-timetable-state p {
+    font-size: 13px;
+  }
+}

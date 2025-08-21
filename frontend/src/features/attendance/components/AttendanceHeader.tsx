@@ -1,38 +1,40 @@
 import { Button } from '../../../components/buttons/Button'
 import { Label } from '../../../components/labels/Label'
+import type { SeatHealthStatus } from '../types/attendance.types'
 import './AttendanceHeader.css'
 
 interface AttendanceHeaderProps {
   editingMode: 'none' | 'remove' | 'move'
   isEditing: boolean
   sourceSeatId: string | null
+  currentMode: 'view' | 'edit'
+  pendingChangesCount: number
+  isAddingMode: boolean // 추가
   onRefresh: () => void
   onEditModeChange: (mode: 'remove' | 'move') => void
   onEditComplete: () => void
+  onEnterEditMode: () => void
+  onCancelEditMode: () => void
+  onToggleAddingMode: () => void // 추가
   onCheckHealth: () => void
   onAutoRepair: () => void
   isCheckingHealth: boolean
   isRepairing: boolean
-  seatHealth: {
-    status: 'HEALTHY' | 'DEGRADED' | 'UNHEALTHY'
-    totalSeats: number
-    assignedSeats: number
-    mismatchedSeats: number
-    issues: Array<{
-      seatId: string
-      type: 'MISMATCH' | 'ORPHANED' | 'DUPLICATE'
-      description: string
-    }>
-    lastChecked: string
-  } | null
+  seatHealth: SeatHealthStatus | null
 }
 
 export const AttendanceHeader = ({
   editingMode,
   sourceSeatId,
+  currentMode,
+  pendingChangesCount,
+  isAddingMode, // 추가
   onRefresh,
   onEditModeChange,
   onEditComplete,
+  onEnterEditMode,
+  onCancelEditMode,
+  onToggleAddingMode, // 추가
   onCheckHealth,
   onAutoRepair,
   isCheckingHealth,
@@ -41,7 +43,7 @@ export const AttendanceHeader = ({
 }: AttendanceHeaderProps) => {
   return (
     <>
-      {/* 좌측 상단: 새로고침, 편집 모드, 헬스체크 */}
+      {/* 좌측 상단: 새로고침, 모드 전환, 편집 컨트롤, 헬스체크 */}
       <div className="flex items-center gap-2 mb-4">
         <button
           onClick={onRefresh}
@@ -50,7 +52,34 @@ export const AttendanceHeader = ({
           새로고침
         </button>
         
-        {editingMode === 'none' ? (
+        {/* 모드 전환 버튼 */}
+        {currentMode === 'view' ? (
+          <button
+            onClick={onEnterEditMode}
+            className="px-3 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
+          >
+            편집 모드
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              onClick={onCancelEditMode}
+              className="px-3 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+            >
+              편집 취소
+            </button>
+            <button
+              onClick={onEditComplete}
+              disabled={pendingChangesCount === 0}
+              className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors disabled:opacity-50"
+            >
+              편집 완료 ({pendingChangesCount})
+            </button>
+          </div>
+        )}
+        
+        {/* 편집 모드 내에서의 세부 편집 모드 */}
+        {currentMode === 'edit' && editingMode === 'none' && (
           <div className="flex gap-2">
             <button
               onClick={() => {
@@ -74,20 +103,22 @@ export const AttendanceHeader = ({
             >
               이동 모드
             </button>
+            <button
+              onClick={() => {
+                console.log('➕ === 좌석 추가 모드 토글 ===');
+                console.log('📍 현재 추가 모드:', isAddingMode);
+                onToggleAddingMode();
+                console.log('✅ 추가 모드 토글 완료');
+              }}
+              className={`px-3 py-2 rounded transition-colors ${
+                isAddingMode 
+                  ? 'bg-green-600 text-white hover:bg-green-700' 
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              }`}
+            >
+              {isAddingMode ? '추가 모드 ON' : '추가 모드 OFF'}
+            </button>
           </div>
-        ) : (
-          <button
-            onClick={() => {
-              console.log('✅ === 편집 완료 버튼 클릭 ===');
-              console.log('📍 현재 편집 모드:', editingMode);
-              console.log('📍 소스 좌석 ID:', sourceSeatId);
-              onEditComplete();
-              console.log('✅ 편집 모드 종료 완료');
-            }}
-            className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-          >
-            편집 완료
-          </button>
         )}
 
         {/* 헬스체크 버튼 */}

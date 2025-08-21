@@ -8,6 +8,7 @@ import type {
   UpdateStudentRequest
 } from '@shared/types'
 import type { AttendanceStatus } from '@shared/types/common.types'
+import { config } from '../config/environment';
 
 // 임시 타입 정의 (향후 shared에서 제공될 예정)
 interface AttendanceStats {
@@ -35,21 +36,23 @@ interface ApiError {
   details?: any
 }
 
-// API 엔드포인트 정의
-const API_ENDPOINTS = {
+// API 엔드포인트 정의 - shared 상수 사용
+import { API_ENDPOINTS } from '@shared/constants';
+
+const API_ENDPOINTS_LOCAL = {
   STUDENTS: {
-    GET_ALL: '/api/v1/attendance/students',
-    GET_BY_ID: (id: string) => `/api/v1/attendance/students/${id}`,
-    CREATE: '/api/v1/attendance/students',
-    UPDATE: (id: string) => `/api/v1/attendance/students/${id}`,
-    DELETE: (id: string) => `/api/v1/attendance/students/${id}`
+    GET_ALL: API_ENDPOINTS.STUDENTS.GET_ALL,
+    GET_BY_ID: API_ENDPOINTS.STUDENTS.GET_BY_ID,
+    CREATE: API_ENDPOINTS.STUDENTS.CREATE,
+    UPDATE: API_ENDPOINTS.STUDENTS.UPDATE,
+    DELETE: API_ENDPOINTS.STUDENTS.DELETE
   },
   ATTENDANCE: {
-    GET_STATS: '/api/v1/attendance/stats',
-    BULK_UPDATE: '/api/v1/attendance/bulk-update',
-    UPDATE_SINGLE: (id: string) => `/api/v1/attendance/students/${id}/attendance`,
-    GET_HISTORY: '/api/v1/attendance/history',
-    INITIALIZE: '/api/v1/attendance/initialize'
+    GET_STATS: API_ENDPOINTS.ATTENDANCE.GET_STATUS_STATISTICS,
+    BULK_UPDATE: API_ENDPOINTS.ATTENDANCE.CREATE_BULK,
+    UPDATE_SINGLE: (id: string) => API_ENDPOINTS.ATTENDANCE.UPDATE(id),
+    GET_HISTORY: (studentId: string) => API_ENDPOINTS.ATTENDANCE.GET_BY_STUDENT(studentId),
+    INITIALIZE: API_ENDPOINTS.ATTENDANCE.CREATE
   }
 }
 
@@ -57,7 +60,7 @@ const API_ENDPOINTS = {
 class ApiClient {
   private baseUrl: string
 
-  constructor(baseUrl: string = 'http://localhost:5001') {
+  constructor(baseUrl: string = config.api.baseURL) {
     this.baseUrl = baseUrl
   }
 
@@ -155,7 +158,7 @@ export class CorrectSharedAttendanceApiService {
     studentId: string,
     request: AttendanceUpdateRequest
   ): Promise<ApiResponse<void>> {
-    const endpoint = API_ENDPOINTS.ATTENDANCE.UPDATE_SINGLE(studentId)
+    const endpoint = API_ENDPOINTS.ATTENDANCE.UPDATE(studentId)
     return this.client.put<void>(endpoint, request)
   }
 
@@ -187,8 +190,8 @@ export class CorrectSharedAttendanceApiService {
     }
     
     const endpoint = queryString.toString() 
-      ? `${API_ENDPOINTS.ATTENDANCE.GET_STATS}?${queryString.toString()}`
-      : API_ENDPOINTS.ATTENDANCE.GET_STATS
+      ? `${API_ENDPOINTS.ATTENDANCE.GET_STATUS_STATISTICS}?${queryString.toString()}`
+      : API_ENDPOINTS.ATTENDANCE.GET_STATUS_STATISTICS
     
     return this.client.get<AttendanceStats>(endpoint)
   }
@@ -207,7 +210,7 @@ export class CorrectSharedAttendanceApiService {
       }
     })
     
-    const endpoint = `${API_ENDPOINTS.ATTENDANCE.GET_HISTORY}?${queryString.toString()}`
+    const endpoint = `${API_ENDPOINTS.ATTENDANCE.GET_BY_STUDENT}?${queryString.toString()}`
     return this.client.get<AttendanceRecord[]>(endpoint)
   }
 }

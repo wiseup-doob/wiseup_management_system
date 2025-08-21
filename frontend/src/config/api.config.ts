@@ -1,7 +1,7 @@
 // 프론트엔드 API 설정
 export const API_CONFIG = {
-  // 프로덕션 Firebase Functions URL
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://us-central1-wiseupmanagementsystem-a6189.cloudfunctions.net/wiseupApi',
+  // 환경변수를 통한 BASE_URL 설정
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://api-xkhcgo7jrq-uc.a.run.app',
   TIMEOUT: 30000,
   MAX_RETRIES: 3,
 } as const

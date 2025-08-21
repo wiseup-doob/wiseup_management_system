@@ -1,12 +1,17 @@
 import axios from 'axios'
+import { config } from '../config/environment';
 
-export const API_CONFIG = {
-  baseURL: 'https://us-central1-wiseupmanagementsystem-a6189.cloudfunctions.net/wiseupApi',
-  timeout: 30000,
+const API_CONFIG = {
+  development: {
+    baseURL: config.api.baseURL,
+  },
+  production: {
+    baseURL: config.api.baseURL,
+  },
 };
 
 const api = axios.create({
-  baseURL: 'https://us-central1-wiseupmanagementsystem-a6189.cloudfunctions.net/wiseupApi',
+  baseURL: config.api.baseURL,
 })
 
 export default api

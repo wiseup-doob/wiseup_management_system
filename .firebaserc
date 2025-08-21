@@ -1,5 +1,9 @@
 {
   "projects": {
-    "default": "wiseupmanagementsystem-a6189"
-  }
+    "default": "wiseupmanagementsystem-a6189",
+    "test_project": "wiseupmanagementprogramtest",
+    "test": "wiseupmanagementprogramtest"
+  },
+  "targets": {},
+  "etags": {}
 }

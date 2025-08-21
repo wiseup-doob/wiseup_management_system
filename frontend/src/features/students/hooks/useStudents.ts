@@ -1,18 +1,19 @@
-import { useCallback } from 'react'
-import { useAppDispatch } from '../../../hooks/useAppDispatch'
-import { useAppSelector } from '../../../hooks/useAppSelector'
+import { useCallback } from 'react';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { useAppSelector } from '../../../hooks/useAppSelector';
 import { 
-  addStudent, 
-  updateStudent, 
-  deleteStudent, 
+  createStudentAsync,
+  updateStudentAsync,
+  deleteStudentAsync,
   setSelectedStudent, 
   setSearchTerm, 
-  setFilter 
-} from '../slice/studentsSlice'
-import type { Student, StudentFormData } from '../types/students.types'
+  setFilter,
+  fetchStudents
+} from '../slice/studentsSlice';
+import type { Student, CreateStudentRequest, UpdateStudentRequest } from '../types/students.types';
 
 export const useStudents = () => {
-  const dispatch = useAppDispatch()
+  const dispatch = useAppDispatch();
   const { 
     students, 
     selectedStudent, 
@@ -20,37 +21,46 @@ export const useStudents = () => {
     filters, 
     isLoading, 
     error 
-  } = useAppSelector(state => state.students)
+  } = useAppSelector(state => state.students);
 
-  const handleAddStudent = useCallback((studentData: StudentFormData) => {
-    const newStudent: Student = {
-      ...studentData,
-      id: Date.now().toString(),
-      status: 'active',
-      enrollmentDate: new Date().toISOString().split('T')[0]
+  const handleAddStudent = useCallback(async (studentData: CreateStudentRequest) => {
+    try {
+      await dispatch(createStudentAsync(studentData)).unwrap();
+      dispatch(fetchStudents()); // 목록 새로고침
+    } catch (error) {
+      console.error('학생 생성 실패:', error);
     }
-    dispatch(addStudent(newStudent))
-  }, [dispatch])
+  }, [dispatch]);
 
-  const handleUpdateStudent = useCallback((student: Student) => {
-    dispatch(updateStudent(student))
-  }, [dispatch])
+  const handleUpdateStudent = useCallback(async (id: string, studentData: UpdateStudentRequest) => {
+    try {
+      await dispatch(updateStudentAsync({ id, studentData })).unwrap();
+      dispatch(fetchStudents()); // 목록 새로고침
+    } catch (error) {
+      console.error('학생 수정 실패:', error);
+    }
+  }, [dispatch]);
 
-  const handleDeleteStudent = useCallback((studentId: string) => {
-    dispatch(deleteStudent(studentId))
-  }, [dispatch])
+  const handleDeleteStudent = useCallback(async (studentId: string) => {
+    try {
+      await dispatch(deleteStudentAsync(studentId)).unwrap();
+      dispatch(fetchStudents()); // 목록 새로고침
+    } catch (error) {
+      console.error('학생 삭제 실패:', error);
+    }
+  }, [dispatch]);
 
   const handleSelectStudent = useCallback((student: Student | null) => {
-    dispatch(setSelectedStudent(student))
-  }, [dispatch])
+    dispatch(setSelectedStudent(student));
+  }, [dispatch]);
 
   const handleSearchChange = useCallback((value: string) => {
-    dispatch(setSearchTerm(value))
-  }, [dispatch])
+    dispatch(setSearchTerm(value));
+  }, [dispatch]);
 
   const handleFilterChange = useCallback((key: keyof typeof filters, value: string) => {
-    dispatch(setFilter({ key, value }))
-  }, [dispatch, filters])
+    dispatch(setFilter({ key, value }));
+  }, [dispatch, filters]);
 
   return {
     students,
@@ -65,5 +75,5 @@ export const useStudents = () => {
     handleSelectStudent,
     handleSearchChange,
     handleFilterChange
-  }
-} 
+  };
+}; 

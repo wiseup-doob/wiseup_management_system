@@ -1,0 +1,372 @@
+/* SchedulePage.css */
+
+.schedule-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 15px;
+  gap: 15px;
+  overflow: hidden;
+}
+
+/* 검색 및 필터 섹션 */
+.search-filter-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.search-container {
+  flex: 1;
+  max-width: 300px;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: white;
+  font-size: 14px;
+  min-width: 120px;
+}
+
+.edit-timetable-btn {
+  min-width: 100px;
+  height: 36px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-student-btn:hover {
+  background-color: #1565c0;
+}
+
+/* 메인 콘텐츠 */
+.schedule-content {
+  display: flex;
+  flex: 1;
+  gap: 15px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 왼쪽 패널 - 학생 목록 */
+.student-panel {
+  width: 350px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.panel-section {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  margin-bottom: 15px;
+  color: #333;
+  font-weight: 600;
+}
+
+/* 로딩, 에러, 빈 상태 스타일 */
+.loading-state,
+.error-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #6c757d;
+}
+
+.error-state {
+  color: #dc3545;
+}
+
+.error-text {
+  margin-bottom: 15px;
+}
+
+.retry-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  border-radius: 6px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.retry-btn:hover {
+  background-color: #5a6268;
+}
+
+.student-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.student-item {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.student-item:hover {
+  background-color: #e9ecef;
+  border-color: #adb5bd;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.student-item.selected {
+  background-color: #e3f2fd;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+.student-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.student-item-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 16px;
+}
+
+.student-status {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.student-status.active {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.student-status.inactive {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.student-status.completed {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.student-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.detail-label {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.detail-value {
+  color: #333;
+  font-weight: 400;
+}
+
+/* 오른쪽 패널 - 학생 상세 정보 */
+.student-detail-panel {
+  flex: 1;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.detail-header {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.detail-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.detail-title-section {
+  flex: 1;
+}
+
+.section-title {
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: 600;
+}
+
+.detail-subtitle {
+  color: #6c757d;
+  font-size: 14px;
+  margin-bottom: 0;
+}
+
+/* 시간표 편집 버튼 */
+.edit-timetable-btn {
+  flex-shrink: 0;
+  min-width: 100px;
+  height: 36px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.student-detail-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 시간표 관련 상태 스타일 */
+.timetable-loading,
+.timetable-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: #6c757d;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.timetable-error {
+  color: #dc3545;
+}
+
+.timetable-error .error-text {
+  margin-bottom: 15px;
+}
+
+/* TimetableWidget 컨테이너 */
+.timetable-widget-container {
+  margin-top: 20px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.student-timetable-widget {
+  width: 100%;
+  min-height: 400px;
+}
+
+.empty-detail {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1200px) {
+  .schedule-content {
+    flex-direction: column;
+  }
+  
+  .student-panel {
+    width: 100%;
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .schedule-page {
+    padding: 10px;
+    gap: 10px;
+  }
+  
+  .search-filter-section {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .filter-buttons {
+    justify-content: center;
+  }
+  
+  .timetable-widget-container {
+    padding: 15px;
+  }
+  
+  .loading-state,
+  .error-state,
+  .empty-state {
+    padding: 30px 15px;
+  }
+  
+  .timetable-loading,
+  .timetable-error {
+    padding: 40px 15px;
+  }
+  
+  /* 시간표 편집 버튼 반응형 */
+  .detail-header-content {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .edit-timetable-btn {
+    align-self: stretch;
+    min-width: auto;
+  }
+}

@@ -1,0 +1,230 @@
+/* TimetableWidget.css */
+
+.timetable-widget {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  background-color: var(--timetable-bg-color, #ffffff);
+  border-radius: var(--timetable-border-radius, 8px);
+  box-shadow: var(--timetable-box-shadow, 0 2px 8px rgba(0, 0, 0, 0.1));
+  transition: all 0.2s ease;
+}
+
+/* 드롭 관련 스타일 */
+.timetable-widget.drop-can {
+  border: 2px dashed #28a745;
+  background-color: rgba(40, 167, 69, 0.05);
+}
+
+.timetable-widget.drop-over {
+  border: 2px solid #28a745;
+  background-color: rgba(40, 167, 69, 0.1);
+  transform: scale(1.02);
+  box-shadow: 0 4px 16px rgba(40, 167, 69, 0.3);
+}
+
+.timetable-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background-color: var(--timetable-table-bg, #ffffff);
+}
+
+.timetable-header-cell {
+  background-color: var(--timetable-header-bg, #f8f9fa);
+  color: var(--timetable-header-color, #495057);
+  font-weight: var(--timetable-header-font-weight, 600);
+  text-align: center;
+  padding: var(--timetable-header-padding, 12px 8px);
+  border: 1px solid var(--timetable-border-color, #dee2e6);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  font-size: var(--timetable-header-font-size, 14px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timetable-time-header {
+  background-color: var(--timetable-time-header-bg, #e9ecef);
+  font-weight: var(--timetable-time-header-font-weight, 700);
+  min-width: var(--timetable-time-column-width, 80px);
+}
+
+.timetable-row {
+  height: var(--timetable-row-height, 60px);
+  min-height: var(--timetable-row-min-height, 60px);
+}
+
+.timetable-time-cell {
+  background-color: var(--timetable-time-cell-bg, #f8f9fa);
+  color: var(--timetable-time-cell-color, #6c757d);
+  font-weight: var(--timetable-time-cell-font-weight, 500);
+  text-align: center;
+  padding: var(--timetable-time-cell-padding, 8px 4px);
+  border: 1px solid var(--timetable-border-color, #dee2e6);
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  font-size: var(--timetable-time-cell-font-size, 12px);
+  white-space: nowrap;
+  min-width: var(--timetable-time-column-width, 80px);
+}
+
+.timetable-cell {
+  position: relative;
+  border: 1px solid var(--timetable-border-color, #dee2e6);
+  background-color: var(--timetable-cell-bg, #ffffff);
+  min-height: var(--timetable-cell-min-height, 60px);
+  padding: var(--timetable-cell-padding, 2px);
+  vertical-align: top;
+}
+
+.timetable-class-cell {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  background-color: var(--timetable-accent-color, #3498db);
+  color: var(--timetable-text-color, #ffffff);
+  border-radius: var(--timetable-class-border-radius, 4px);
+  padding: var(--timetable-class-padding, 6px 8px);
+  font-size: var(--timetable-class-font-size, 12px);
+  font-weight: var(--timetable-class-font-weight, 500);
+  line-height: var(--timetable-class-line-height, 1.2);
+  overflow: hidden;
+  cursor: default;
+  user-select: none;
+  z-index: 20;
+  box-shadow: var(--timetable-class-box-shadow, 0 1px 3px rgba(0, 0, 0, 0.2));
+  transition: var(--timetable-class-transition, all 0.2s ease);
+  /* white-space: nowrap 제거 - 세로 표시를 위해 */
+  /* text-overflow: ellipsis 제거 - 세로 표시를 위해 */
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Phase 2: 겹치는 수업 스타일 */
+.timetable-class-cell.conflict {
+  background-color: var(--timetable-conflict-color, #e74c3c);
+  border: 2px solid var(--timetable-conflict-border, #c0392b);
+  box-shadow: var(--timetable-conflict-box-shadow, 0 2px 6px rgba(231, 76, 60, 0.3));
+  animation: var(--timetable-conflict-animation, conflict-pulse 2s infinite);
+}
+
+@keyframes conflict-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+}
+
+.timetable-class-cell:hover {
+  transform: var(--timetable-class-hover-transform, scale(1.02));
+  box-shadow: var(--timetable-class-hover-box-shadow, 0 3px 8px rgba(0, 0, 0, 0.3));
+  z-index: var(--timetable-class-hover-z-index, 25);
+}
+
+.timetable-class-cell:active {
+  transform: var(--timetable-class-active-transform, scale(0.98));
+}
+
+.class-name {
+  font-weight: var(--timetable-class-name-font-weight, 600);
+  margin-bottom: var(--timetable-class-name-margin-bottom, 4px);
+  color: var(--timetable-text-color, #ffffff);
+  text-shadow: var(--timetable-text-shadow, 0 1px 2px rgba(0, 0, 0, 0.5));
+  opacity: var(--timetable-text-opacity, 1);
+  letter-spacing: var(--timetable-text-letter-spacing, 0.5px);
+  background-color: var(--timetable-text-bg, rgba(0, 0, 0, 0.7));
+  padding: var(--timetable-text-padding, 2px 4px);
+  border-radius: var(--timetable-text-border-radius, 2px);
+  display: block;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.class-time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--timetable-class-time-font-size, 10px);
+  color: var(--timetable-time-color, #ffffff);
+  text-shadow: var(--timetable-time-text-shadow, 0 1px 2px rgba(0, 0, 0, 0.7));
+  opacity: var(--timetable-time-opacity, 0.9);
+  font-weight: var(--timetable-time-font-weight, 500);
+  max-width: 100%;
+}
+
+.time-start,
+.time-end {
+  background-color: var(--timetable-time-bg, rgba(0, 0, 0, 0.8));
+  padding: var(--timetable-time-padding, 1px 3px);
+  border-radius: var(--timetable-time-border-radius, 2px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
+}
+
+.time-separator {
+  font-size: 8px;
+  color: var(--timetable-time-color, #ffffff);
+  opacity: 0.7;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.timetable-empty-day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--timetable-empty-height, 200px);
+  color: var(--timetable-empty-color, #6c757d);
+  font-size: var(--timetable-empty-font-size, 16px);
+  font-weight: var(--timetable-empty-font-weight, 500);
+  background-color: var(--timetable-empty-bg, #f8f9fa);
+  border-radius: var(--timetable-empty-border-radius, 8px);
+  border: 2px dashed var(--timetable-empty-border, #dee2e6);
+}
+
+/* CSS 변수 정의 */
+:root {
+  --timetable-accent-color: #3498db;
+  --timetable-conflict-color: #e74c3c;
+  --timetable-conflict-border: #c0392b;
+  --timetable-conflict-box-shadow: 0 2px 6px rgba(231, 76, 60, 0.3);
+  --timetable-conflict-animation: conflict-pulse 2s infinite;
+  --timetable-text-bg: rgba(0, 0, 0, 0.7);
+  --timetable-time-bg: rgba(0, 0, 0, 0.8);
+  --timetable-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --timetable-time-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  --timetable-text-opacity: 1;
+  --timetable-time-opacity: 0.9;
+  --timetable-text-letter-spacing: 0.5px;
+  --timetable-text-padding: 2px 4px;
+  --timetable-time-padding: 1px 3px;
+  --timetable-text-border-radius: 2px;
+  --timetable-time-border-radius: 2px;
+  --timetable-time-margin-top: 1px;
+  --timetable-class-name-font-weight: 600;
+  --timetable-class-name-margin-bottom: 2px;
+  --timetable-class-time-font-size: 10px;
+  --timetable-time-font-weight: 500;
+  --timetable-class-hover-transform: scale(1.02);
+  --timetable-class-hover-box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+  --timetable-class-hover-z-index: 25;
+  --timetable-class-active-transform: scale(0.98);
+}

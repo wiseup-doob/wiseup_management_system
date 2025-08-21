@@ -1,163 +1,125 @@
-/**
- * Firebase Functions v1 - WiseUp Management System API
- * 
- * Express.js를 사용하여 RESTful API 엔드포인트를 처리합니다.
- */
-
 import * as functions from 'firebase-functions';
-import express, { Request, Response, NextFunction } from 'express';
-import { initializeFirebase } from './config/firebase';
-import { studentRouter } from './routes/student';
-import { attendanceRouter } from './routes/attendance';
-import { seatRouter } from './routes/seat';
-import { initializationRouter } from './routes/initialization';
-import assignmentRouter from './routes/assignment';
-import timetableRouter from './routes/timetable';
-import { setCorsHeaders, handleOptionsRequest } from './middleware/cors';
-import { errorHandler } from './middleware/errorHandler';
-import { requestLogger } from './middleware/requestLogger';
-import { versionMiddleware } from './middleware/versionMiddleware';
+import * as admin from 'firebase-admin';
+import express from 'express';
+import cors from 'cors';
+import { studentRoutes } from './routes/student';
+import { parentRoutes } from './routes/parent';
+import { studentSummaryRoutes } from './routes/student-summary';
+import { attendanceRoutes } from './routes/attendance';
+import { courseRoutes } from './routes/course';
+import { classSectionRoutes } from './routes/class-section';
+import { teacherRoutes } from './routes/teacher';
+import { classroomRoutes } from './routes/classroom';
+import { seatRoutes } from './routes/seat';
+import { seatAssignmentRoutes } from './routes/seat-assignment';
+import { studentTimetableRoutes } from './routes/student-timetable';
+// import testDataRoutes from './routes/test-data';
 
-// 환경 변수 설정 (Firebase Functions v1)
-process.env.NODE_ENV = process.env.NODE_ENV || 'development';
-process.env.JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
-process.env.CORS_ORIGINS = process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:3000';
-process.env.RATE_LIMIT_MAX_REQUESTS = process.env.RATE_LIMIT_MAX_REQUESTS || '100';
-process.env.REQUEST_TIMEOUT = process.env.REQUEST_TIMEOUT || '30000';
-process.env.FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'wiseupmanagementsystem';
-process.env.USE_EMULATOR = process.env.USE_EMULATOR || 'true';
-
-// Firebase 초기화
-initializeFirebase();
+// Firebase Admin 초기화
+admin.initializeApp();
 
 // Express 앱 생성
 const app = express();
 
-// 전역 미들웨어 적용
-app.use(requestLogger);
-app.use(versionMiddleware);
-app.use((req: Request, res: Response, next: NextFunction) => {
-  setCorsHeaders(res);
-  if (handleOptionsRequest(res)) return;
+// 미들웨어
+app.use(cors({ origin: true }));
+app.use(express.json());
+
+// ===== 모든 요청 로깅 미들웨어 =====
+app.use((req, res, next) => {
+  console.log('🌐 [DEBUG] 메인 라우터에서 요청 수신');
+  console.log('📝 요청 정보:', { 
+    method: req.method, 
+    url: req.url, 
+    path: req.path, 
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl,
+    params: req.params 
+  });
+  console.log('🔍 요청 헤더:', req.headers);
   next();
 });
 
-// JSON 파싱 미들웨어
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// ===== 구체적인 경로를 먼저 등록 =====
 
-// ===== 기본 API =====
+// 학생 시간표 관련 라우트 (더 구체적인 경로)
+console.log('🚀 [DEBUG] student-timetables 라우터 등록 시작...');
+app.use('/api/student-timetables', (req, res, next) => {
+  console.log('🎯 [DEBUG] /api/student-timetables 라우터로 요청 라우팅됨');
+  console.log('📝 라우팅 정보:', { 
+    method: req.method, 
+    url: req.url, 
+    path: req.path, 
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl 
+  });
+  next();
+}, studentTimetableRoutes);
+console.log('✅ Student-timetables routes registered successfully');
 
-// GET /api/health - 헬스 체크
-app.get('/api/health', (req: Request, res: Response) => {
-  res.json({
-    success: true,
-    message: 'WiseUp Management System API is running',
-    timestamp: new Date().toISOString(),
-    version: 'v1',
-    env: process.env.NODE_ENV
+// 수업 관련 라우트 (더 구체적인 경로)
+console.log('🚀 [DEBUG] class-sections 라우터 등록 시작...');
+app.use('/api/class-sections', (req, res, next) => {
+  console.log('🎯 [DEBUG] /api/class-sections 라우터로 요청 라우팅됨');
+  console.log('📝 라우팅 정보:', { 
+    method: req.method, 
+    url: req.url, 
+    path: req.path, 
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl 
+  });
+  next();
+}, classSectionRoutes);
+console.log('✅ Class-sections routes registered successfully');
+
+// 출석 기록 관련 라우트 (더 구체적인 경로)
+app.use('/api/attendance', attendanceRoutes);
+
+// 좌석 배정 관련 라우트 (더 구체적인 경로)
+app.use('/api/seat-assignments', seatAssignmentRoutes);
+
+// 좌석 관련 라우트 (더 구체적인 경로)
+app.use('/api/seats', seatRoutes);
+
+// ===== 일반적인 경로를 나중에 등록 =====
+
+// 학생 관련 라우트 (일반적인 경로)
+app.use('/api/students', studentRoutes);
+
+// 부모 관련 라우트 (일반적인 경로)
+app.use('/api/parents', parentRoutes);
+
+// 학생 요약 정보 관련 라우트 (일반적인 경로)
+app.use('/api/student-summaries', studentSummaryRoutes);
+
+// 강의 관련 라우트 (일반적인 경로)
+app.use('/api/courses', courseRoutes);
+
+// 강사 관련 라우트 (일반적인 경로)
+app.use('/api/teachers', teacherRoutes);
+
+// 교실 관련 라우트 (일반적인 경로)
+app.use('/api/classrooms', classroomRoutes);
+
+// 기본 라우트는 마지막에 등록 (catch-all 방지)
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'WiseUp Management System API',
+    version: '1.0.0',
+    timestamp: new Date().toISOString()
   });
 });
 
-// GET /api/debug/firestore - Firestore 연결 상태 확인
-app.get('/api/debug/firestore', async (req: Request, res: Response) => {
-  try {
-    const { getFirestore } = await import('./config/firebase.js');
-    const db = getFirestore();
-    
-    // 간단한 연결 테스트
-    await db.collection('_test').doc('connection').get();
-    
-    res.json({
-      success: true,
-      message: 'Firestore 연결 성공',
-      timestamp: new Date().toISOString(),
-      firestore: {
-        connected: true,
-        emulator: process.env.USE_EMULATOR === 'true',
-        emulatorHost: process.env.FIRESTORE_EMULATOR_HOST
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Firestore 연결 실패',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    });
+// 라우트 등록 확인을 위한 디버깅
+console.log('All routes registered. Available routes:');
+app._router.stack.forEach((layer: any) => {
+  if (layer.route) {
+    console.log(`${layer.route.stack[0].method.toUpperCase()} ${layer.route.path}`);
+  } else if (layer.name === 'router') {
+    console.log(`Router: ${layer.regexp}`);
   }
 });
 
-// ===== 라우터 적용 =====
-
-// 학생 관리 라우터
-app.use('/api/students', studentRouter);
-
-// 출석 관리 라우터 (별도 라우터로 분리)
-app.use('/api/attendance', attendanceRouter);
-
-// 좌석 관리 라우터
-app.use('/api/seats', seatRouter);
-
-// 초기화 관리 라우터
-app.use('/api/initialization', initializationRouter);
-
-// 과제 관리 라우터
-app.use('/api/assignments', assignmentRouter);
-
-// 시간표 관리 라우터
-app.use('/api/timetable', timetableRouter);
-
-// ===== 기존 API 호환성 (임시) =====
-
-// 학생 출석 상태 업데이트 (기존 API 호환성)
-app.post('/updateAttendance', (req: Request, res: Response) => {
-  // 기존 API 호환성을 위한 임시 처리
-  res.status(410).json({
-    success: false,
-    message: '이 API는 더 이상 사용되지 않습니다. /api/attendance/records를 사용해주세요.',
-    deprecated: true
-  });
-});
-
-// 출석 기록 조회 (기존 API 호환성)
-app.get('/getAttendanceHistory', (req: Request, res: Response) => {
-  // 기존 API 호환성을 위한 임시 처리
-  res.status(410).json({
-    success: false,
-    message: '이 API는 더 이상 사용되지 않습니다. /api/attendance/records를 사용해주세요.',
-    deprecated: true
-  });
-});
-
-// 학생 데이터 초기화 (기존 API 호환성)
-app.post('/initializeStudents', (req: Request, res: Response) => {
-  // 기존 API 호환성을 위한 임시 처리
-  res.status(410).json({
-    success: false,
-    message: '이 API는 더 이상 사용되지 않습니다. /api/students/initialize를 사용해주세요.',
-    deprecated: true
-  });
-});
-
-// 404 핸들러
-app.use('*', (req: Request, res: Response) => {
-  res.status(404).json({
-    success: false,
-    error: 'NOT_FOUND',
-    message: `API endpoint ${req.method} ${req.originalUrl} not found`,
-    meta: {
-      method: req.method,
-      url: req.originalUrl,
-      timestamp: new Date().toISOString()
-    }
-  });
-});
-
-// 에러 핸들러
-app.use(errorHandler);
-
-// ===== Firebase Functions v1 =====
-
-// 모든 API 엔드포인트를 처리하는 단일 함수
-export const wiseupApi = functions.https.onRequest(app);
+// Firebase Functions로 export
+// 강제 배포를 위한 타임스탬프: 2025-08-21 09:35:00
+export const api = functions.https.onRequest(app);
