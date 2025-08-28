@@ -20,8 +20,17 @@ export type StudentTimetableResponse = TimetableApiResponse
 
 // TimetableWidget에 전달할 데이터 타입
 export interface TimetableData {
-  timetableGrid: TimetableGrid
-  isEmpty: boolean
-  hasConflicts: boolean
-  conflictCount: number
+  classSections: ClassSectionWithSchedule[]
+  conflicts: Array<{
+    conflictId: string
+    conflictType: 'overlap' | 'adjacent'
+    day: string
+    time: string
+    classes: any[]
+  }>
+  metadata?: {
+    totalClasses: number
+    totalStudents: number
+    totalTeachers: number
+  }
 }

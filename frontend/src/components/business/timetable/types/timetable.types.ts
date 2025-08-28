@@ -31,6 +31,12 @@ export interface TimetableClass {
   color: string
   status: 'active' | 'inactive' | 'cancelled'
   isOutOfRange?: boolean // Phase 4-1: 범위 외 수업 체크
+  layoutInfo?: {
+    width: string
+    left: string
+    zIndex: number
+    isOverlapped: boolean
+  }
 }
 
 // 요일별 수업 그룹

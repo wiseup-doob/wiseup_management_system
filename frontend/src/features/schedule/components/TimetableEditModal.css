@@ -74,14 +74,18 @@
 }
 
 .section-header .Label:first-child {
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   color: #333;
   font-weight: 600;
 }
 
-.section-header .Label:last-child {
-  color: #6c757d;
-  font-size: 13px;
+.search-container {
+  margin-top: 8px;
+}
+
+.search-container .search-input {
+  width: 100%;
+  max-width: 200px;
 }
 
 .class-cards {

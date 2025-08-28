@@ -1,0 +1,195 @@
+/* TimetableCell.css */
+
+.timetable-cell {
+  width: 100%;
+  height: 100%;
+  padding: 6px;
+  border-radius: 6px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* 위쪽 기준 정렬로 변경 */
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* background-color 제거 - 백엔드 색상 사용 */
+}
+
+.timetable-cell:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.cell-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 100%;
+  justify-content: flex-start; /* 위쪽 기준 정렬로 변경 */
+}
+
+/* 수업 이름 */
+.class-name {
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+  margin-bottom: 2px;
+  color: #ffffff;
+  background-color: #000000;
+  padding: 2px 4px;
+  border-radius: 3px;
+  text-shadow: none;
+}
+
+/* 시작 시간 */
+.time-start {
+  font-weight: 600;
+  font-size: 10px;
+  line-height: 1.1;
+  text-align: center;
+  color: #ffffff;
+  background-color: #000000;
+  padding: 2px 4px;
+  border-radius: 3px;
+  text-shadow: none;
+}
+
+/* 시간 구분선 */
+.time-separator {
+  font-weight: 400;
+  font-size: 8px;
+  line-height: 1;
+  text-align: center;
+  color: #666666;
+  margin: 1px 0;
+  background-color: transparent;
+}
+
+/* 끝 시간 */
+.time-end {
+  font-weight: 600;
+  font-size: 10px;
+  line-height: 1.1;
+  text-align: center;
+  color: #ffffff;
+  background-color: #000000;
+  padding: 2px 4px;
+  border-radius: 3px;
+  text-shadow: none;
+}
+
+/* 선생 이름 */
+.teacher-name {
+  font-weight: 500;
+  font-size: 9px;
+  line-height: 1.1;
+  text-align: center;
+  color: #ffffff;
+  background-color: #000000;
+  padding: 2px 4px;
+  border-radius: 3px;
+  text-shadow: none;
+  margin-top: 2px;
+}
+
+/* 강의실 */
+.classroom-name {
+  font-weight: 500;
+  font-size: 9px;
+  line-height: 1.1;
+  text-align: center;
+  color: #ffffff;
+  background-color: #000000;
+  padding: 2px 4px;
+  border-radius: 3px;
+  text-shadow: none;
+}
+
+/* 충돌 표시 */
+.conflict-indicator {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 10px;
+  color: #ff6b6b;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* 비활성 오버레이 */
+.inactive-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* 취소 오버레이 */
+.cancelled-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* 상태별 스타일 */
+.timetable-cell.inactive {
+  background-color: transparent !important;
+  color: #cccccc;
+}
+
+.timetable-cell.cancelled {
+  background-color: transparent !important;
+  color: #ffcccc;
+}
+
+.timetable-cell.active {
+  background-color: transparent !important;
+  color: #ffffff;
+}
+
+/* 오버레이 셀용 스타일 */
+.timetable-cell.timetable-cell-overlay {
+  background-color: transparent !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* 작은 셀에서의 폰트 크기 조정 */
+.timetable-cell[style*="height: 30px"] .class-name {
+  font-size: 10px;
+}
+
+.timetable-cell[style*="height: 30px"] .time-start,
+.timetable-cell[style*="height: 30px"] .time-end {
+  font-size: 9px;
+}
+
+.timetable-cell[style*="height: 30px"] .teacher-name,
+.timetable-cell[style*="height: 30px"] .classroom-name {
+  font-size: 8px;
+}

@@ -1,0 +1,149 @@
+.timetable-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.time-column-header {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 12px;
+  background-color: #f8f9fa;
+  border-right: 2px solid #dee2e6;
+  font-weight: 600;
+}
+
+.header-label {
+  font-size: 14px;
+  color: #495057;
+  text-align: center;
+}
+
+.day-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 8px;
+  background-color: #f8f9fa;
+  border-right: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.day-header:hover {
+  background-color: #e9ecef;
+}
+
+.day-header:last-child {
+  border-right: none;
+}
+
+.day-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #495057;
+  text-align: center;
+}
+
+/* 주말 스타일 */
+.day-header.saturday {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.day-header.saturday .day-label {
+  color: #1976d2;
+}
+
+.day-header.sunday {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.day-header.sunday .day-label {
+  color: #d32f2f;
+}
+
+/* 다크 테마 지원 */
+.timetable-header.dark {
+  background-color: #343a40;
+  border-bottom-color: #495057;
+}
+
+.timetable-header.dark .time-column-header,
+.timetable-header.dark .day-header {
+  background-color: #495057;
+  border-right-color: #6c757d;
+  color: #f8f9fa;
+}
+
+.timetable-header.dark .time-column-header {
+  border-right-color: #6c757d;
+}
+
+.timetable-header.dark .header-label,
+.timetable-header.dark .day-label {
+  color: #e9ecef;
+}
+
+.timetable-header.dark .day-header:hover {
+  background-color: #5a6268;
+}
+
+.timetable-header.dark .day-header.saturday {
+  background-color: #1e3a5f;
+}
+
+.timetable-header.dark .day-header.saturday .day-label {
+  color: #64b5f6;
+}
+
+.timetable-header.dark .day-header.sunday {
+  background-color: #5d1b1b;
+}
+
+.timetable-header.dark .day-header.sunday .day-label {
+  color: #ef5350;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .timetable-header {
+    grid-template-columns: 60px repeat(7, 1fr);
+  }
+  
+  .time-column-header,
+  .day-header {
+    padding: 12px 6px;
+  }
+  
+  .header-label {
+    font-size: 12px;
+  }
+  
+  .day-label {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .timetable-header {
+    grid-template-columns: 50px repeat(7, 1fr);
+  }
+  
+  .time-column-header,
+  .day-header {
+    padding: 8px 4px;
+  }
+  
+  .header-label {
+    font-size: 10px;
+  }
+  
+  .day-label {
+    font-size: 12px;
+  }
+}

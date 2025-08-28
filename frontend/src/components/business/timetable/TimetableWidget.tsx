@@ -1,13 +1,19 @@
-import React, { useMemo, useCallback, useRef } from 'react'
+import React, { useCallback, useRef, useEffect, useState, useMemo } from 'react'
 import { useDrop } from 'react-dnd'
 import type { TimetableGrid, TimetableClass } from './types/timetable.types'
+import { TIMETABLE_CONSTANTS, DAYS } from './constants/timetable.constants'
+import { timeCalculations } from './utils/timeCalculations'
+import { useTimetable } from './hooks/useTimetable'
+import { TimetableHeader } from './TimetableHeader'
+import { TimetableTimeColumn } from './TimetableTimeColumn'
+import { TimetableCell } from './TimetableCell'
 import './TimetableWidget.css'
 
 export interface TimetableWidgetProps {
-  data: TimetableGrid
+  data?: any | any[] // 백엔드에서 받은 원시 데이터 (단일 객체 또는 배열)
   startHour?: number
   endHour?: number
-  timeInterval?: number
+  // timeInterval prop 제거 - 30분으로 고정
   showConflicts?: boolean
   showEmptySlots?: boolean
   showTimeLabels?: boolean
@@ -15,13 +21,6 @@ export interface TimetableWidgetProps {
   onDrop?: (item: any) => void
   className?: string
 }
-
-const DAY_LABELS = {
-  monday: '월', tuesday: '화', wednesday: '수',
-  thursday: '목', friday: '금', saturday: '토', sunday: '일'
-} as const
-
-const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
 
 // Phase 2: 실제 시간 기반 겹침 감지
 const detectRealTimeOverlaps = (classes: TimetableClass[]): TimetableClass[][] => {
@@ -87,10 +86,10 @@ const processOverlappingClasses = (classes: TimetableClass[]): (TimetableClass &
 }
 
 export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
-  data,
+  data = [],
   startHour = 9,
   endHour = 23,
-  timeInterval = 60,
+  // timeInterval 제거
   showConflicts = false,
   showEmptySlots = false,
   showTimeLabels = true,
@@ -98,7 +97,6 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
   onDrop,
   className = ''
 }) => {
-
   // 드롭 존 설정
   const [{ isOver, canDrop }, drop] = useDrop({
     accept: 'class-section',
@@ -114,126 +112,248 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
   })
 
   const dropRef = useRef<HTMLDivElement>(null)
+  const tableRef = useRef<HTMLTableElement>(null)
+  const [classPositions, setClassPositions] = useState<{[key: string]: {left: number, top: number, width: number, height: number}}>({})
+  
   drop(dropRef)
 
-  // Phase 4-2: 고정 시간 범위 기반 전체 시간 슬롯 생성 (컴포넌트 내부)
-  const fullTimeSlots = useMemo(() => {
-    const slots: { time: string }[] = []
-    const startMinutes = startHour * 60
-    const endMinutes = endHour * 60
-    for (let minutes = startMinutes; minutes < endMinutes; minutes += timeInterval) {
-      const hours = Math.floor(minutes / 60)
-      const mins = minutes % 60
-      const timeString = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`
-      slots.push({ time: timeString })
+  // ✅ useTimetable 훅 사용하여 데이터 가공
+  // data가 단일 객체인 경우 배열로 변환, 배열인 경우 그대로 사용
+  const dataArray = useMemo(() => {
+    if (!data) return []
+    
+    console.log('🔍 TimetableWidget received data:', data)
+    console.log('🔍 Data type:', typeof data)
+    console.log('🔍 Is array:', Array.isArray(data))
+    console.log('🔍 Data content:', JSON.stringify(data, null, 2))
+    
+    if (Array.isArray(data)) {
+      return data
+    } else {
+      // 단일 객체인 경우 배열로 변환
+      return [data]
     }
-    return slots
-  }, [startHour, endHour, timeInterval])
+  }, [data])
+  
+  const { timetableGrid } = useTimetable(dataArray, {
+    startHour,
+    endHour
+  })
+  
+  console.log('🔍 TimetableWidget useTimetable result:', timetableGrid)
+  
+  // ✅ timetableGrid에서 데이터 추출
+  const { timeSlots, daySchedules, gridStyles } = timetableGrid || {}
+  const fullTimeSlots = timeSlots || []
+  
+  console.log('🔍 TimetableWidget extracted data:', { timeSlots, daySchedules, gridStyles })
+  
+  // ✅ 기존 gridStyles와 TIMETABLE_CONSTANTS 통합
+  const gridStyle = {
+    '--timetable-columns': DAYS.length + 1, // +1은 시간 컬럼
+    '--timetable-rows': fullTimeSlots.length,
+    '--timetable-time-interval': TIMETABLE_CONSTANTS.SLOT_HEIGHT_PX, // ✅ 30px 고정
+    '--dynamic-rows': fullTimeSlots.length,
+    ...gridStyles // 기존 gridStyles와 병합
+  } as React.CSSProperties
 
-  // Phase 2: CSS 변수 스타일 계산 (행 수만 전달)
-  const gridStyle = useMemo(() => {
+  // 셀 위치 계산 함수 (CSS Grid 방식)
+  const getCellPosition = useCallback((dayIndex: number, timeIndex: number) => {
+    if (!tableRef.current) return null
+    
+    // CSS Grid에서 특정 셀의 위치 계산
+    const gridContainer = tableRef.current
+    const containerRect = dropRef.current?.getBoundingClientRect()
+    
+    if (!containerRect) return null
+    
+    // Grid 셀의 크기 계산
+    const gridRect = gridContainer.getBoundingClientRect()
+    const cellWidth = (gridRect.width - 80) / DAYS.length // 80px는 시간 열 너비
+    const cellHeight = 30 // 고정 셀 높이
+    
+    // 위치 계산
+    const left = 80 + (dayIndex * cellWidth) // 시간 열 너비(80px) + 요일별 오프셋
+    const top = 50 + (timeIndex * cellHeight) // 헤더 높이(50px) + 시간별 오프셋
+    
     return {
-      '--timetable-columns': DAYS.length,
-      '--timetable-rows': fullTimeSlots.length,
-      '--timetable-time-interval': `${timeInterval}px`
-    } as React.CSSProperties
-  }, [fullTimeSlots.length, timeInterval])
-
-  // Phase 2: 수업 위치 계산 (grid 기반 디버그용)
-  const calculateClassPosition = useCallback((cls: TimetableClass, dayIndex: number) => {
-    const startRow = cls.startSlotIndex + 2 // +2는 헤더 행
-    const spanRows = Math.max(1, cls.endSlotIndex - cls.startSlotIndex + 1)
-    const column = dayIndex + 2 // +2는 시간 컬럼
-
-    return {
-      gridRow: `${startRow} / span ${spanRows}`,
-      gridColumn: column
+      left: left,
+      top: top,
+      width: cellWidth
+      // height는 제거 - calculateClassPositions에서 계산된 duration 사용
     }
   }, [])
 
-  // Phase 2: 각 요일별 처리된 수업 데이터
-  const processedDaySchedules = useMemo(() => {
-    return DAYS.map(day => {
-      const daySchedule = data?.daySchedules?.find(d => d.dayOfWeek === day)
-      const classes = daySchedule?.classes || []
-      return {
-        day,
-        classes: processOverlappingClasses(classes)
-      }
+  // 모든 수업의 위치 계산
+  const calculateClassPositions = useCallback(() => {
+    if (!daySchedules) return
+    
+    const positions: {[key: string]: {left: number, top: number, width: number, height: number}} = {}
+    
+    daySchedules.forEach((daySchedule) => {
+      const dayIndex = DAYS.indexOf(daySchedule.dayOfWeek)
+      if (dayIndex === -1) return
+      
+      daySchedule.classes.forEach((cls) => {
+        const startSlotIndex = timeCalculations.calculateSlotIndex(cls.startTime, startHour)
+        const duration = timeCalculations.calculateHeight(cls.startTime, cls.endTime, startHour)
+        
+        // 디버깅 로그 추가
+        console.log(`🔍 수업 높이 계산:`, {
+          수업명: cls.name,
+          시작시간: cls.startTime,
+          끝시간: cls.endTime,
+          시작슬롯: startSlotIndex,
+          계산된높이: duration,
+          예상높이: `${cls.startTime}~${cls.endTime} = ${duration}px`
+        })
+        
+        const cellPos = getCellPosition(dayIndex, startSlotIndex)
+        if (cellPos) {
+          const key = `${cls.id}-${daySchedule.dayOfWeek}`
+          positions[key] = {
+            left: cellPos.left,
+            top: cellPos.top,
+            width: cellPos.width,
+            height: duration // cellPos.height 대신 duration 직접 사용
+          }
+          
+          // 실제 적용될 스타일 로그
+          console.log(`🔍 실제 적용될 스타일:`, {
+            수업명: cls.name,
+            시작시간: cls.startTime,
+            끝시간: cls.endTime,
+            left: `${cellPos.left}px`,
+            top: `${cellPos.top}px`,
+            width: `${cellPos.width}px`,
+            height: `${duration}px`
+          })
+        }
+      })
     })
-  }, [data?.daySchedules])
+    
+    setClassPositions(positions)
+  }, [daySchedules, startHour, getCellPosition])
+
+  // 컴포넌트 마운트 후와 데이터 변경 시 위치 계산
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      calculateClassPositions()
+    }, 100) // DOM 렌더링 완료 후 계산
+    
+    return () => clearTimeout(timer)
+  }, [calculateClassPositions])
+
+  // 윈도우 리사이즈 시 재계산
+  useEffect(() => {
+    const handleResize = () => {
+      calculateClassPositions()
+    }
+    
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [calculateClassPositions])
 
   return (
     <div 
       ref={dropRef}
       className={`timetable-widget ${className} ${isOver ? 'drop-over' : ''} ${canDrop ? 'drop-can' : ''}`}
-      style={gridStyle}
     >
-      <table className="timetable-table">
-        <thead>
-          <tr>
-            <th className="timetable-header-cell timetable-time-header">시간</th>
+      {/* CSS Grid 방식으로 변경 */}
+      <div 
+        ref={tableRef}
+        className="timetable-grid"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `80px repeat(${DAYS.length}, 1fr)`,
+          gridTemplateRows: `50px repeat(${fullTimeSlots.length}, 30px)`,
+          gap: '0',
+          width: '100%',
+          height: '100%',
+          position: 'relative'
+        }}
+      >
+        {/* 헤더 행 */}
+        <div className="timetable-time-header">
+          <span className="header-label">시간</span>
+        </div>
+        {DAYS.map((day) => (
+          <div key={day} className="timetable-day-header">
+            <TimetableHeader 
+              days={[day]} 
+              className="timetable-header-cell"
+            />
+          </div>
+        ))}
+        
+        {/* 시간 열과 요일별 셀들 */}
+        {fullTimeSlots.map((slot, timeIndex) => (
+          <>
+            <div key={`time-${timeIndex}`} className="timetable-time-cell">
+              <TimetableTimeColumn 
+                timeSlots={[slot]}
+                className="timetable-time-slot"
+              />
+            </div>
             {DAYS.map((day) => (
-              <th key={day} className="timetable-header-cell">
-                {DAY_LABELS[day]}
-              </th>
+              <div 
+                key={`${day}-${timeIndex}`} 
+                className="timetable-day-cell"
+                data-day={day}
+                data-time={timeIndex}
+              >
+                {/* 빈 셀 - 수업은 위에 오버레이 */}
+              </div>
             ))}
-          </tr>
-        </thead>
-        <tbody>
-          {fullTimeSlots.map((slot, timeIndex) => (
-            <tr key={timeIndex} className="timetable-row">
-              <td className="timetable-time-cell">
-                {slot.time}
-              </td>
-              {DAYS.map((day, dayIndex) => {
-                const daySchedule = data?.daySchedules?.find(d => d.dayOfWeek === day)
-                const classes = daySchedule?.classes || []
-                
-                // Phase 2: 겹치는 수업 처리 적용
-                const processedClasses = processOverlappingClasses(classes)
-                
-                return (
-                  <td key={`${day}-${timeIndex}`} className="timetable-cell">
-                    {/* 이 시간대에 시작하는 수업들 */}
-                    {processedClasses
-                      .filter(cls => cls.startSlotIndex === timeIndex)
-                      .map((cls, classIndex) => {
-                        const spanRows = Math.max(1, cls.endSlotIndex - cls.startSlotIndex + 1)
-                        
-                        return (
-                          <div
-                            key={`${cls.id}-${classIndex}`}
-                            className={`timetable-class-cell ${showConflicts && cls.layoutInfo?.isOverlapped ? 'conflict' : ''}`}
-                            style={{
-                              position: 'absolute',
-                              top: '2px',
-                              left: cls.layoutInfo ? `${cls.layoutInfo.left}` : '0',
-                              right: cls.layoutInfo ? 'auto' : '0',
-                              width: cls.layoutInfo ? cls.layoutInfo.width : '100%',
-                              height: `calc(${spanRows} * 60px - 4px)`,
-                              backgroundColor: cls.color || 'var(--timetable-accent-color)',
-                              zIndex: cls.layoutInfo?.zIndex || 20,
-                              cursor: onClassClick ? 'pointer' : 'default'
-                            }}
-                            onClick={() => onClassClick?.(cls)}
-                          >
-                            <div className="class-name">{cls.name}</div>
-                            <div className="class-time">
-                              <div className="time-start">{cls.startTime}</div>
-                              <div className="time-separator">~</div>
-                              <div className="time-end">{cls.endTime}</div>
-                            </div>
-                          </div>
-                        )
-                      })}
-                  </td>
-                )
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          </>
+        ))}
+      </div>
+      
+      {/* 수업들을 계산된 위치에 오버레이 */}
+      {daySchedules?.map((daySchedule) => {
+        const dayIndex = DAYS.indexOf(daySchedule.dayOfWeek)
+        if (dayIndex === -1) return null
+        
+        return daySchedule.classes.map((cls) => {
+          const key = `${cls.id}-${daySchedule.dayOfWeek}`
+          const position = classPositions[key]
+          
+          if (!position) return null
+          
+          // 겹침 레이아웃 정보 계산
+          const isOverlapped = cls.layoutInfo?.isOverlapped || false
+          const overlapWidth = isOverlapped && cls.layoutInfo ? parseFloat(cls.layoutInfo.width) : 100
+          const overlapLeft = isOverlapped && cls.layoutInfo ? parseFloat(cls.layoutInfo.left) : 0
+          const zIndex = cls.layoutInfo?.zIndex || 10
+          
+          return (
+            <div
+              key={key}
+              className="timetable-class-overlay"
+              style={{
+                position: 'absolute',
+                left: isOverlapped 
+                  ? `${position.left + (overlapLeft * position.width / 100)}px`
+                  : `${position.left}px`,
+                top: `${position.top}px`,
+                width: isOverlapped 
+                  ? `${overlapWidth * position.width / 100}px`
+                  : `${position.width}px`,
+                height: `${position.height}px`,
+                backgroundColor: cls.color || 'var(--timetable-accent-color)',
+                zIndex: zIndex,
+                cursor: onClassClick ? 'pointer' : 'default'
+              }}
+              onClick={() => onClassClick?.(cls)}
+            >
+              <TimetableCell 
+                classData={cls}
+                className="timetable-cell-overlay"
+              />
+            </div>
+          )
+        })
+      })}
     </div>
   )
 }

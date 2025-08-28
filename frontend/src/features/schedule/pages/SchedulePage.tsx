@@ -4,10 +4,11 @@ import { BaseWidget } from '../../../components/base/BaseWidget'
 import { Label } from '../../../components/labels/Label'
 import { SearchInput } from '../../../components/SearchInput/SearchInput'
 import { Button } from '../../../components/buttons/Button'
-import { TimetableWidget } from '../../../components/business/timetable/TimetableWidget'
+import { TimetableWidget, TimetableDownloadModal, BulkTimetableDownloadModal } from '../../../components/business/timetable'
 import type { Student } from '@shared/types'
-import { useStudents, useStudentSearch, useStudentTimetable } from '../hooks'
+import { useStudents, useStudentSearch } from '../hooks'
 import { TimetableEditModal } from '../components/TimetableEditModal'
+import { apiService } from '../../../services/api'
 
 function SchedulePage() {
   // 학생 목록 관리
@@ -27,20 +28,82 @@ function SchedulePage() {
   // 선택된 학생 상태
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
 
-  // 학생 시간표 관리
-  const {
-    timetableData,
-    isLoading: isTimetableLoading,
-    error: timetableError,
-    loadTimetable
-  } = useStudentTimetable()
+  // 학생 시간표 관리 (직접 API 호출)
+  const [timetableData, setTimetableData] = useState<any>(null)
+  const [isTimetableLoading, setIsTimetableLoading] = useState(false)
+  const [timetableError, setTimetableError] = useState<string | null>(null)
+
+  // 모달 상태 관리
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false)
+  const [isBulkDownloadModalOpen, setIsBulkDownloadModalOpen] = useState(false)
 
   // 학생 선택 시 시간표 로드
   useEffect(() => {
     if (selectedStudent) {
       loadTimetable(selectedStudent)
     }
-  }, [selectedStudent, loadTimetable])
+  }, [selectedStudent])
+
+  // 시간표 로드 함수
+  const loadTimetable = useCallback(async (student: Student) => {
+    if (!student) return
+
+    setIsTimetableLoading(true)
+    setTimetableError(null)
+    setTimetableData(null) // 기존 데이터 초기화
+
+    try {
+      console.log(`📚 ${student.name}의 시간표 로드 시작...`)
+      
+      const response = await apiService.getStudentTimetable(student.id)
+      
+      if (response.success && response.data && response.data.classSections) {
+        console.log('✅ 시간표 데이터 로드 성공:', response.data)
+        
+        // useTimetable 훅이 기대하는 구조로 변환
+        const data = {
+          classSections: response.data.classSections,
+          conflicts: [],
+          metadata: {
+            totalClasses: response.data.classSections.length,
+            totalStudents: 1,
+            totalTeachers: 0
+          }
+        }
+        
+        setTimetableData(data)
+        console.log(`📚 ${student.name}의 시간표 로드 완료`, data)
+        
+      } else {
+        // 시간표가 없는 경우
+        if (response.message?.includes('not found') || 
+            response.message?.includes('Student timetable not found') ||
+            response.message?.includes('Resource not found')) {
+          console.log(`📚 ${student.name}의 시간표가 없습니다.`)
+          setTimetableData({
+            classSections: [],
+            conflicts: [],
+            metadata: { totalClasses: 0, totalStudents: 1, totalTeachers: 0 }
+          })
+          setTimetableError(null)
+        } else {
+          const errorMessage = response.message || '시간표를 불러오는데 실패했습니다.'
+          setTimetableError(errorMessage)
+          setTimetableData(null)
+          console.error('❌ 시간표 로드 실패:', errorMessage)
+        }
+      }
+      
+    } catch (err) {
+      const errorMessage = '시간표를 불러오는 중 오류가 발생했습니다.'
+      setTimetableError(errorMessage)
+      setTimetableData(null)
+      console.error('❌ 시간표 로드 오류:', err)
+    } finally {
+      setIsTimetableLoading(false)
+    }
+  }, [])
 
   // 학생 선택 핸들러
   const handleStudentSelect = useCallback((student: Student) => {
@@ -52,9 +115,6 @@ function SchedulePage() {
     // 나중에 실제 추가 로직 구현
   }, [])
 
-  // 모달 상태 관리
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-
   // 모달 열기/닫기 핸들러
   const handleOpenEditModal = useCallback(() => {
     setIsEditModalOpen(true)
@@ -62,6 +122,24 @@ function SchedulePage() {
 
   const handleCloseEditModal = useCallback(() => {
     setIsEditModalOpen(false)
+  }, [])
+
+  // 다운로드 모달 열기/닫기 핸들러
+  const handleOpenDownloadModal = useCallback(() => {
+    setIsDownloadModalOpen(true)
+  }, [])
+
+  const handleCloseDownloadModal = useCallback(() => {
+    setIsDownloadModalOpen(false)
+  }, [])
+
+  // 전체 다운로드 모달 열기/닫기 핸들러
+  const handleOpenBulkDownloadModal = useCallback(() => {
+    setIsBulkDownloadModalOpen(true)
+  }, [])
+
+  const handleCloseBulkDownloadModal = useCallback(() => {
+    setIsBulkDownloadModalOpen(false)
   }, [])
 
   // 시간표 저장 핸들러
@@ -106,6 +184,16 @@ function SchedulePage() {
             <option value="고2">고2</option>
             <option value="고3">고3</option>
           </select>
+          
+          <Button 
+            onClick={handleOpenBulkDownloadModal}
+            className="bulk-download-btn"
+            variant="primary"
+            size="small"
+            disabled={searchResults.length === 0}
+          >
+            📦 전체 시간표 다운로드
+          </Button>
         </div>
       </div>
 
@@ -148,6 +236,7 @@ function SchedulePage() {
                 {searchResults.map((student) => (
                   <div 
                     key={student.id} 
+                    data-student-id={student.id}
                     className={`student-item ${selectedStudent?.id === student.id ? 'selected' : ''}`}
                     onClick={() => handleStudentSelect(student)}
                   >
@@ -186,16 +275,26 @@ function SchedulePage() {
                 </Label>
               </div>
               
-              {/* 시간표 편집 버튼 - 학생이 선택되었을 때만 표시 */}
+              {/* 버튼 그룹 - 학생이 선택되었을 때만 표시 */}
               {selectedStudent && (
-                <Button 
-                  onClick={handleOpenEditModal}
-                  className="edit-timetable-btn"
-                  variant="primary"
-                  size="small"
-                >
-                  시간표 편집
-                </Button>
+                <div className="action-buttons">
+                  <Button 
+                    onClick={handleOpenEditModal}
+                    className="edit-timetable-btn"
+                    variant="primary"
+                    size="small"
+                  >
+                    시간표 편집
+                  </Button>
+                  <Button 
+                    onClick={handleOpenDownloadModal}
+                    className="download-timetable-btn"
+                    variant="secondary"
+                    size="small"
+                  >
+                    📥 시간표 다운로드
+                  </Button>
+                </div>
               )}
             </div>
           </div>
@@ -221,10 +320,27 @@ function SchedulePage() {
                   </div>
                 ) : (
                   <div className="timetable-widget-container">
-                    <TimetableWidget 
-                      data={timetableData.timetableGrid}
-                      className="student-timetable-widget"
-                    />
+                    {timetableData && timetableData.classSections ? (
+                      <TimetableWidget 
+                        data={{
+                          classSections: timetableData.classSections,
+                          conflicts: [],
+                          metadata: {
+                            totalClasses: timetableData.classSections.length,
+                            totalStudents: 1,
+                            totalTeachers: 0
+                          }
+                        }}
+                        className="student-timetable-widget"
+                        data-student-id={selectedStudent.id}
+                      />
+                    ) : (
+                      <div className="timetable-loading">
+                        <Label variant="secondary" size="medium">
+                          {isTimetableLoading ? '시간표를 불러오는 중...' : '시간표 데이터가 없습니다.'}
+                        </Label>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -244,7 +360,38 @@ function SchedulePage() {
         isOpen={isEditModalOpen}
         onClose={handleCloseEditModal}
         student={selectedStudent}
+        timetableData={timetableData}
         onSave={handleSaveTimetable}
+      />
+      
+      {/* 시간표 다운로드 모달 */}
+      <TimetableDownloadModal
+        isOpen={isDownloadModalOpen}
+        onClose={handleCloseDownloadModal}
+        timetableData={timetableData}
+        studentInfo={selectedStudent ? {
+          name: selectedStudent.name,
+          grade: selectedStudent.grade,
+          status: selectedStudent.status
+        } : undefined}
+      />
+      
+      {/* 전체 시간표 다운로드 모달 */}
+      <BulkTimetableDownloadModal
+        isOpen={isBulkDownloadModalOpen}
+        onClose={handleCloseBulkDownloadModal}
+        students={searchResults.map(student => ({
+          id: student.id,
+          name: student.name,
+          grade: student.grade,
+          status: student.status,
+          isSelected: false, // 기본적으로 선택되지 않음
+          timetableData: student.id === selectedStudent?.id ? timetableData : null
+        }))}
+        onStudentsUpdate={(updatedStudents) => {
+          // 학생 선택 상태 업데이트를 처리할 수 있는 콜백
+          console.log('학생 선택 상태 업데이트:', updatedStudents)
+        }}
       />
     </BaseWidget>
   )

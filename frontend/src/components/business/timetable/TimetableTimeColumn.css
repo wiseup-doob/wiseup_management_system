@@ -1,0 +1,86 @@
+.timetable-time-column {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.time-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e9ecef;
+  background-color: #ffffff;
+  transition: background-color 0.2s ease;
+}
+
+.time-slot:hover {
+  background-color: #f1f3f4;
+}
+
+.time-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #495057;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* 첫 번째 시간 슬롯 스타일 */
+.time-slot:first-child {
+  border-top: 1px solid #e9ecef;
+}
+
+/* 반시간 단위일 때 스타일 조정 */
+.timetable-time-column.half-hour .time-slot {
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+/* 다크 테마 지원 */
+.timetable-time-column.dark {
+  background-color: #343a40;
+  border-right-color: #495057;
+}
+
+.timetable-time-column.dark .time-slot {
+  background-color: #495057;
+  border-bottom-color: #6c757d;
+  color: #f8f9fa;
+}
+
+.timetable-time-column.dark .time-slot:hover {
+  background-color: #5a6268;
+}
+
+.timetable-time-column.dark .time-label {
+  color: #e9ecef;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .time-slot {
+    padding: 4px 6px;
+  }
+  
+  .time-label {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .timetable-time-column {
+    grid-column: 1;
+    min-width: 60px;
+  }
+  
+  .time-slot {
+    padding: 2px 4px;
+  }
+  
+  .time-label {
+    font-size: 9px;
+  }
+}

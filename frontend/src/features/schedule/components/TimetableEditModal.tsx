@@ -5,6 +5,7 @@ import type { StudentTimetableResponse } from '../types/timetable.types'
 import type { ClassSectionWithDetails } from '../../class/types/class.types'
 import { Button } from '../../../components/buttons/Button'
 import { Label } from '../../../components/labels/Label'
+import { SearchInput } from '../../../components/SearchInput/SearchInput'
 import { TimetableWidget } from '../../../components/business/timetable/TimetableWidget'
 import { apiService } from '../../../services/api'
 import { transformStudentTimetableResponse, checkAllConflicts } from '../utils'
@@ -14,14 +15,15 @@ interface TimetableEditModalProps {
   isOpen: boolean
   onClose: () => void
   student: Student | null
+  timetableData?: any // SchedulePage에서 전달받은 시간표 데이터
   onSave: () => void
 }
 
-// 시간표 설정 상수
+// ✅ 30분 단위 고정 시간표 설정
 const TIMETABLE_CONFIG = {
   startHour: 9,
   endHour: 23,
-  timeInterval: 60
+  timeInterval: 30
 }
 
 // 요일 매핑
@@ -39,10 +41,13 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
   isOpen,
   onClose,
   student,
+  timetableData,
   onSave
 }) => {
   // 상태 관리
   const [availableClasses, setAvailableClasses] = useState<ClassSectionWithDetails[]>([])
+  const [filteredClasses, setFilteredClasses] = useState<ClassSectionWithDetails[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
   const [currentTimetable, setCurrentTimetable] = useState<any>(null)
   const [originalTimetableData, setOriginalTimetableData] = useState<any>(null) // 원본 백엔드 데이터 저장
   const [localTimetableData, setLocalTimetableData] = useState<any>(null) // 로컬 편집 데이터
@@ -74,6 +79,7 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
       // 수업 목록 설정
       if (classesResponse.success && classesResponse.data) {
         setAvailableClasses(classesResponse.data)
+        setFilteredClasses(classesResponse.data) // 초기에는 모든 수업 표시
         console.log('✅ 수업 목록 로드 성공:', classesResponse.data.length, '개')
         
         // 교사명, 강의실명 디버깅
@@ -86,6 +92,7 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
       } else {
         console.warn('⚠️ 수업 목록 로드 실패:', classesResponse.message)
         setAvailableClasses([])
+        setFilteredClasses([])
       }
       
       // 학생 시간표 설정
@@ -98,14 +105,19 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
         // 로컬 편집 데이터 초기화
         setLocalTimetableData(timetableResponse.data)
         
-        const timetableGrid = transformStudentTimetableResponse(
-          timetableResponse.data,
-          TIMETABLE_CONFIG.startHour,
-          TIMETABLE_CONFIG.endHour,
-          TIMETABLE_CONFIG.timeInterval
-        )
+        // useTimetable 훅이 기대하는 구조로 변환
+        const timetableForDisplay = {
+          classSections: timetableResponse.data.classSections,
+          conflicts: [],
+          metadata: {
+            studentId: timetableResponse.data.studentId,
+            studentName: timetableResponse.data.studentName,
+            grade: timetableResponse.data.grade,
+            status: timetableResponse.data.status
+          }
+        }
         
-        setCurrentTimetable(timetableGrid)
+        setCurrentTimetable(timetableForDisplay)
       } else {
         // 시간표가 없는 경우 빈 시간표 생성
         console.log('🔍 학생 시간표가 없습니다. 빈 시간표를 생성합니다.')
@@ -122,14 +134,19 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
           // 로컬 편집 데이터 초기화
           setLocalTimetableData(emptyTimetableData)
           
-          const emptyTimetableGrid = transformStudentTimetableResponse(
-            emptyTimetableData,
-            TIMETABLE_CONFIG.startHour,
-            TIMETABLE_CONFIG.endHour,
-            TIMETABLE_CONFIG.timeInterval
-          )
+          // useTimetable 훅이 기대하는 구조로 변환
+          const emptyTimetableForDisplay = {
+            classSections: emptyTimetableData.classSections,
+            conflicts: [],
+            metadata: {
+              studentId: emptyTimetableData.studentId,
+              studentName: emptyTimetableData.studentName,
+              grade: emptyTimetableData.grade,
+              status: emptyTimetableData.status
+            }
+          }
           
-          setCurrentTimetable(emptyTimetableGrid)
+          setCurrentTimetable(emptyTimetableForDisplay)
         }
       }
       
@@ -150,13 +167,18 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
         // 로컬 편집 데이터 초기화
         setLocalTimetableData(emptyTimetableData)
         
-        const emptyTimetableGrid = transformStudentTimetableResponse(
-          emptyTimetableData,
-          TIMETABLE_CONFIG.startHour,
-          TIMETABLE_CONFIG.endHour,
-          TIMETABLE_CONFIG.timeInterval
-        )
-        setCurrentTimetable(emptyTimetableGrid)
+        // useTimetable 훅이 기대하는 구조로 변환
+        const emptyTimetableForDisplay = {
+          classSections: emptyTimetableData.classSections,
+          conflicts: [],
+          metadata: {
+            studentId: emptyTimetableData.studentId,
+            studentName: emptyTimetableData.studentName,
+            grade: emptyTimetableData.grade,
+            status: emptyTimetableData.status
+          }
+        }
+        setCurrentTimetable(emptyTimetableForDisplay)
       }
       
     } finally {
@@ -217,15 +239,19 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
         
         setLocalTimetableData(updatedLocalData)
         
-        // 시간표 UI 업데이트
-        const updatedTimetableGrid = transformStudentTimetableResponse(
-          updatedLocalData,
-          TIMETABLE_CONFIG.startHour,
-          TIMETABLE_CONFIG.endHour,
-          TIMETABLE_CONFIG.timeInterval
-        )
+        // 시간표 UI 업데이트 - useTimetable 훅이 기대하는 구조로 변환
+        const updatedTimetableForDisplay = {
+          classSections: updatedLocalData.classSections,
+          conflicts: [],
+          metadata: {
+            studentId: updatedLocalData.studentId,
+            studentName: updatedLocalData.studentName,
+            grade: updatedLocalData.grade,
+            status: updatedLocalData.status
+          }
+        }
         
-        setCurrentTimetable(updatedTimetableGrid)
+        setCurrentTimetable(updatedTimetableForDisplay)
         setError(null)
         setHasUnsavedChanges(true) // 저장되지 않은 변경사항 표시
         
@@ -292,6 +318,29 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
   }
 
   if (!isOpen) return null
+
+  // 검색 핸들러
+  const handleSearch = (value: string) => {
+    setSearchTerm(value)
+    
+    if (!value.trim()) {
+      // 검색어가 없으면 모든 수업 표시
+      setFilteredClasses(availableClasses)
+    } else {
+      // 검색어가 있으면 필터링
+      const filtered = availableClasses.filter(classSection => {
+        const searchLower = value.toLowerCase()
+        return (
+          classSection.name.toLowerCase().includes(searchLower) ||
+          classSection.teacher?.name?.toLowerCase().includes(searchLower) ||
+          classSection.classroom?.name?.toLowerCase().includes(searchLower) ||
+          classSection.course?.name?.toLowerCase().includes(searchLower) ||
+          classSection.course?.subject?.toLowerCase().includes(searchLower)
+        )
+      })
+      setFilteredClasses(filtered)
+    }
+  }
 
   // 수업 추가 함수
   const handleAddClass = async (classSectionId: string) => {
@@ -380,15 +429,19 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
       
       setLocalTimetableData(updatedLocalData)
       
-      // 시간표 UI 업데이트
-      const updatedTimetableGrid = transformStudentTimetableResponse(
-        updatedLocalData,
-        TIMETABLE_CONFIG.startHour,
-        TIMETABLE_CONFIG.endHour,
-        TIMETABLE_CONFIG.timeInterval
-      )
+      // 시간표 UI 업데이트 - useTimetable 훅이 기대하는 구조로 변환
+      const updatedTimetableForDisplay = {
+        classSections: updatedLocalData.classSections,
+        conflicts: [],
+        metadata: {
+          studentId: updatedLocalData.studentId,
+          studentName: updatedLocalData.studentName,
+          grade: updatedLocalData.grade,
+          status: updatedLocalData.status
+        }
+      }
       
-      setCurrentTimetable(updatedTimetableGrid)
+      setCurrentTimetable(updatedTimetableForDisplay)
       setError(null)
       setHasUnsavedChanges(true) // 저장되지 않은 변경사항 표시
       
@@ -683,9 +736,17 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
                         <Label variant="heading" size="small">
                           수업 목록
                         </Label>
-                        <Label variant="secondary" size="small">
-                          드래그하여 시간표에 추가하세요 (자동으로 요일과 시간에 배치됩니다)
-                        </Label>
+                        <div className="search-container">
+                          <SearchInput 
+                            placeholder="수업명, 교사, 강의실, 과목으로 검색"
+                            value={searchTerm}
+                            onChange={setSearchTerm}
+                            onSearch={handleSearch}
+                            variant="pill"
+                            showIcon={true}
+                            size="sm"
+                          />
+                        </div>
                       </div>
                       
                                             <div className="class-cards">
@@ -726,14 +787,23 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
                         )}
                         
                         {/* 수업 목록 표시 */}
-                        {!isLoading && !error && availableClasses.length > 0 && (
-                          availableClasses.map(classSection => (
+                        {!isLoading && !error && filteredClasses.length > 0 && (
+                          filteredClasses.map(classSection => (
                             <DraggableClassCard key={classSection.id} classSection={classSection} />
                           ))
                         )}
                         
+                        {/* 검색 결과가 없는 경우 */}
+                        {!isLoading && !error && searchTerm && filteredClasses.length === 0 && (
+                          <div className="empty-state">
+                            <Label variant="secondary" size="small">
+                              "{searchTerm}"에 대한 검색 결과가 없습니다.
+                            </Label>
+                          </div>
+                        )}
+                        
                         {/* 수업이 없는 경우 */}
-                        {!isLoading && !error && availableClasses.length === 0 && (
+                        {!isLoading && !error && !searchTerm && availableClasses.length === 0 && (
                           <div className="empty-state">
                             <Label variant="secondary" size="small">등록된 수업이 없습니다.</Label>
                           </div>
@@ -767,7 +837,6 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
                             className="edit-timetable-widget"
                             startHour={TIMETABLE_CONFIG.startHour}
                             endHour={TIMETABLE_CONFIG.endHour}
-                            timeInterval={TIMETABLE_CONFIG.timeInterval}
                             onDrop={handleDrop}
                           />
                         )}

@@ -18,8 +18,8 @@ import {
 import { apiService } from '../../../services/api'
 import type { ClassSection, ClassSchedule, ClassSectionDependencies } from '@shared/types/class-section.types'
 import type { ClassFormDataWithIds, ClassSectionWithDetails } from '../types/class.types'
-// TimetableWidget과 useTimetable 훅 import
-import { TimetableWidget, useTimetable, TimetableSkeleton, EmptyTimetableState } from '../../../components/business/timetable'
+// TimetableWidget과 관련 컴포넌트들 import
+import { TimetableWidget, TimetableSkeleton, EmptyTimetableState } from '../../../components/business/timetable'
 
 // 동적 import로 번들 크기 최적화
 const AddClassPage = React.lazy(() => import('./AddClassPage'))
@@ -487,28 +487,15 @@ function ClassPage() {
     }
   }, [])
 
-  // useTimetable 훅을 사용하여 데이터 처리 - selectedClass를 직접 전달
-  const { timetableGrid, isEmpty, isValid, error: timetableError } = useTimetable(
-    selectedClass, // 원시 데이터 전달
-    { 
-      startHour: 9, 
-      endHour: 23, 
-      timeInterval: 60,
-      enableDebug: process.env.NODE_ENV === 'development'
-    }
-  )
-
-  // 디버깅: selectedClass와 timetableGrid 상태 확인
+  // 디버깅: selectedClass 상태 확인
   useEffect(() => {
     if (selectedClass) {
       console.log('🔍 Selected Class:', selectedClass)
       console.log('📅 Schedule String:', selectedClass.schedule)
-      console.log('📊 Timetable Grid:', timetableGrid)
-      console.log('📈 Timetable Status:', { isEmpty, isValid, error: timetableError })
     } else {
       console.log('❌ selectedClass가 null입니다')
     }
-  }, [selectedClass, timetableGrid, isEmpty, isValid, timetableError])
+  }, [selectedClass])
 
   // 검색 결과 하이라이트 함수
   const highlightText = (text: string, searchTerm: string) => {
@@ -943,28 +930,14 @@ function ClassPage() {
                           좌측에서 수업을 선택하면 시간표가 표시됩니다.
                         </Label>
                       </div>
-                    ) : isLoading ? ( // 데이터 fetching 로딩
+                    ) : isLoading ? (
                       <TimetableSkeleton /> 
-                    ) : timetableError ? ( // Phase 2: 에러 상태 처리
-                      <div className="timetable-error-state">
-                        <Label variant="error" size="medium">
-                          시간표 로딩 오류: {timetableError}
-                        </Label>
-                      </div>
-                    ) : !isValid ? ( // Phase 2: 유효하지 않은 데이터 처리
-                      <div className="timetable-invalid-state">
-                        <Label variant="secondary" size="medium">
-                          유효하지 않은 시간표 데이터입니다.
-                        </Label>
-                      </div>
-                    ) : isEmpty ? ( // Phase 2: 빈 데이터 처리
-                      <EmptyTimetableState />
-                    ) : timetableGrid ? ( // Phase 2: timetableGrid null 체크
+                    ) : (
                       <TimetableWidget 
-                        data={timetableGrid}
+                        data={selectedClass} // 단일 객체 직접 전달
                         startHour={9}
                         endHour={23}
-                        timeInterval={60}
+                        // timeInterval prop 제거 - 30분으로 고정
                         showConflicts={true}
                         showEmptySlots={true}
                         showTimeLabels={true}
@@ -973,8 +946,6 @@ function ClassPage() {
                         }}
                         className="class-timetable-widget"
                       />
-                    ) : (
-                      <EmptyTimetableState />
                     )}
                   </div>
                 </div>

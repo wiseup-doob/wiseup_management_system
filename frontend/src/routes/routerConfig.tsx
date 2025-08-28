@@ -6,6 +6,7 @@ import ClassPage from '../features/class/pages/ClassPage'
 import AddClassPage from '../features/class/pages/AddClassPage'
 import SchedulePage from '../features/schedule/pages/SchedulePage'
 
+
 const routes = [
   {
     path: '/',
@@ -36,7 +37,8 @@ const routes = [
         element: <SchedulePage />
       }
     ]
-  }
+  },
+
 ]
 
 export default routes

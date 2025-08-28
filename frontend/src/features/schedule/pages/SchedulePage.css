@@ -34,6 +34,38 @@
   align-items: center;
 }
 
+.bulk-download-btn {
+  min-width: 160px;
+  height: 36px;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+}
+
+.bulk-download-btn:hover:not(:disabled) {
+  background-color: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.bulk-download-btn:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.bulk-download-btn:disabled:hover {
+  background-color: #9ca3af;
+  transform: none;
+  box-shadow: none;
+}
+
 .filter-select {
   padding: 8px 12px;
   border: 1px solid #ddd;
@@ -53,6 +85,31 @@
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s;
+}
+
+/* 액션 버튼 그룹 */
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.download-timetable-btn {
+  min-width: 140px;
+  height: 36px;
+  background-color: white;
+  color: #1976d2;
+  border: 1px solid #1976d2;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.download-timetable-btn:hover {
+  background-color: #f3f8ff;
+  border-color: #1565c0;
+  color: #1565c0;
 }
 
 .add-student-btn:hover {

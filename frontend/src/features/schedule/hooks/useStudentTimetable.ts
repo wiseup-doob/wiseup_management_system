@@ -5,36 +5,23 @@ import type { TimetableGrid } from '../../../components/business/timetable/types
 import { apiService } from '../../../services/api'
 import { transformStudentTimetableResponse } from '../utils'
 
-// 고정된 시간표 설정
+// ✅ 30분 단위 고정 시간표 설정
 const TIMETABLE_CONFIG = {
   startHour: 9,
   endHour: 23,
-  timeInterval: 60
+  timeInterval: 30
 }
 
 // 빈 시간표 데이터 생성 (Hook 밖으로 이동)
 const createEmptyTimetableData = (): TimetableData => {
-  const emptyGrid: TimetableGrid = {
-    timeSlots: [],
-    daySchedules: [],
-    completeWeekSchedule: {
-      monday: { dayOfWeek: 'monday', classes: [] },
-      tuesday: { dayOfWeek: 'tuesday', classes: [] },
-      wednesday: { dayOfWeek: 'wednesday', classes: [] },
-      thursday: { dayOfWeek: 'thursday', classes: [] },
-      friday: { dayOfWeek: 'friday', classes: [] },
-      saturday: { dayOfWeek: 'saturday', classes: [] },
-      sunday: { dayOfWeek: 'sunday', classes: [] }
-    },
-    conflicts: [],
-    gridStyles: {}
-  }
-
   return {
-    timetableGrid: emptyGrid,
-    isEmpty: true,
-    hasConflicts: false,
-    conflictCount: 0
+    classSections: [],
+    conflicts: [],
+    metadata: {
+      totalClasses: 0,
+      totalStudents: 0,
+      totalTeachers: 0
+    }
   }
 }
 
@@ -70,24 +57,19 @@ export const useStudentTimetable = (): UseStudentTimetableReturn => {
       if (response.success && response.data) {
         console.log('✅ 시간표 데이터 로드 성공:', response.data)
         
-        // 백엔드 응답을 TimetableWidget 형식으로 변환
-        const timetableGrid = transformStudentTimetableResponse(
-          response.data,
-          TIMETABLE_CONFIG.startHour,
-          TIMETABLE_CONFIG.endHour,
-          TIMETABLE_CONFIG.timeInterval
-        )
-        
         const timetableData: TimetableData = {
-          timetableGrid,
-          isEmpty: response.data.classSections.length === 0,
-          hasConflicts: false,
-          conflictCount: 0
+          classSections: response.data.classSections || [],
+          conflicts: [],
+          metadata: {
+            totalClasses: response.data.classSections?.length || 0,
+            totalStudents: 1,
+            totalTeachers: 0
+          }
         }
         
         setTimetableData(timetableData)
         console.log(`📚 ${student.name}의 시간표 로드 완료`, {
-          classCount: response.data.classSections.length
+          classCount: response.data.classSections?.length || 0
         })
         
       } else {
@@ -104,9 +86,8 @@ export const useStudentTimetable = (): UseStudentTimetableReturn => {
             response.message?.includes('Resource not found')) {
           console.log(`📚 ${student.name}의 시간표가 없습니다. 빈 시간표를 표시합니다.`)
           
-          // 빈 시간표 데이터 생성 (그리드 구조는 유지)
+          // 빈 시간표 데이터 생성
           const emptyTimetableData = createEmptyTimetableData()
-          emptyTimetableData.isEmpty = true
           setTimetableData(emptyTimetableData)
           setError(null) // 에러 상태 해제
         } else {
@@ -126,7 +107,7 @@ export const useStudentTimetable = (): UseStudentTimetableReturn => {
     } finally {
       setIsLoading(false)
     }
-  }, [createEmptyTimetableData])
+  }, [])
 
   // 에러 클리어
   const clearError = useCallback(() => {
