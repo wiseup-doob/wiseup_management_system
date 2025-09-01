@@ -104,6 +104,8 @@ export interface ClassFormDataWithIds {
   status?: 'active' | 'inactive' | 'completed'
   description?: string
   schedule: string
+  // 색상 필드 추가
+  color?: string
 }
 
 export type ClassStatus = 'active' | 'inactive' | 'completed'
@@ -163,6 +165,19 @@ export interface CustomTimeSlot {
   startTime: string;
   endTime: string;
   color?: string;
+}
+
+// ===== 색상 관련 타입 =====
+
+export interface ColorPaletteItem {
+  code: string;
+  name: string;
+}
+
+export interface ColorPaletteResponse {
+  success: boolean;
+  data: ColorPaletteItem[];
+  message: string;
 }
 
 export interface CreateScheduleBlockRequest {

@@ -27,7 +27,9 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
     description: '',
     // AddClassPage와 동일한 구조로 추가
     subject: 'mathematics' as const,
-    difficulty: 'intermediate' as const
+    difficulty: 'intermediate' as const,
+    // 색상 필드 추가
+    color: classData?.color || '#3498db'
   })
   
   // 일정 정보를 위한 상태 추가
@@ -56,6 +58,54 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
   
   // 현재 수업의 Course 정보 상태
   const [currentCourse, setCurrentCourse] = useState<{ subject: string; difficulty: string } | null>(null)
+  
+  // 색상 선택 관련 상태
+  const [useColorPalette, setUseColorPalette] = useState(false)
+  const [selectedPaletteColor, setSelectedPaletteColor] = useState('')
+  const [customColor, setCustomColor] = useState('')
+  const [availableColors, setAvailableColors] = useState<Array<{ code: string; name: string }>>([])
+  const [colorDropdownOpen, setColorDropdownOpen] = useState(false)
+
+  // 색상 팔레트 로드 및 기존 색상 상태 설정
+  useEffect(() => {
+    const loadColorPalette = async () => {
+      try {
+        const response = await apiService.getColorPalette()
+        if (response.success && response.data) {
+          setAvailableColors(response.data)
+          console.log('✅ 색상 팔레트 로드 완료:', response.data.length, '개')
+          
+          // 기존 색상이 로드된 후 색상 상태 설정
+          if (classData?.color && response.data.length > 0) {
+            const existingColor = classData.color
+            const isColorInPalette = response.data.some(color => color.code === existingColor)
+            
+            if (isColorInPalette) {
+              // 색상 팔레트에 있는 색상인 경우
+              setUseColorPalette(true)
+              setSelectedPaletteColor(existingColor)
+              setCustomColor(existingColor)
+              console.log('🎨 기존 색상을 팔레트에서 찾음:', existingColor)
+            } else {
+              // 색상 팔레트에 없는 색상인 경우
+              setUseColorPalette(false)
+              setSelectedPaletteColor('')
+              setCustomColor(existingColor)
+              console.log('🎨 기존 색상을 직접 입력 모드로 설정:', existingColor)
+            }
+          }
+        } else {
+          console.warn('⚠️ 색상 팔레트 로드 실패:', response.message)
+          setAvailableColors([])
+        }
+      } catch (error) {
+        console.error('❌ 색상 팔레트 로드 오류:', error)
+        setAvailableColors([])
+      }
+    }
+    
+    loadColorPalette()
+  }, [classData?.color])
 
   // 백엔드에서 데이터 로드 (실제 API 호출)
   useEffect(() => {
@@ -169,7 +219,9 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
         description: classData.description || '',
         // Course 정보에서 가져온 값 사용
         subject: course?.subject as any || 'mathematics',
-        difficulty: course?.difficulty as any || 'intermediate'
+        difficulty: course?.difficulty as any || 'intermediate',
+        // 색상 필드 추가
+        color: classData.color || '#3498db'
       })
       
       // 일정 데이터 파싱 (ClassSchedule[] → UI 상태용 배열)
@@ -287,6 +339,18 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
       case 'difficulty':
         if (!value.trim()) {
           fieldError = '난이도를 선택해주세요.'
+        }
+        break
+
+      case 'color':
+        if (!value.trim()) {
+          fieldError = '색상을 선택하거나 입력해주세요.'
+        } else {
+          // HEX 색상 코드 형식 검증
+          const hexColorRegex = /^#[0-9A-Fa-f]{6}$/
+          if (!hexColorRegex.test(value)) {
+            fieldError = '올바른 HEX 색상 코드를 입력해주세요. (예: #3498db)'
+          }
         }
         break
 
@@ -456,7 +520,9 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
         classroomId: formData.classroomId,
         maxStudents: parseInt(formData.maxStudents),
         schedule: scheduleData,
-        description: formData.description
+        description: formData.description,
+        // 색상 필드 추가
+        color: formData.color
       }
 
       console.log('🔄 ClassSection 업데이트 요청:', classSectionUpdateRequest)
@@ -533,12 +599,17 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
       maxStudents: '',
       description: '',
       subject: 'mathematics' as const,
-      difficulty: 'intermediate' as const
+      difficulty: 'intermediate' as const,
+      color: '#3498db'
     })
     setSchedules([])
     setErrors({})
     setTouched({})
     setCurrentCourse(null)
+    // 색상 선택 상태 초기화
+    setCustomColor('#3498db')
+    setSelectedPaletteColor('')
+    setUseColorPalette(false)
   }
 
   const handleCancel = () => {
@@ -880,6 +951,126 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
                     {touched.difficulty && errors.difficulty && (
                       <div className="error-message">{errors.difficulty}</div>
                     )}
+                  </div>
+                  
+                  {/* 색상 선택 필드 추가 */}
+                  <div className="form-group">
+                    <label>시간표 색상</label>
+                    
+                    {/* 색상 팔레트 사용 체크박스 */}
+                    <div className="edit-class-color-palette-checkbox">
+                      <input
+                        type="checkbox"
+                        id="useColorPalette"
+                        checked={useColorPalette}
+                        onChange={(e) => {
+                          const usePalette = e.target.checked
+                          setUseColorPalette(usePalette)
+                          
+                          // 체크박스 상태 변경 시 색상 선택 상태 초기화
+                          if (usePalette) {
+                            // 팔레트 사용 시: 선택된 팔레트 색상이 있으면 유지, 없으면 기본값
+                            if (selectedPaletteColor) {
+                              setFormData(prev => ({ ...prev, color: selectedPaletteColor }))
+                            } else {
+                              setFormData(prev => ({ ...prev, color: '#3498db' }))
+                            }
+                          } else {
+                            // 직접 입력 시: 현재 customColor 사용
+                            setFormData(prev => ({ ...prev, color: customColor || '#3498db' }))
+                          }
+                        }}
+                        disabled={isSubmitting}
+                      />
+                      <label htmlFor="useColorPalette">색상 팔레트 사용</label>
+                    </div>
+
+                    {/* 색상 팔레트 커스텀 드롭다운 (체크박스 체크 시) */}
+                    {useColorPalette && (
+                      <div className="edit-class-color-custom-dropdown">
+                        <div 
+                          className="edit-class-color-dropdown-trigger"
+                          onClick={() => setColorDropdownOpen(!colorDropdownOpen)}
+                          style={{ 
+                            backgroundColor: selectedPaletteColor || '#ffffff',
+                            color: selectedPaletteColor ? '#ffffff' : '#6c757d',
+                            border: selectedPaletteColor ? 'none' : '2px solid #e9ecef'
+                          }}
+                        >
+                          {selectedPaletteColor ? (
+                            <>
+                              <div className="edit-class-color-preview-box"></div>
+                              <span>
+                                {availableColors.find(color => color.code === selectedPaletteColor)?.name || selectedPaletteColor}
+                              </span>
+                            </>
+                          ) : (
+                            '색상을 선택하세요'
+                          )}
+                          <span className="edit-class-color-dropdown-arrow">▼</span>
+                        </div>
+                        
+                        {colorDropdownOpen && (
+                          <div className="edit-class-color-dropdown-menu">
+                            <div 
+                              className="edit-class-color-option"
+                              onClick={() => {
+                                setSelectedPaletteColor('')
+                                setCustomColor('')
+                                setFormData(prev => ({ ...prev, color: '' }))
+                                setColorDropdownOpen(false)
+                              }}
+                            >
+                              <div className="edit-class-color-option-preview" style={{ backgroundColor: '#e9ecef' }}></div>
+                              <span>색상을 선택하세요</span>
+                            </div>
+                            
+                            {availableColors.map(color => (
+                              <div 
+                                key={color.code}
+                                className="edit-class-color-option"
+                                onClick={() => {
+                                  setSelectedPaletteColor(color.code)
+                                  setCustomColor(color.code)
+                                  setFormData(prev => ({ ...prev, color: color.code }))
+                                  setColorDropdownOpen(false)
+                                }}
+                              >
+                                <div 
+                                  className="edit-class-color-option-preview"
+                                  style={{ backgroundColor: color.code }}
+                                ></div>
+                                <span>{color.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 직접 입력 필드 (체크박스 체크 안 함 시) */}
+                    {!useColorPalette && (
+                      <input
+                        type="text"
+                        value={customColor}
+                        onChange={(e) => {
+                          const inputColor = e.target.value
+                          setCustomColor(inputColor)
+                          setSelectedPaletteColor('') // 팔레트 선택 초기화
+                          setFormData(prev => ({ ...prev, color: inputColor }))
+                        }}
+                        placeholder="#3498db"
+                        className="edit-class-custom-color-input"
+                        disabled={isSubmitting}
+                      />
+                    )}
+                    
+                    <small className="edit-class-color-form-text">
+                      {useColorPalette 
+                        ? '미리 정의된 색상 팔레트에서 선택하세요' 
+                        : 'HEX 색상 코드를 직접 입력하세요 (예: #3498db)'
+                      }
+                    </small>
                   </div>
                 </div>
                 <div className="form-row">

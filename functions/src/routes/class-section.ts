@@ -44,6 +44,9 @@ router.delete('/:id/students/:studentId', classSectionController.removeStudentFr
 // 수업에 등록된 학생 목록 조회
 router.get('/:id/students', classSectionController.getEnrolledStudents.bind(classSectionController));
 
+// ✅ 데이터 일관성 검증 및 수정
+router.post('/:id/validate-consistency', classSectionController.validateAndFixCurrentStudents.bind(classSectionController));
+
 // Course와 ClassSection을 한번에 생성하는 새로운 엔드포인트
 router.post('/create-with-course', classSectionController.createClassWithCourse.bind(classSectionController));
 

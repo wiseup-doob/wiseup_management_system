@@ -37,6 +37,29 @@ const DAY_MAPPING: Record<string, string> = {
   'sunday': '일요일'
 }
 
+// 🎨 Phase 5: 색상 관련 유틸리티 함수들
+/**
+ * 수업의 색상을 가져오는 함수
+ * @param classSection 수업 정보
+ * @returns 수업 색상 (DB 저장 색상 우선, 없으면 기본 색상)
+ */
+const getClassColor = (classSection: ClassSectionWithDetails): string => {
+  return classSection.color || '#3498db'
+}
+
+/**
+ * 색상 정보를 로깅하는 함수
+ * @param classSection 수업 정보
+ * @param context 컨텍스트 (예: '충돌 검증', '시간표 표시' 등)
+ */
+const logColorInfo = (classSection: ClassSectionWithDetails, context: string): void => {
+  console.log(`🎨 ${context} - 수업 "${classSection.name}" 색상:`, {
+    dbColor: classSection.color || '없음',
+    finalColor: getClassColor(classSection),
+    hasCustomColor: !!classSection.color
+  })
+}
+
 export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
   isOpen,
   onClose,
@@ -72,7 +95,7 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
       
       // 병렬로 데이터 로드
       const [classesResponse, timetableResponse] = await Promise.all([
-        apiService.getClassSectionsWithDetails(), // 상세 정보 포함된 수업 목록
+        apiService.getClassSectionsWithDetails(), // 상세 정보 포함된 수업 목록 (🎨 색상 포함)
         apiService.getStudentTimetable(studentId) // 학생 시간표
       ])
       
@@ -82,12 +105,13 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
         setFilteredClasses(classesResponse.data) // 초기에는 모든 수업 표시
         console.log('✅ 수업 목록 로드 성공:', classesResponse.data.length, '개')
         
-        // 교사명, 강의실명 디버깅
+        // 교사명, 강의실명, 색상 디버깅
         console.log('🔍 첫 번째 수업 상세 정보:', {
           name: classesResponse.data[0]?.name,
           teacher: classesResponse.data[0]?.teacher,
           classroom: classesResponse.data[0]?.classroom,
-          schedule: classesResponse.data[0]?.schedule
+          schedule: classesResponse.data[0]?.schedule,
+          color: classesResponse.data[0]?.color // 🎨 DB 저장된 색상 확인
         })
       } else {
         console.warn('⚠️ 수업 목록 로드 실패:', classesResponse.message)
@@ -185,6 +209,31 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
       setIsLoading(false)
     }
   }
+
+  // 색상 관련 성능 최적화
+  const classColorsMap = useMemo(() => {
+    const colorsMap = new Map<string, string>()
+    availableClasses.forEach(classSection => {
+      colorsMap.set(classSection.id, getClassColor(classSection))
+    })
+    return colorsMap
+  }, [availableClasses])
+
+  // 🎨 Phase 5: 색상 정보 요약 로깅
+  useEffect(() => {
+    if (availableClasses.length > 0) {
+      const colorStats = {
+        total: availableClasses.length,
+        withCustomColor: availableClasses.filter(cs => cs.color).length,
+        withoutColor: availableClasses.filter(cs => !cs.color).length,
+        sampleColors: availableClasses.slice(0, 3).map(cs => ({
+          name: cs.name,
+          color: getClassColor(cs)
+        }))
+      }
+      console.log('🎨 수업 색상 통계:', colorStats)
+    }
+  }, [availableClasses])
 
   // 드래그 가능한 수업 카드 컴포넌트
   const DraggableClassCard: React.FC<{ classSection: ClassSectionWithDetails }> = ({ classSection }) => {
@@ -370,8 +419,12 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
           teacher: { name: classToAdd.teacher?.name || '담당 교사 미정' }, // ✅ 올바른 구조
           classroom: { name: classToAdd.classroom?.name || '강의실 미정' }, // ✅ 올바른 구조
           schedule: classToAdd.schedule || [],
-          color: '#3498db'
+          // 🎨 Phase 5: 하드코딩된 색상을 DB 저장 색상으로 변경
+          color: getClassColor(classToAdd) // 🚀 유틸리티 함수 사용
         } as any; // 임시로 any 타입 사용하여 호환성 확보
+        
+        // 🎨 색상 정보 로깅
+        logColorInfo(classToAdd, '충돌 검증')
         
         // 충돌 검증 시작
         console.log('🔍 충돌 검증 시작:', timetableForConflictCheck.classSections.length, '개 수업')
@@ -562,8 +615,12 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
               teacher: { name: classSection.teacher?.name || '담당 교사 미정' }, // ✅ 올바른 구조
               classroom: { name: classSection.classroom?.name || '강의실 미정' }, // ✅ 올바른 구조
               schedule: [schedule], // 개별 스케줄만 검증
-              color: '#3498db'
+              // 🎨 Phase 5: 하드코딩된 색상을 DB 저장 색상으로 변경
+              color: getClassColor(classSection) // 🚀 유틸리티 함수 사용
             } as any; // 임시로 any 타입 사용하여 호환성 확보
+            
+            // 🎨 색상 정보 로깅
+            logColorInfo(classSection, '충돌 검증')
             
             // 충돌 검증 시작
             console.log('🔍 충돌 검증 시작:', timetableForConflictCheck.classSections.length, '개 수업')

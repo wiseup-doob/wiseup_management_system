@@ -1,5 +1,6 @@
 import * as admin from 'firebase-admin';
 import { BaseService } from './BaseService';
+import { ColorService } from './ColorService';
 import type { 
   ClassSection, 
   CreateClassSectionRequest, 
@@ -8,13 +9,17 @@ import type {
   ClassScheduleBlock,
   ClassScheduleGrid,
   ClassScheduleSearchParams,
-  DayOfWeek
+  DayOfWeek,
+  ClassSchedule
 } from '@shared/types';
 import type { Student } from '@shared/types';
 
 export class ClassSectionService extends BaseService {
+  private colorService: ColorService;
+
   constructor() {
     super('class_sections');
+    this.colorService = new ColorService();
   }
 
   // 수업 생성
@@ -39,20 +44,74 @@ export class ClassSectionService extends BaseService {
       }
     }
 
+    // 🎨 새 수업 색상 자동 생성 (Class Section 기반 고급 색상 생성)
+    let color: string | undefined;
+    try {
+      if (!data.color) {
+        // 🚀 새로운 Class Section 기반 색상 생성 로직 사용
+        // 임시 ID로 색상 생성 (실제 ID는 생성 후에 알 수 있음)
+        const tempId = `temp_${Date.now()}`;
+        color = await this.colorService.generateColorForClassSection(
+          tempId,           // 임시 수업 ID
+          data.name,        // 수업명
+          data.teacherId,   // 교사 ID
+          data.classroomId, // 강의실 ID
+          data.schedule     // 수업 스케줄
+        );
+        console.log(`🎨 새 수업 "${data.name}" 색깔 자동 생성: ${color}`);
+      } else {
+        color = data.color; // 사용자가 직접 지정한 색상 사용
+        console.log(`🎨 사용자 지정 색상 사용: ${color}`);
+      }
+    } catch (error) {
+      console.warn('새 수업 색깔 생성 실패, 나중에 자동 생성됩니다:', error);
+      // 색상 생성 실패해도 수업 생성은 계속 진행
+    }
+
     const classSectionData: Omit<ClassSection, 'id'> = {
       ...data,
+      color, // 👈 생성된 색상 저장
       currentStudents: data.currentStudents ?? 0,
       status: data.status ?? 'active',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
 
-    return this.create(classSectionData);
+    const classSectionId = await this.create(classSectionData);
+    
+    // 🔄 실제 ID로 색상 재생성 (일관성 보장 + 색상 충돌 방지)
+    if (color && color.startsWith('temp_')) {
+      try {
+        // 🚀 새로운 로직으로 실제 색상 생성
+        const actualColor = await this.colorService.generateColorForClassSection(
+          classSectionId,   // 실제 수업 ID
+          data.name,        // 수업명
+          data.teacherId,   // 교사 ID
+          data.classroomId, // 강의실 ID
+          data.schedule     // 수업 스케줄
+        );
+        
+        // 색상 충돌 확인 및 조정
+        const finalColor = await this.resolveColorConflict(classSectionId, actualColor, data.schedule);
+        
+        await this.updateClassSection(classSectionId, { color: finalColor });
+        console.log(`✅ 새 수업 색깔 최종 업데이트: ${finalColor}`);
+      } catch (error) {
+        console.error('새 수업 색깔 최종 업데이트 실패:', error);
+        // 실패해도 임시 색상으로 유지
+      }
+    }
+
+    return classSectionId;
   }
 
   // 수업 조회 (ID로)
   async getClassSectionById(id: string): Promise<ClassSection | null> {
-    return this.getById<ClassSection>(id);
+    const classSection = await this.getById<ClassSection>(id);
+    if (!classSection) return null;
+    
+    // 색상이 없으면 자동 생성
+    return this.ensureClassSectionHasColor(classSection);
   }
 
   // 수업 수정
@@ -102,6 +161,7 @@ export class ClassSectionService extends BaseService {
     maxStudents: number;
     description?: string;
     notes?: string;
+    color?: string; // 색상 필드 추가
   }): Promise<{ course: any; classSection: ClassSection }> {
     // 1단계: Course 찾기 또는 생성
     let courseId: string;
@@ -150,6 +210,8 @@ export class ClassSectionService extends BaseService {
       currentStudents: 0,
       description: data.description || '',
       notes: data.notes || '',
+      // 색상 필드: 전달받은 색상이 있으면 사용, 없으면 undefined (자동 생성)
+      color: data.color || undefined,
       status: 'active',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -175,9 +237,12 @@ export class ClassSectionService extends BaseService {
     try {
       const classSections = await this.getAllClassSections();
       
+      // 🔄 점진적 색상 생성: 색상이 없는 수업들만 배치 처리
+      const sectionsWithColors = await this.ensureBatchClassSectionsHaveColors(classSections);
+      
       // 각 ClassSection에 관련 정보 추가
       const enrichedData = await Promise.all(
-        classSections.map(async (section) => {
+        sectionsWithColors.map(async (section) => {
           try {
             const [courseDoc, teacherDoc, classroomDoc] = await Promise.all([
               this.db.collection('courses').doc(section.courseId).get(),
@@ -185,8 +250,11 @@ export class ClassSectionService extends BaseService {
               this.db.collection('classrooms').doc(section.classroomId).get()
             ]);
             
+            // ✅ currentStudents 정합성 검사 및 업데이트
+            const updatedSection = await this.validateAndUpdateCurrentStudents(section);
+            
             return {
-              ...section,
+              ...updatedSection,
               course: courseDoc.exists ? { id: courseDoc.id, ...courseDoc.data() } : null,
               teacher: teacherDoc.exists ? { id: teacherDoc.id, ...teacherDoc.data() } : null,
               classroom: classroomDoc.exists ? { id: classroomDoc.id, ...classroomDoc.data() } : null
@@ -225,8 +293,11 @@ export class ClassSectionService extends BaseService {
         this.db.collection('classrooms').doc(classSection.classroomId).get()
       ]);
       
+      // ✅ currentStudents 정합성 검사 및 업데이트
+      const updatedClassSection = await this.validateAndUpdateCurrentStudents(classSection);
+      
       return {
-        ...classSection,
+        ...updatedClassSection,
         course: courseDoc.exists ? { id: courseDoc.id, ...courseDoc.data() } : null,
         teacher: teacherDoc.exists ? { id: teacherDoc.id, ...teacherDoc.data() } : null,
         classroom: classroomDoc.exists ? { id: classroomDoc.id, ...classroomDoc.data() } : null
@@ -808,5 +879,321 @@ export class ClassSectionService extends BaseService {
       console.error('등록된 학생 목록 조회 실패:', error);
       throw new Error(`등록된 학생 목록 조회 중 오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
     }
+  }
+
+  /**
+   * 수업의 currentStudents 필드를 실제 등록된 학생 수와 비교하여 정합성을 검사하고 필요시 업데이트합니다.
+   * @param classSection 검사할 수업 정보
+   * @returns 업데이트된 수업 정보 (업데이트가 발생한 경우) 또는 원본 수업 정보
+   */
+  private async validateAndUpdateCurrentStudents(classSection: any): Promise<any> {
+    try {
+      const enrolledStudents = await this.getEnrolledStudents(classSection.id);
+      const actualCount = enrolledStudents.length;
+      const dbCount = classSection.currentStudents || 0;
+      
+      // currentStudents가 실제와 다른 경우에만 업데이트
+      if (dbCount !== actualCount) {
+        console.log(`🔧 수업 "${classSection.name}" currentStudents 불일치 수정: ${dbCount} → ${actualCount}`);
+        
+        // DB 업데이트
+        await this.updateClassSection(classSection.id, {
+          currentStudents: actualCount
+        });
+        
+        // 반환할 수업 정보에도 업데이트된 값 적용
+        return {
+          ...classSection,
+          currentStudents: actualCount
+        };
+      }
+      
+      // 불일치가 없는 경우 원본 데이터 그대로 반환
+      return classSection;
+      
+    } catch (error) {
+      console.error(`수업 ${classSection.id} currentStudents 정합성 검사 실패:`, error);
+      // 에러가 발생해도 원본 데이터는 반환 (앱 동작 중단 방지)
+      return classSection;
+    }
+  }
+
+  // ===== 색상 관리 메서드들 =====
+
+  /**
+   * 수업에 색상이 있는지 확인하고, 없으면 자동으로 생성하여 저장합니다.
+   * @param classSection 검사할 수업 정보
+   * @returns 색상이 포함된 수업 정보
+   */
+  private async ensureClassSectionHasColor(classSection: ClassSection): Promise<ClassSection> {
+    if (classSection.color) {
+      return classSection; // 이미 색깔 있음
+    }
+    
+    try {
+      console.log(`🎨 수업 "${classSection.name}" 색깔 자동 생성 시작`);
+      
+      // 🚀 새로운 Class Section 기반 색상 생성 로직 사용
+      const color = await this.colorService.generateColorForClassSection(
+        classSection.id, 
+        classSection.name,
+        classSection.teacherId,
+        classSection.classroomId,
+        classSection.schedule
+      );
+      
+      // DB에 색상 저장
+      await this.updateClassSection(classSection.id, { color });
+      
+      console.log(`✅ 수업 "${classSection.name}" 색깔 자동 생성 완료: ${color}`);
+      
+      return {
+        ...classSection,
+        color
+      };
+    } catch (error) {
+      console.error(`❌ 수업 "${classSection.name}" 색깔 생성 실패:`, error);
+      // 실패해도 원본 데이터 반환 (앱 동작 중단 방지)
+      return classSection;
+    }
+  }
+
+  /**
+   * 여러 수업에 대한 색상을 일괄 처리합니다.
+   * @param classSections 수업 목록
+   * @returns 색상이 포함된 수업 목록
+   */
+  async ensureBatchClassSectionsHaveColors(classSections: ClassSection[]): Promise<ClassSection[]> {
+    try {
+      // 색상이 없는 수업들만 필터링
+      const sectionsWithoutColor = classSections.filter(cs => !cs.color);
+      
+      if (sectionsWithoutColor.length === 0) {
+        return classSections; // 모든 수업에 색깔 있음
+      }
+      
+      console.log(`🎨 ${sectionsWithoutColor.length}개 수업 색깔 배치 생성 시작`);
+      
+      // 🚀 성능 최적화: 배치 크기 제한 (한 번에 처리할 수업 수 제한)
+      const BATCH_SIZE = 50;
+      const updatedSections = [...classSections];
+      
+      // 배치 단위로 처리
+      for (let i = 0; i < sectionsWithoutColor.length; i += BATCH_SIZE) {
+        const batch = admin.firestore().batch();
+        const currentBatch = sectionsWithoutColor.slice(i, i + BATCH_SIZE);
+        
+        console.log(`🔄 배치 ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(sectionsWithoutColor.length / BATCH_SIZE)} 처리 중...`);
+        
+        // 현재 배치의 색상 생성 및 업데이트
+        for (const section of currentBatch) {
+          try {
+            // 🚀 새로운 Class Section 기반 색상 생성 로직 사용
+            const color = await this.colorService.generateColorForClassSection(
+              section.id, 
+              section.name,
+              section.teacherId,
+              section.classroomId,
+              section.schedule
+            );
+            
+            // 배치에 추가
+            const docRef = admin.firestore().collection('class_sections').doc(section.id);
+            batch.update(docRef, { color });
+            
+            // 메모리상 데이터도 업데이트
+            const index = updatedSections.findIndex(cs => cs.id === section.id);
+            if (index !== -1) {
+              updatedSections[index] = { ...section, color };
+            }
+          } catch (error) {
+            console.error(`수업 ${section.id} 색상 생성 실패:`, error);
+            // 실패한 수업은 기본 색상 적용
+            const index = updatedSections.findIndex(cs => cs.id === section.id);
+            if (index !== -1) {
+              updatedSections[index] = { ...section, color: '#3498db' };
+            }
+          }
+        }
+        
+        // 현재 배치 커밋
+        try {
+          await batch.commit();
+          console.log(`✅ 배치 ${Math.floor(i / BATCH_SIZE) + 1} 완료 (${currentBatch.length}개 수업)`);
+        } catch (error) {
+          console.error(`배치 ${Math.floor(i / BATCH_SIZE) + 1} 커밋 실패:`, error);
+          // 배치 커밋 실패 시 개별 업데이트 시도
+          for (const section of currentBatch) {
+            try {
+              // 🚀 새로운 Class Section 기반 색상 생성 로직 사용
+              const color = await this.colorService.generateColorForClassSection(
+                section.id, 
+                section.name,
+                section.teacherId,
+                section.classroomId,
+                section.schedule
+              );
+              await this.updateClassSection(section.id, { color });
+              
+              // 메모리상 데이터도 업데이트
+              const index = updatedSections.findIndex(cs => cs.id === section.id);
+              if (index !== -1) {
+                updatedSections[index] = { ...section, color };
+              }
+            } catch (error) {
+              console.error(`개별 수업 ${section.id} 색상 업데이트 실패:`, error);
+            }
+          }
+        }
+      }
+      
+      console.log(`✅ ${sectionsWithoutColor.length}개 수업 색깔 배치 생성 완료`);
+      
+      return updatedSections;
+      
+    } catch (error) {
+      console.error('배치 색상 생성 실패:', error);
+      // 에러 발생 시 원본 데이터 반환
+      return classSections;
+    }
+  }
+
+  /**
+   * 🔍 색상 충돌 해결 및 최적 색상 선택
+   * @param classSectionId 수업 ID
+   * @param proposedColor 제안된 색상
+   * @param schedule 수업 스케줄
+   * @returns 충돌이 없는 최적 색상
+   */
+  private async resolveColorConflict(
+    classSectionId: string, 
+    proposedColor: string, 
+    schedule?: ClassSchedule[]
+  ): Promise<string> {
+    try {
+      if (!schedule || schedule.length === 0) {
+        return proposedColor; // 스케줄이 없으면 충돌 확인 불가
+      }
+
+      // 🕐 같은 시간대에 진행되는 다른 수업들의 색상 조회
+      const conflictingSections = await this.findConflictingClassSections(schedule);
+      
+      if (conflictingSections.length === 0) {
+        return proposedColor; // 충돌하는 수업 없음
+      }
+
+      // 🎨 색상 충돌 확인
+      const hasConflict = this.colorService.detectColorConflict(
+        conflictingSections.map(cs => ({
+          id: cs.id,
+          color: cs.color || '#3498db',
+          schedule: cs.schedule
+        })),
+        proposedColor,
+        schedule
+      );
+
+      if (!hasConflict) {
+        return proposedColor; // 충돌 없음
+      }
+
+      // 🔄 충돌이 있는 경우 대체 색상 생성
+      console.log(`⚠️ 색상 충돌 감지, 대체 색상 생성 중...`);
+      
+      // 다른 색상 팔레트에서 색상 선택
+      const alternativeColors = this.colorService.getAvailableColors();
+      const usedColors = conflictingSections.map(cs => cs.color).filter(Boolean);
+      
+      // 사용되지 않은 색상 중에서 선택
+      for (const color of alternativeColors) {
+        if (!usedColors.includes(color)) {
+          // 충돌 재확인
+          const stillHasConflict = this.colorService.detectColorConflict(
+            conflictingSections.map(cs => ({
+              id: cs.id,
+              color: cs.color || '#3498db',
+              schedule: cs.schedule
+            })),
+            color,
+            schedule
+          );
+          
+          if (!stillHasConflict) {
+            console.log(`✅ 대체 색상 선택: ${color}`);
+            return color;
+          }
+        }
+      }
+
+      // 모든 색상이 충돌하는 경우 기본 색상 반환
+      console.log(`⚠️ 모든 색상이 충돌, 기본 색상 사용`);
+      return '#3498db';
+
+    } catch (error) {
+      console.error('색상 충돌 해결 실패:', error);
+      return proposedColor; // 에러 시 원래 색상 반환
+    }
+  }
+
+  /**
+   * 🕐 시간대가 겹치는 다른 수업들 조회
+   * @param schedule 현재 수업 스케줄
+   * @returns 시간대가 겹치는 수업 목록
+   */
+  private async findConflictingClassSections(schedule: ClassSchedule[]): Promise<ClassSection[]> {
+    try {
+      const allClassSections = await this.getAllClassSections();
+      const conflictingSections: ClassSection[] = [];
+
+      for (const classSection of allClassSections) {
+        if (!classSection.schedule || classSection.schedule.length === 0) continue;
+
+        // 시간대 겹침 확인
+        const hasOverlap = this.checkScheduleOverlap(schedule, classSection.schedule);
+        if (hasOverlap) {
+          conflictingSections.push(classSection);
+        }
+      }
+
+      return conflictingSections;
+    } catch (error) {
+      console.error('충돌하는 수업 조회 실패:', error);
+      return [];
+    }
+  }
+
+  /**
+   * ⏰ 두 스케줄 간의 시간대 겹침 확인
+   * @param schedule1 첫 번째 스케줄
+   * @param schedule2 두 번째 스케줄
+   * @returns 겹침 여부
+   */
+  private checkScheduleOverlap(schedule1: ClassSchedule[], schedule2: ClassSchedule[]): boolean {
+    for (const s1 of schedule1) {
+      for (const s2 of schedule2) {
+        if (s1.dayOfWeek === s2.dayOfWeek) {
+          // 시간 겹침 확인
+          const start1 = this.timeToMinutes(s1.startTime);
+          const end1 = this.timeToMinutes(s1.endTime);
+          const start2 = this.timeToMinutes(s2.startTime);
+          const end2 = this.timeToMinutes(s2.endTime);
+
+          if (!(end1 <= start2 || end2 <= start1)) {
+            return true; // 겹침
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 🕐 시간을 분 단위로 변환
+   * @param time 시간 문자열 (HH:MM)
+   * @returns 분 단위 시간
+   */
+  private timeToMinutes(time: string): number {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
   }
 }

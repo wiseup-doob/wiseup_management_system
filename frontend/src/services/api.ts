@@ -552,6 +552,15 @@ class ApiService {
     });
   }
 
+  // ===== 색상 관련 API =====
+
+  /**
+   * 색상 팔레트 조회 (색상 코드와 이름을 함께 반환)
+   */
+  async getColorPalette(): Promise<ApiResponse<Array<{ code: string; name: string }>>> {
+    return this.request<Array<{ code: string; name: string }>>('/api/colors/palette');
+  }
+
   // ===== 수업 관리 API =====
 
   // 모든 수업 조회

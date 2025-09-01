@@ -46,6 +46,7 @@ export interface CreateClassSectionRequest {
   status?: 'active' | 'inactive' | 'completed'; // 수업 상태 (기본값: 'active')
   description?: string;          // 수업 설명
   notes?: string;                // 참고사항
+  color?: string;                // 시간표 표시 색상
 }
 
 // ===== 수업 수정 요청 타입 =====
@@ -60,6 +61,7 @@ export interface UpdateClassSectionRequest {
   status?: 'active' | 'inactive' | 'completed'; // 수업 상태
   description?: string;          // 수업 설명
   notes?: string;                // 참고사항
+  color?: string;                // 시간표 표시 색상
 }
 
 // ===== 수업 검색 파라미터 타입 =====

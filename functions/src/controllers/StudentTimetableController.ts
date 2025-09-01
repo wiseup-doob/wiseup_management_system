@@ -4,7 +4,6 @@ import { ClassSectionService } from '../services/ClassSectionService';
 import { StudentService } from '../services/StudentService';
 import { TeacherService } from '../services/TeacherService';
 import { ClassroomService } from '../services/ClassroomService';
-import { CourseService } from '../services/CourseService';
 import type { 
   CreateStudentTimetableRequest, 
   UpdateStudentTimetableRequest, 
@@ -22,7 +21,6 @@ export class StudentTimetableController {
   private studentService: StudentService;
   private teacherService: TeacherService;
   private classroomService: ClassroomService;
-  private courseService: CourseService;
 
   constructor() {
     this.studentTimetableService = new StudentTimetableService();
@@ -30,7 +28,6 @@ export class StudentTimetableController {
     this.studentService = new StudentService();
     this.teacherService = new TeacherService();
     this.classroomService = new ClassroomService();
-    this.courseService = new CourseService();
   }
 
   // 학생 시간표 생성
@@ -458,7 +455,8 @@ export class StudentTimetableController {
           teacherName: cs.teacher?.name || 'Unknown Teacher',
           classroomName: cs.classroom?.name || 'Unknown Classroom',
           schedule: cs.schedule || [],
-          color: this.generateClassColor(cs.id, cs.course?.name)
+          // 🎨 Phase 4: 기존 색상 생성 로직 제거, DB 저장 색상 사용
+          color: cs.color || '#3498db'
         }))
       };
 
@@ -478,29 +476,6 @@ export class StudentTimetableController {
         error: 'Internal server error'
       });
     }
-  }
-
-  // 수업 색상 생성 (시간표 표시용) - Course.name 기반
-  private generateClassColor(classId: string, courseName: string): string {
-    const colors = [
-      '#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c', '#98df8a',
-      '#d62728', '#ff9896', '#9467bd', '#c5b0d5', '#8c564b', '#c49c94',
-      '#e377c2', '#f7b6d2', '#7f7f7f', '#c7c7c7', '#bcbd22', '#dbdb8d',
-      '#17becf', '#9edae5', '#393b79', '#637939', '#8c6d31', '#b5cf6b',
-      '#cedb9c', '#8c6d31', '#bd9e39', '#e7ba52', '#ad494a', '#a6cee3'
-    ];
-    
-    const combined = `${classId}_${courseName}`;
-    let hash = 0;
-    
-    for (let i = 0; i < combined.length; i++) {
-      const char = combined.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // 32bit 정수로 변환
-    }
-    
-    const index = Math.abs(hash) % colors.length;
-    return colors[index];
   }
 
   /**
@@ -551,21 +526,11 @@ export class StudentTimetableController {
               }
             }
 
-            // 5. Course 정보 조회 (색상 생성용)
-            let courseName = '수업명 미정';
-            if (classSection.courseId) {
-              try {
-                const course = await this.courseService.getCourseById(classSection.courseId);
-                courseName = course?.name || courseName;
-              } catch (error) {
-                console.warn(`Failed to fetch course: ${classSection.courseId}`, error);
-              }
-            }
+            // 5. 색상 사용 (DB에 저장된 색상 사용, 없으면 기본 색상)
+            // 🎨 Phase 4: 기존 색상 생성 로직 제거, DB 저장 색상 사용
+            const color = classSection.color || '#3498db';
 
-            // 6. 색상 생성 (Course.name 사용)
-            const color = this.generateClassColor(classSection.id, courseName);
-
-            // 7. 스케줄 정보 정리 (타입 안전성 확보)
+            // 6. 스케줄 정보 정리 (타입 안전성 확보)
             const schedule = (classSection.schedule || []).map(s => ({
               dayOfWeek: s.dayOfWeek as DayOfWeek,
               startTime: s.startTime,
@@ -681,6 +646,9 @@ export class StudentTimetableController {
         classSectionIds: updatedClassSectionIds
       });
 
+      // ✅ 실제 등록된 학생 수로 currentStudents 업데이트
+      await this.updateCurrentStudentsFromActualCount(classSectionId);
+
       // 7. 업데이트된 시간표 조회
       const updatedTimetable = await this.studentTimetableService.getStudentTimetableById(timetable.id);
       if (!updatedTimetable) {
@@ -766,6 +734,9 @@ export class StudentTimetableController {
         classSectionIds: updatedClassSectionIds
       });
 
+      // ✅ 실제 등록된 학생 수로 currentStudents 업데이트
+      await this.updateCurrentStudentsFromActualCount(classSectionId);
+
       // 6. 업데이트된 시간표 조회
       const updatedTimetable = await this.studentTimetableService.getStudentTimetableById(timetable.id);
       if (!updatedTimetable) {
@@ -799,6 +770,24 @@ export class StudentTimetableController {
         success: false,
         error: 'Internal server error'
       });
+    }
+  }
+
+  // ✅ 헬퍼 메서드: 실제 등록된 학생 수로 currentStudents 업데이트
+  private async updateCurrentStudentsFromActualCount(classSectionId: string): Promise<void> {
+    try {
+      // 실제 등록된 학생 수 계산
+      const enrolledStudents = await this.classSectionService.getEnrolledStudents(classSectionId);
+      const actualStudentCount = enrolledStudents.length;
+      
+      // currentStudents를 실제 값으로 업데이트
+      await this.classSectionService.updateClassSection(classSectionId, {
+        currentStudents: actualStudentCount
+      });
+      
+      console.log(`✅ ClassSection ${classSectionId} currentStudents 업데이트: ${actualStudentCount}`);
+    } catch (error) {
+      console.error(`❌ currentStudents 업데이트 실패:`, error);
     }
   }
 }

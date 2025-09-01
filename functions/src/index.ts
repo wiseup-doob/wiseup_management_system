@@ -13,6 +13,7 @@ import { classroomRoutes } from './routes/classroom';
 import { seatRoutes } from './routes/seat';
 import { seatAssignmentRoutes } from './routes/seat-assignment';
 import { studentTimetableRoutes } from './routes/student-timetable';
+import colorsRouter from './routes/colors';
 // import testDataRoutes from './routes/test-data';
 
 // Firebase Admin 초기화
@@ -100,6 +101,9 @@ app.use('/api/teachers', teacherRoutes);
 
 // 교실 관련 라우트 (일반적인 경로)
 app.use('/api/classrooms', classroomRoutes);
+
+// 색상 팔레트 관련 라우트 (일반적인 경로)
+app.use('/api/colors', colorsRouter);
 
 // 기본 라우트는 마지막에 등록 (catch-all 방지)
 app.get('/', (req, res) => {

@@ -113,7 +113,8 @@ export class ClassSectionController {
         schedule,
         maxStudents,
         description,
-        notes
+        notes,
+        color // 색상 필드 추가
       } = req.body;
 
       // 필수 필드 검증
@@ -135,7 +136,8 @@ export class ClassSectionController {
         schedule,
         maxStudents,
         description,
-        notes
+        notes,
+        color // 색상 필드 전달
       });
 
       res.status(201).json({
@@ -445,6 +447,76 @@ export class ClassSectionController {
       res.status(500).json({
         success: false,
         message: '등록된 학생 목록 조회 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    }
+  }
+
+  // ✅ 데이터 일관성 검증 및 수정 API
+  async validateAndFixCurrentStudents(req: Request, res: Response): Promise<void> {
+    try {
+      const { id: classSectionId } = req.params;
+
+      // 필수 파라미터 검증
+      if (!classSectionId) {
+        res.status(400).json({
+          success: false,
+          message: '수업 ID가 필요합니다.'
+        });
+        return;
+      }
+
+      // 실제 등록된 학생 수 조회
+      const enrolledStudents = await this.classSectionService.getEnrolledStudents(classSectionId);
+      const actualStudentCount = enrolledStudents.length;
+
+      // 현재 DB 값 조회
+      const classSection = await this.classSectionService.getClassSectionById(classSectionId);
+      if (!classSection) {
+        res.status(404).json({
+          success: false,
+          message: '수업을 찾을 수 없습니다.'
+        });
+        return;
+      }
+
+      const dbStudentCount = classSection.currentStudents || 0;
+
+      if (dbStudentCount !== actualStudentCount) {
+        // 불일치 발견 시 자동 수정
+        await this.classSectionService.updateClassSection(classSectionId, {
+          currentStudents: actualStudentCount
+        });
+
+        res.status(200).json({
+          success: true,
+          message: '데이터 불일치가 수정되었습니다.',
+          data: {
+            classSectionId,
+            oldValue: dbStudentCount,
+            newValue: actualStudentCount,
+            fixed: true,
+            enrolledStudents: enrolledStudents.length
+          }
+        });
+      } else {
+        res.status(200).json({
+          success: true,
+          message: '데이터가 일치합니다.',
+          data: {
+            classSectionId,
+            currentStudents: actualStudentCount,
+            fixed: false,
+            enrolledStudents: enrolledStudents.length
+          }
+        });
+      }
+
+    } catch (error) {
+      console.error('데이터 일관성 검증 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '데이터 일관성 검증 중 오류가 발생했습니다.',
         error: error instanceof Error ? error.message : '알 수 없는 오류'
       });
     }

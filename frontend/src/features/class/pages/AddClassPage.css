@@ -559,3 +559,174 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* ===== 색상 선택 UI 스타일 (AddClassPage 전용) ===== */
+
+/* 색상 팔레트 체크박스 */
+.add-class-color-palette-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.add-class-color-palette-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #3498db;
+}
+
+.add-class-color-palette-checkbox label {
+  font-size: 14px;
+  color: #495057;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+}
+
+/* 커스텀 색상 드롭다운 */
+.add-class-color-custom-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.add-class-color-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #ffffff;
+  color: #212529;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  user-select: none;
+}
+
+.add-class-color-dropdown-trigger:hover {
+  border-color: #3498db;
+  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.15);
+}
+
+.add-class-color-dropdown-arrow {
+  margin-left: auto;
+  font-size: 12px;
+  color: #6c757d;
+  transition: transform 0.2s ease;
+}
+
+.add-class-color-dropdown-trigger:hover .add-class-color-dropdown-arrow {
+  color: #3498db;
+}
+
+.add-class-color-preview-box {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.add-class-color-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: #ffffff;
+  border: 2px solid #e9ecef;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.add-class-color-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.add-class-color-option:last-child {
+  border-bottom: none;
+}
+
+.add-class-color-option:hover {
+  background-color: #f8f9fa;
+}
+
+.add-class-color-option-preview {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 2px solid #e9ecef;
+  border-radius: 4px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.add-class-color-option span {
+  font-size: 14px;
+  color: #212529;
+  flex: 1;
+}
+
+/* 직접 입력 색상 필드 */
+.add-class-custom-color-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  color: #212529;
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.add-class-custom-color-input:hover {
+  border-color: #3498db;
+  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.15);
+}
+
+.add-class-custom-color-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.25);
+  background-color: #ffffff;
+}
+
+.add-class-custom-color-input::placeholder {
+  color: #6c757d;
+  font-family: inherit;
+  opacity: 0.7;
+}
+
+/* 색상 선택 도움말 텍스트 */
+.add-class-color-form-text {
+  display: block;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #6c757d;
+  line-height: 1.5;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #3498db;
+}

@@ -32,6 +32,7 @@ export interface CreateClassSectionRequest {
     status?: 'active' | 'inactive' | 'completed';
     description?: string;
     notes?: string;
+    color?: string;
 }
 export interface UpdateClassSectionRequest {
     name?: string;
@@ -44,6 +45,7 @@ export interface UpdateClassSectionRequest {
     status?: 'active' | 'inactive' | 'completed';
     description?: string;
     notes?: string;
+    color?: string;
 }
 export interface ClassSectionSearchParams {
     name?: string;

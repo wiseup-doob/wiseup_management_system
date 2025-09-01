@@ -179,7 +179,6 @@
 
 .detail-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   margin-bottom: 6px;
   font-size: 13px;
@@ -188,11 +187,14 @@
 .detail-label {
   color: #666;
   font-weight: 500;
+  min-width: 60px;
+  flex-shrink: 0;
 }
 
 .detail-value {
   color: #333;
   font-weight: 600;
+  margin-left: 8px;
 }
 
 .class-item-actions {
