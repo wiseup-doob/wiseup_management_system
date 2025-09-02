@@ -786,7 +786,6 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
             ×
           </button>
         </div>
-
                             {/* 좌측: 수업 카드 목록 */}
                     <div className="class-list-section">
                       <div className="section-header">

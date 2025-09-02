@@ -428,6 +428,7 @@ function ClassPage() {
     updateSearchParams({ [paramKey]: value })
     
     setUrlFilters(prev => ({ ...prev, [key]: value }))
+    dispatch(setFilter({ key, value }))  // Redux 필터 상태 동기화
     // teacherName을 teacherId로 변환하여 검색
     if (key === 'teacherName') {
       if (value) {
