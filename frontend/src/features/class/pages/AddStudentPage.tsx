@@ -40,7 +40,6 @@ function AddStudentPage({ isOpen, onClose, classData, onStudentAdded }: AddStude
         throw new Error('학생 목록을 불러오는데 실패했습니다.')
       }
     } catch (error) {
-      console.error('학생 목록 로드 실패:', error)
       setError('학생 목록을 불러오는데 실패했습니다.')
     } finally {
       setIsLoading(false)
@@ -62,7 +61,6 @@ function AddStudentPage({ isOpen, onClose, classData, onStudentAdded }: AddStude
         setEnrolledStudents([])
       }
     } catch (error) {
-      console.error('등록된 학생 목록 로드 실패:', error)
       setEnrolledStudents([])
     } finally {
       setIsLoadingEnrolled(false)
@@ -155,7 +153,6 @@ function AddStudentPage({ isOpen, onClose, classData, onStudentAdded }: AddStude
       }, 2000)
       
     } catch (error) {
-      console.error('학생 등록 실패:', error)
       setError('학생 등록에 실패했습니다. 다시 시도해주세요.')
     } finally {
       setIsAdding(false)
@@ -188,7 +185,6 @@ function AddStudentPage({ isOpen, onClose, classData, onStudentAdded }: AddStude
       }
       
     } catch (error) {
-      console.error('학생 제거 실패:', error)
       setError('학생 제거에 실패했습니다. 다시 시도해주세요.')
     } finally {
       setIsRemoving(false)

@@ -241,7 +241,6 @@ function ClassPage() {
         setClassDependencies(response.data)
       }
     } catch (error) {
-      console.error('수업 의존성 확인 실패:', error)
       setClassDependencies(null)
     }
     
@@ -285,7 +284,6 @@ function ClassPage() {
       }
       
     } catch (error) {
-      console.error('수업 삭제 실패:', error)
       alert('수업 삭제에 실패했습니다. 다시 시도해주세요.')
     } finally {
       setIsDeleting(false)

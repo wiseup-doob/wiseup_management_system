@@ -61,13 +61,10 @@ const AddClassPage: React.FC<AddClassPageProps> = ({ isOpen, onClose, onClassCre
         const response = await apiService.getColorPalette()
         if (response.success && response.data) {
           setAvailableColors(response.data)
-          console.log('✅ 색상 팔레트 로드 완료:', response.data.length, '개')
         } else {
-          console.warn('⚠️ 색상 팔레트 로드 실패:', response.message)
           setAvailableColors([])
         }
       } catch (error) {
-        console.error('❌ 색상 팔레트 로드 오류:', error)
         setAvailableColors([])
       }
     }
@@ -103,7 +100,6 @@ const AddClassPage: React.FC<AddClassPageProps> = ({ isOpen, onClose, onClassCre
           })))
         }
       } catch (error) {
-        console.error('데이터 로딩 실패:', error)
         setErrorMessage('데이터를 불러오는데 실패했습니다. 다시 시도해주세요.')
         setShowErrorAlert(true)
       } finally {
@@ -316,7 +312,6 @@ const AddClassPage: React.FC<AddClassPageProps> = ({ isOpen, onClose, onClassCre
         color: formData.color
       }
 
-      console.log('수업 추가 요청:', createRequest)
       
       // 새로운 API 호출: Course와 ClassSection을 한번에 생성
       const response = await apiService.createClassWithCourse(createRequest)
@@ -343,8 +338,6 @@ const AddClassPage: React.FC<AddClassPageProps> = ({ isOpen, onClose, onClassCre
         throw new Error(response.message || '수업 생성에 실패했습니다.')
       }
     } catch (error) {
-      console.error('수업 추가 실패:', error)
-      
       // 에러 메시지 설정
       const errorMsg = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
       setErrorMessage(errorMsg)

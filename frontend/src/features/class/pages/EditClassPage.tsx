@@ -73,7 +73,6 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
         const response = await apiService.getColorPalette()
         if (response.success && response.data) {
           setAvailableColors(response.data)
-          console.log('✅ 색상 팔레트 로드 완료:', response.data.length, '개')
           
           // 기존 색상이 로드된 후 색상 상태 설정
           if (classData?.color && response.data.length > 0) {
@@ -85,21 +84,17 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
               setUseColorPalette(true)
               setSelectedPaletteColor(existingColor)
               setCustomColor(existingColor)
-              console.log('🎨 기존 색상을 팔레트에서 찾음:', existingColor)
             } else {
               // 색상 팔레트에 없는 색상인 경우
               setUseColorPalette(false)
               setSelectedPaletteColor('')
               setCustomColor(existingColor)
-              console.log('🎨 기존 색상을 직접 입력 모드로 설정:', existingColor)
             }
           }
         } else {
-          console.warn('⚠️ 색상 팔레트 로드 실패:', response.message)
           setAvailableColors([])
         }
       } catch (error) {
-        console.error('❌ 색상 팔레트 로드 오류:', error)
         setAvailableColors([])
       }
     }
@@ -128,9 +123,7 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
             name: teacher.name
           }))
           setTeachers(teacherData)
-          console.log('✅ 교사 데이터 로드 완료:', teacherData.length, '명')
         } else {
-          console.warn('⚠️ 교사 데이터 로드 실패:', teachersResponse.message)
           setTeachers([])
         }
         
@@ -142,9 +135,7 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
             difficulty: course.difficulty || '' // difficulty를 classNumber로 매핑
           }))
           setCourses(courseData)
-          console.log('✅ 강의 데이터 로드 완료:', courseData.length, '개')
         } else {
-          console.warn('⚠️ 강의 데이터 로드 실패:', coursesResponse.message)
           setCourses([])
         }
         
@@ -154,13 +145,10 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
             name: classroom.name
           }))
           setClassrooms(classroomData)
-          console.log('✅ 강의실 데이터 로드 완료:', classroomData.length, '개')
         } else {
-          console.warn('⚠️ 강의실 데이터 로드 실패:', classroomsResponse.message)
           setClassrooms([])
         }
       } catch (error) {
-        console.error('데이터 로딩 실패:', error)
         setErrorMessage('데이터를 불러오는데 실패했습니다. 다시 시도해주세요.')
         setShowErrorAlert(true)
       } finally {
@@ -174,7 +162,6 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
   // 수업 데이터가 변경될 때 기본 폼 데이터 설정
   useEffect(() => {
     if (classData && isOpen) {
-      console.log('🔄 수업 데이터 변경 감지:', classData)
       
       // 기본 폼 데이터만 설정 (데이터 로딩 완료 후 상세 초기화)
       setFormData(prev => ({
@@ -192,7 +179,6 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
   // 데이터 로딩 완료 후 폼 초기화
   useEffect(() => {
     if (classData && isOpen && !isLoadingData && courses.length > 0 && teachers.length > 0 && classrooms.length > 0) {
-      console.log('🔄 데이터 로딩 완료 후 폼 초기화 시작:', classData)
       
       // 현재 수업의 Course 정보 찾기
       const course = courses.find(c => c.id === classData.courseId)
@@ -226,7 +212,6 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
       
       // 일정 데이터 파싱 (ClassSchedule[] → UI 상태용 배열)
       if (classData.schedule) {
-        console.log('📅 원본 일정 데이터:', classData.schedule)
         const schedulesFromData = classData.schedule.map((schedule, index) => ({
           id: `schedule-${index}`,
           dayOfWeek: schedule.dayOfWeek,
@@ -234,22 +219,13 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
           endTime: schedule.endTime
         }))
         setSchedules(schedulesFromData)
-        console.log('✅ 일정 데이터 파싱 완료:', schedulesFromData)
       } else {
-        console.log('⚠️ 일정 데이터가 없음')
         setSchedules([])
       }
       
       // 데이터 무결성 검증
       validateDataIntegrity(classData)
       
-      console.log('✅ 폼 초기화 완료:', {
-        courseId: classData.courseId,
-        teacherId: classData.teacherId,
-        classroomId: classData.classroomId,
-        subject: course?.subject,
-        difficulty: course?.difficulty
-      })
     }
   }, [classData, isOpen, isLoadingData, courses, teachers, classrooms])
 
@@ -288,12 +264,9 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
     }
     
     if (warnings.length > 0) {
-      console.warn('⚠️ 데이터 무결성 경고:', warnings)
       // 사용자에게 경고 메시지 표시 (선택적)
       // setErrorMessage(`다음 데이터에 문제가 있습니다:\n${warnings.join('\n')}`)
       // setShowErrorAlert(true)
-    } else {
-      console.log('✅ 데이터 무결성 검증 통과')
     }
   }
 
@@ -381,35 +354,27 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
 
   // 일정 데이터 검증
   const validateSchedules = () => {
-    console.log('🔍 일정 검증 시작:', schedules)
-    
     if (schedules.length === 0) {
-      console.log('❌ 일정이 없음')
       return '최소 하나의 수업 일정을 추가해야 합니다.'
     }
 
     for (let i = 0; i < schedules.length; i++) {
       const schedule = schedules[i]
-      console.log(`📅 ${i + 1}번째 일정 검증:`, schedule)
       
       if (!schedule.dayOfWeek) {
-        console.log(`❌ ${i + 1}번째 일정 요일 누락`)
         return `${i + 1}번째 일정의 요일을 선택해주세요.`
       }
       
       if (!schedule.startTime) {
-        console.log(`❌ ${i + 1}번째 일정 시작 시간 누락`)
         return `${i + 1}번째 일정의 시작 시간을 입력해주세요.`
       }
       
       if (!schedule.endTime) {
-        console.log(`❌ ${i + 1}번째 일정 종료 시간 누락`)
         return `${i + 1}번째 일정의 종료 시간을 입력해주세요.`
       }
 
       // 시작 시간이 종료 시간보다 늦은 경우
       if (schedule.startTime >= schedule.endTime) {
-        console.log(`❌ ${i + 1}번째 일정 시간 순서 오류: ${schedule.startTime} >= ${schedule.endTime}`)
         return `${i + 1}번째 일정의 시작 시간은 종료 시간보다 빨라야 합니다.`
       }
 
@@ -421,14 +386,12 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
           if (
             (schedule.startTime < otherSchedule.endTime && schedule.endTime > otherSchedule.startTime)
           ) {
-            console.log(`❌ ${i + 1}번째와 ${j + 1}번째 일정 시간 중복: ${schedule.dayOfWeek}`)
             return `${i + 1}번째와 ${j + 1}번째 일정의 시간이 겹칩니다.`
           }
         }
       }
     }
 
-    console.log('✅ 일정 검증 통과')
     return ''
   }
 
@@ -499,16 +462,13 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
       
       // 1. Course 업데이트 (이름이 변경된 경우)
       if (formData.name !== classData?.name) {
-        console.log('🔄 Course 이름 업데이트:', classData?.name, '→', formData.name)
         const courseUpdateRequest = {
           name: formData.name
         }
         
         try {
           await apiService.updateCourse(classData!.courseId, courseUpdateRequest)
-          console.log('✅ Course 업데이트 성공')
         } catch (error) {
-          console.error('❌ Course 업데이트 실패:', error)
           // Course 업데이트 실패 시에도 ClassSection은 업데이트 시도
         }
       }
@@ -525,7 +485,6 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
         color: formData.color
       }
 
-      console.log('🔄 ClassSection 업데이트 요청:', classSectionUpdateRequest)
       
       // 실제 API 호출
       const response = await apiService.updateClassSection(classData?.id || '', classSectionUpdateRequest)
@@ -552,8 +511,6 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
         throw new Error(response.message || '수업 수정에 실패했습니다.')
       }
     } catch (error) {
-      console.error('수업 수정 실패:', error)
-      
       // 에러 메시지 설정
       let errorMsg = '알 수 없는 오류가 발생했습니다.'
       
@@ -561,7 +518,6 @@ const EditClassPage: React.FC<EditClassPageProps> = ({
         // 성공 메시지가 에러로 처리되는 경우 방지
         if (error.message.includes('성공적으로 수정되었습니다')) {
           // 실제로는 성공이므로 에러 처리하지 않음
-          console.log('수업 수정 성공:', error.message)
           return
         }
         
