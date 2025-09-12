@@ -1,0 +1,940 @@
+/* ClassDetailModal 스타일링 */
+
+/* 모달 오버레이 */
+.class-detail-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+/* 모달 컨테이너 */
+.class-detail-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e5e7eb;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalSlideIn 0.3s ease-out;
+  box-sizing: border-box;
+}
+
+/* 모달 헤더 */
+.class-detail-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: white;
+  flex-shrink: 0;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-active {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.status-inactive {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-completed {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-default {
+  background-color: #f8fafc;
+  color: #6b7280;
+}
+
+.close-button {
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  min-width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-button:hover {
+  background-color: #f8fafc;
+  transform: scale(1.05);
+}
+
+/* 모달 내용 */
+.class-detail-modal-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px;
+  box-sizing: border-box;
+  background: white;
+}
+
+/* 로딩 및 에러 상태 */
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  gap: 16px;
+  background: white;
+}
+
+.retry-button {
+  margin-top: 8px;
+}
+
+/* 수업 상세 정보 컨테이너 */
+.class-details-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: white;
+}
+
+/* 정보 섹션 - 조건부 렌더링 지원 */
+.class-detail-info-section {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+/* 학생 목록이 비활성화된 경우 마진 조정 */
+.class-details-container:not(:has(.class-detail-info-section)) .color-picker-section {
+  margin-top: 0;
+}
+
+.class-detail-section-title {
+  margin-bottom: 16px;
+  color: #111827;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+/* 정보 그리드 */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.info-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.info-label {
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  color: #111827;
+  font-weight: 500;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+/* 수강 인원 테이블 */
+.class-detail-students-table {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.class-detail-table-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr;
+  background: white;
+  border-bottom: 2px solid #d1d5db;
+  font-weight: 600;
+  font-size: 14px;
+  color: #111827;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.class-detail-table-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr;
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+  background: white;
+}
+
+.class-detail-table-row:hover {
+  background-color: #f9fafb;
+}
+
+.class-detail-table-row:last-child {
+  border-bottom: none;
+}
+
+.class-detail-table-cell {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  color: #111827;
+  font-weight: 500;
+}
+
+.class-detail-table-cell:not(:last-child) {
+  border-right: 1px solid #e5e7eb;
+}
+
+/* 빈 상태 */
+.empty-students {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+  background: white;
+}
+
+/* 모달 푸터 */
+.class-detail-modal-footer {
+  padding: 20px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: white;
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.close-modal-button {
+  min-width: 80px;
+}
+
+/* 반응형 디자인 - 조건부 렌더링 지원 */
+@media (max-width: 768px) {
+  .class-detail-modal {
+    margin: 10px;
+    max-height: 95vh;
+    width: calc(100% - 20px);
+  }
+  
+  .class-detail-modal-header {
+    background: white;
+    padding: 16px 20px;
+  }
+  
+  .class-detail-modal-content {
+    padding: 20px;
+    overflow-x: hidden;
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+  
+  .class-detail-table-header,
+  .class-detail-table-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+  
+  .class-detail-table-cell {
+    padding: 8px 12px;
+    border-right: none;
+    border-bottom: 1px solid #f3f4f6;
+    min-width: 0;
+    overflow: hidden;
+  }
+  
+  .class-detail-table-cell:last-child {
+    border-bottom: none;
+  }
+  
+  .class-detail-table-header .class-detail-table-cell {
+    font-weight: 600;
+    background: white;
+    margin-bottom: 4px;
+  }
+  
+  /* 조건부 렌더링에 따른 간격 조정 */
+  .class-detail-info-section {
+    margin-bottom: 16px;
+  }
+  
+  .color-picker-section {
+    margin-top: 16px;
+  }
+  
+  /* 모달 푸터 버튼 반응형 개선 */
+  .modal-footer-buttons {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+  
+  .modal-footer-buttons .color-save-button,
+  .modal-footer-buttons .close-modal-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .class-detail-modal-overlay {
+    padding: 10px;
+  }
+  
+  .class-detail-modal {
+    margin: 0;
+    border-radius: 8px;
+    width: calc(100% - 20px);
+  }
+  
+  .class-detail-modal-header {
+    background: white;
+    padding: 12px 16px;
+  }
+  
+  .class-detail-modal-content {
+    padding: 16px;
+    overflow-x: hidden;
+  }
+  
+  .class-detail-info-section {
+    padding: 16px;
+  }
+  
+  /* 조건부 렌더링에 따른 간격 조정 */
+  .class-detail-info-section {
+    margin-bottom: 12px;
+  }
+  
+  .color-picker-section {
+    margin-top: 12px;
+    padding: 12px;
+  }
+  
+  /* 모달 푸터 버튼 초소형 화면 최적화 */
+  .modal-footer {
+    padding: 16px;
+  }
+  
+  .modal-footer-buttons {
+    gap: 6px;
+  }
+  
+  .modal-footer-buttons .color-save-button,
+  .modal-footer-buttons .close-modal-button {
+    min-height: 40px;
+    font-size: 14px;
+  }
+}
+
+/* 스크롤바 스타일링 */
+.class-detail-modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.class-detail-modal-content::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 3px;
+}
+
+.class-detail-modal-content::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 3px;
+}
+
+.class-detail-modal-content::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+/* 접근성 개선 및 성능 최적화 */
+.class-detail-modal:focus {
+  outline: none;
+}
+
+.close-button:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* GPU 가속을 위한 transform 사용 */
+.class-detail-modal {
+  will-change: transform, opacity;
+}
+
+.color-dropdown-menu {
+  will-change: transform, opacity;
+}
+
+/* 스크롤 성능 최적화 */
+.class-detail-modal-content {
+  contain: layout style paint;
+}
+
+/* 애니메이션 성능 최적화 */
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* 다크 모드 지원 - 조건부 렌더링 지원 */
+@media (prefers-color-scheme: dark) {
+  .class-detail-modal {
+    background: #1f2937;
+    color: #f9fafb;
+  }
+  
+  .class-detail-modal-header {
+    background: #111827;
+    border-bottom-color: #374151;
+  }
+  
+  .header-content {
+    background: #111827;
+  }
+  
+  .class-detail-info-section {
+    background: #111827;
+    border-color: #374151;
+  }
+  
+  .info-label {
+    color: #9ca3af;
+  }
+  
+  .info-value {
+    color: #f9fafb;
+  }
+  
+  .class-detail-students-table {
+    background: #1f2937;
+    border-color: #374151;
+  }
+  
+  .class-detail-table-header {
+    background: #111827;
+    color: #9ca3af;
+  }
+  
+  .class-detail-table-row {
+    background: #1f2937;
+  }
+  
+  .class-detail-table-row:hover {
+    background-color: #111827;
+  }
+  
+  .class-detail-table-cell {
+    color: #f9fafb;
+  }
+  
+  .empty-students {
+    background: #1f2937;
+    color: #9ca3af;
+  }
+  
+  .class-detail-modal-footer {
+    background: #111827;
+    border-top-color: #374151;
+  }
+  
+  .modal-footer {
+    background: #111827;
+  }
+  
+  /* 로딩 및 에러 상태 다크모드 */
+  .loading-container,
+  .error-container {
+    background: #1f2937;
+  }
+  
+  .class-details-container {
+    background: #1f2937;
+  }
+}
+
+/* ===== 색상 선택기 스타일 ===== */
+
+/* 색상 선택기 섹션 - 조건부 렌더링 지원 */
+.color-picker-section {
+  margin-top: 20px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+/* 색상 선택기가 비활성화된 경우 마진 조정 */
+.class-details-container:not(:has(.color-picker-section)) .class-detail-info-section:last-child {
+  margin-bottom: 0;
+}
+
+.color-picker-section h4 {
+  margin: 0 0 16px 0;
+  color: #111827;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* 색상 팔레트 체크박스 */
+.color-palette-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.color-palette-checkbox input[type="checkbox"] {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.color-palette-checkbox label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* 색상 커스텀 드롭다운 */
+.color-custom-dropdown {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.color-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 40px;
+  background: white;
+}
+
+.color-dropdown-trigger:hover {
+  border-color: #d1d5db;
+}
+
+.color-preview-box {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.color-dropdown-arrow {
+  margin-left: auto;
+  font-size: 12px;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.color-dropdown-trigger:hover .color-dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+/* 드롭다운 메뉴 */
+.color-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.color-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.color-option:last-child {
+  border-bottom: none;
+}
+
+.color-option:hover {
+  background-color: #f8f9fa;
+}
+
+.color-option-preview {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+/* 직접 입력 필드 */
+.custom-color-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 8px;
+  transition: border-color 0.2s ease;
+  background: white;
+  color: #111827;
+}
+
+.custom-color-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.custom-color-input:disabled {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* 폼 텍스트 */
+.color-form-text {
+  display: block;
+  font-size: 12px;
+  color: #6c757d;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+/* 모달 푸터 버튼들 - 조건부 렌더링 지원 */
+.modal-footer-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.color-save-button {
+  min-width: 100px;
+  transition: all 0.2s ease;
+}
+
+.color-save-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.close-modal-button {
+  transition: all 0.2s ease;
+}
+
+/* 성공/에러 알림 */
+.success-alert {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 6px;
+  padding: 12px 16px;
+  z-index: 1001;
+  animation: slideIn 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 300px;
+}
+
+.success-alert-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.success-icon {
+  color: #155724;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.success-message h3 {
+  margin: 0 0 4px 0;
+  color: #155724;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.success-message p {
+  margin: 0;
+  color: #155724;
+  font-size: 12px;
+}
+
+.error-alert {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  padding: 12px 16px;
+  z-index: 1001;
+  animation: slideIn 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 300px;
+}
+
+.error-alert-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error-icon {
+  color: #721c24;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.error-message h3 {
+  margin: 0 0 4px 0;
+  color: #721c24;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.error-message p {
+  margin: 0;
+  color: #721c24;
+  font-size: 12px;
+}
+
+/* 반응형 디자인 - 색상 선택기 */
+@media (max-width: 768px) {
+  .color-picker-section {
+    margin-top: 16px;
+    padding: 12px;
+  }
+  
+  .color-picker-section h4 {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  
+  .color-dropdown-trigger {
+    padding: 6px 10px;
+    min-height: 36px;
+  }
+  
+  .color-option {
+    padding: 6px 10px;
+  }
+  
+  .custom-color-input {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  
+  .success-alert,
+  .error-alert {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .color-picker-section {
+    margin-top: 12px;
+    padding: 10px;
+  }
+  
+  .color-palette-checkbox {
+    margin-bottom: 10px;
+  }
+  
+  .color-palette-checkbox label {
+    font-size: 13px;
+  }
+  
+  .color-dropdown-trigger {
+    padding: 5px 8px;
+    min-height: 32px;
+  }
+  
+  .color-option {
+    padding: 5px 8px;
+  }
+  
+  .custom-color-input {
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+  
+  .color-form-text {
+    font-size: 11px;
+  }
+}
+
+/* 다크 모드 지원 - 색상 선택기 강화 */
+@media (prefers-color-scheme: dark) {
+  .color-picker-section {
+    background: #111827;
+    border-color: #374151;
+  }
+  
+  .color-picker-section h4 {
+    color: #f9fafb;
+  }
+  
+  .color-palette-checkbox label {
+    color: #d1d5db;
+  }
+  
+  .color-dropdown-trigger {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+  
+  .color-dropdown-trigger:hover {
+    border-color: #4b5563;
+  }
+  
+  .color-dropdown-menu {
+    background: #1f2937;
+    border-color: #374151;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .color-option {
+    border-bottom-color: #374151;
+    color: #f9fafb;
+  }
+  
+  .color-option:hover {
+    background-color: #111827;
+  }
+  
+  .custom-color-input {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+  
+  .custom-color-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+  
+  .custom-color-input:disabled {
+    background-color: #111827;
+    color: #6b7280;
+  }
+  
+  .color-form-text {
+    color: #9ca3af;
+  }
+  
+  /* 색상 미리보기 다크모드 */
+  .color-preview-box {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .color-option-preview {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}

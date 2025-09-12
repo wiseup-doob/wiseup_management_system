@@ -600,6 +600,7 @@ function ClassPage() {
           <ClassDetailPanel
             selectedClass={selectedClass}
             isLoading={isLoading}
+            onRefreshClasses={refreshClasses}
           />
         ) : selectedTeacher ? (
           <TeacherDetailPanel
@@ -607,6 +608,7 @@ function ClassPage() {
             teacherId={selectedTeacher}
             classes={teacherClasses}
             onClose={handleCloseTeacherPanel}
+            onRefreshClasses={refreshClasses}
           />
         ) : null}
       </div>

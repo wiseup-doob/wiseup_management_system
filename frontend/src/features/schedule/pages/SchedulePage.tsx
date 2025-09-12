@@ -8,6 +8,7 @@ import { TimetableWidget, TimetableDownloadModal, BulkTimetableDownloadModal } f
 import type { Student } from '@shared/types'
 import { useStudents, useStudentSearch } from '../hooks'
 import { TimetableEditModal } from '../components/TimetableEditModal'
+import { ClassDetailModal } from '../../../components/business/ClassDetailModal'
 import { apiService } from '../../../services/api'
 
 function SchedulePage() {
@@ -37,6 +38,8 @@ function SchedulePage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false)
   const [isBulkDownloadModalOpen, setIsBulkDownloadModalOpen] = useState(false)
+  const [isClassDetailModalOpen, setIsClassDetailModalOpen] = useState(false)
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
 
   // 학생 선택 시 시간표 로드
   useEffect(() => {
@@ -141,6 +144,28 @@ function SchedulePage() {
   const handleCloseBulkDownloadModal = useCallback(() => {
     setIsBulkDownloadModalOpen(false)
   }, [])
+
+  // 수업 상세 모달 열기/닫기 핸들러
+  const handleClassClick = useCallback((classData: any) => {
+    console.log('📚 수업 클릭됨:', classData)
+    setSelectedClassId(classData.id)
+    setIsClassDetailModalOpen(true)
+  }, [])
+
+  const handleCloseClassDetailModal = useCallback(() => {
+    setIsClassDetailModalOpen(false)
+    setSelectedClassId(null)
+  }, [])
+
+  // 색상 저장 후 시간표 새로고침 콜백
+  const handleColorSaved = useCallback(() => {
+    console.log('🎨 색상 저장됨, 시간표 새로고침')
+    // 선택된 학생이 있으면 해당 학생의 시간표 새로고침
+    if (selectedStudent) {
+      loadTimetable(selectedStudent)
+    }
+  }, [selectedStudent, loadTimetable])
+
 
   // 시간표 저장 핸들러
   const handleSaveTimetable = useCallback(() => {
@@ -333,6 +358,7 @@ function SchedulePage() {
                         }}
                         className="student-timetable-widget"
                         data-student-id={selectedStudent.id}
+                        onClassClick={handleClassClick}
                       />
                     ) : (
                       <div className="timetable-loading">
@@ -392,6 +418,14 @@ function SchedulePage() {
           // 학생 선택 상태 업데이트를 처리할 수 있는 콜백
           console.log('학생 선택 상태 업데이트:', updatedStudents)
         }}
+      />
+      
+      {/* 수업 상세 정보 모달 */}
+      <ClassDetailModal
+        isOpen={isClassDetailModalOpen}
+        onClose={handleCloseClassDetailModal}
+        classSectionId={selectedClassId}
+        onColorSaved={handleColorSaved}
       />
     </BaseWidget>
   )

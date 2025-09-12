@@ -1,16 +1,41 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState, useCallback } from 'react'
 import './TeacherDetailPanel.css'
 import type { ClassSectionWithDetails } from '../types/class.types'
 import { TimetableWidget, TimetableSkeleton } from '../../../components/business/timetable'
+import { ClassDetailModal } from '../../../components/business/ClassDetailModal'
 
 interface TeacherDetailPanelProps {
   teacherName: string
   teacherId: string
   classes: ClassSectionWithDetails[]
   onClose: () => void
+  onRefreshClasses?: () => void  // 수업 목록 새로고침 콜백
 }
 
-export function TeacherDetailPanel({ teacherName, teacherId, classes, onClose }: TeacherDetailPanelProps) {
+export function TeacherDetailPanel({ teacherName, teacherId, classes, onClose, onRefreshClasses }: TeacherDetailPanelProps) {
+  // 모달 관련 상태
+  const [isClassDetailModalOpen, setIsClassDetailModalOpen] = useState(false)
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
+
+  // 색상 저장 후 수업 목록 새로고침 콜백
+  const handleTeacherClassColorSaved = useCallback(() => {
+    console.log('🎨 수업 색상 저장됨, 선생님 수업 목록 새로고침')
+    // 선생님 수업 목록 새로고침 (props로 받은 onRefreshClasses 호출)
+    onRefreshClasses?.()
+  }, [onRefreshClasses])
+
+  // 수업 클릭 핸들러
+  const handleTimetableClassClick = useCallback((classData: any) => {
+    console.log('📚 시간표 수업 클릭됨:', classData)
+    setSelectedClassId(classData.id)
+    setIsClassDetailModalOpen(true)
+  }, [])
+
+  // 모달 닫기 핸들러
+  const handleCloseClassDetailModal = useCallback(() => {
+    setIsClassDetailModalOpen(false)
+    setSelectedClassId(null)
+  }, [])
 
   // 통계 계산
   const statistics = useMemo(() => {
@@ -75,10 +100,8 @@ export function TeacherDetailPanel({ teacherName, teacherId, classes, onClose }:
                 endHour={23}
                 showConflicts={true}
                 showEmptySlots={false}
+                onClassClick={handleTimetableClassClick}
                 showTimeLabels={true}
-                onClassClick={(classData) => {
-                  console.log('선생님 시간표에서 수업 클릭:', classData)
-                }}
                 className="teacher-timetable-widget"
               />
             </div>
@@ -88,33 +111,17 @@ export function TeacherDetailPanel({ teacherName, teacherId, classes, onClose }:
             </div>
           )}
         </div>
-
-        {/* 수업 목록 */}
-        {/* <div className="teacher-classes">
-          <h3>담당 수업 목록</h3>
-          {classes.length > 0 ? (
-            <div className="teacher-classes-list">
-              {classes.map(cls => (
-                <div key={cls.id} className="teacher-class-item">
-                  <div className="teacher-class-item-header">
-                    <span className="teacher-class-item-name">{cls.name}</span>
-                    <span className="teacher-class-item-status">{cls.status === 'active' ? '진행중' : '비활성'}</span>
-                  </div>
-                  <div className="teacher-class-item-details">
-                    <span>과목: {cls.course?.subject || '미지정'}</span>
-                    <span>교실: {cls.classroom?.name || '미지정'}</span>
-                    <span>정원: {cls.currentStudents || 0}/{cls.maxStudents}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="no-classes">
-              <p>담당 수업이 없습니다.</p>
-            </div>
-          )}
-        </div> */}
       </div>
+      
+      {/* 수업 상세 정보 모달 */}
+      <ClassDetailModal
+        isOpen={isClassDetailModalOpen}
+        onClose={handleCloseClassDetailModal}
+        classSectionId={selectedClassId}
+        onColorSaved={handleTeacherClassColorSaved}
+        showColorPicker={true}
+        showStudentList={true}
+      />
     </div>
   )
 }

@@ -171,45 +171,82 @@
 }
 
 .search-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   margin-bottom: 1.5rem;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filter-select {
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  min-width: 120px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
 .students-grid {
   min-height: 200px;
 }
 
-.students-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.student-card {
+/* 학생 테이블 스타일 */
+.students-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
   background-color: #ffffff;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.student-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+.students-table th,
+.students-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e9ecef;
 }
 
-.student-card h4 {
-  margin: 0 0 0.5rem 0;
-  color: #333;
-  font-size: 1.1rem;
+.students-table th {
+  background-color: #f8f9fa;
   font-weight: 600;
+  color: #333;
+  font-size: 14px;
+  border-bottom: 2px solid #dee2e6;
 }
 
-.student-card p {
-  margin: 0.25rem 0;
-  color: #666;
-  font-size: 0.9rem;
+.students-table td {
+  color: #555;
+  font-size: 14px;
+}
+
+.students-table tr:hover {
+  background-color: #f8f9fa;
+}
+
+.students-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* 테이블 내 삭제 버튼 스타일 조정 */
+.students-table .delete-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  margin: 0;
 }
 
 .students-count {
@@ -219,6 +256,33 @@
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #e9ecef;
+}
+
+/* 검색 결과 없음 처리 */
+.no-results {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+}
+
+.no-results p {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.clear-filters-btn {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.clear-filters-btn:hover {
+  background-color: #5a6268;
 }
 
 /* 반응형 디자인 */
@@ -240,6 +304,19 @@
 
   .btn-primary,
   .btn-secondary {
+    width: 100%;
+  }
+
+  /* 검색 필터 반응형 */
+  .search-filters {
+    gap: 0.75rem;
+  }
+  
+  .filter-controls {
+    flex-direction: column;
+  }
+  
+  .filter-select {
     width: 100%;
   }
 }
@@ -265,6 +342,21 @@
   .form-group input,
   .form-group select {
     padding: 0.5rem;
+  }
+
+  /* 학생 테이블 반응형 */
+  .students-table {
+    font-size: 12px;
+  }
+  
+  .students-table th,
+  .students-table td {
+    padding: 8px 12px;
+  }
+  
+  .students-table .delete-btn {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
   }
 }
 
@@ -587,7 +679,6 @@
 
 /* ===== 삭제 버튼 및 액션 영역 스타일 ===== */
 
-.student-actions,
 .teacher-actions,
 .classroom-actions {
   margin-top: 1rem;
@@ -621,7 +712,6 @@
 
 /* 반응형 디자인에서 삭제 버튼 */
 @media (max-width: 768px) {
-  .student-actions,
   .teacher-actions,
   .classroom-actions {
     justify-content: center;

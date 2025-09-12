@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './StudentsPage.css';
 import { BaseWidget } from '../../../components/base/BaseWidget';
 import { Button } from '../../../components/buttons/Button';
@@ -21,7 +21,7 @@ import type {
   ClassroomDependencies
 } from '@shared/types';
 import type { Grade } from '@shared/types/student.types';
-import { createStudentAsync, fetchStudents, setSearchTerm, setFilter, deleteStudentAsync } from '../slice/studentsSlice';
+import { createStudentAsync, fetchStudents, setSearchTerm, setFilter, deleteStudentAsync, searchStudentsAsync } from '../slice/studentsSlice';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { apiService } from '../../../services/api';
@@ -87,6 +87,9 @@ function StudentsPage() {
   // 강의실 의존성 정보 상태
   const [classroomDependencies, setClassroomDependencies] = useState<ClassroomDependencies | null>(null);
 
+  // 디바운싱을 위한 ref
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // 학년 옵션
   const gradeOptions: Grade[] = [
     '초1', '초2', '초3', '초4', '초5', '초6',
@@ -104,6 +107,15 @@ function StudentsPage() {
     loadTeachers();
     loadClassrooms();
   }, [dispatch]);
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // 교사 목록 로드
   const loadTeachers = async () => {
@@ -135,15 +147,46 @@ function StudentsPage() {
     }
   };
 
-  // 검색어 변경 핸들러
-  const handleSearchChange = (value: string) => {
+  // 검색어 변경 핸들러 (디바운싱 적용)
+  const handleSearchChange = useCallback((value: string) => {
     dispatch(setSearchTerm(value));
-  };
+    
+    // 기존 타이머 클리어
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // 빈 검색어인 경우 전체 목록 로드
+    if (!value.trim()) {
+      dispatch(fetchStudents());
+      return;
+    }
+    
+    // 디바운싱 적용 (300ms)
+    searchTimeoutRef.current = setTimeout(() => {
+      dispatch(searchStudentsAsync({ name: value.trim() }));
+    }, 300);
+  }, [dispatch]);
 
   // 필터 변경 핸들러
-  const handleFilterChange = (key: keyof typeof filters, value: string) => {
+  const handleFilterChange = useCallback((key: keyof typeof filters, value: string) => {
     dispatch(setFilter({ key, value }));
-  };
+    
+    // 필터 변경 시 검색 실행
+    const searchParams: any = {
+      name: searchTerm || undefined,
+      grade: key === 'grade' ? (value as Grade) || undefined : filters.grade || undefined,
+    };
+    
+    // 빈 필터인 경우 전체 목록 로드
+    const hasActiveFilters = Object.values(searchParams).some(v => v !== undefined);
+    
+    if (hasActiveFilters) {
+      dispatch(searchStudentsAsync(searchParams));
+    } else {
+      dispatch(fetchStudents());
+    }
+  }, [dispatch, searchTerm, filters]);
 
   // 입력 필드 변경 핸들러
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -559,40 +602,70 @@ function StudentsPage() {
               onChange={handleSearchChange}
               placeholder="학생 검색..."
             />
-            {/* TODO: 필터 추가 */}
+            
+            <div className="filter-controls">
+              <select
+                value={filters.grade}
+                onChange={(e) => handleFilterChange('grade', e.target.value)}
+                className="filter-select"
+              >
+                <option value="">전체 학년</option>
+                {gradeOptions.map(grade => (
+                  <option key={grade} value={grade}>{grade}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="students-grid">
             {isLoading ? (
               <p>학생 목록을 불러오는 중...</p>
             ) : students && students.length > 0 ? (
-              <div className="students-list">
-                {students.map((student) => (
-                  <div key={student.id} className="student-card">
-                    <h4>{student.name}</h4>
-                    <p>학년: {student.grade}</p>
-                    <p>상태: {student.status === 'active' ? '재원' : '퇴원'}</p>
-                    {student.contactInfo?.phone && (
-                      <p>전화번호: {student.contactInfo.phone}</p>
-                    )}
-                    {student.firstAttendanceDate && (
-                      <p>첫 등원일: {student.firstAttendanceDate}</p>
-                    )}
-                    <div className="student-actions">
-                      <Button
-                        type="button"
-                        variant="danger"
-                        onClick={() => handleOpenDeleteModal(student.id, student.name, 'student')}
-                        className="delete-btn"
-                      >
-                        삭제
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <table className="students-table">
+                <thead>
+                  <tr>
+                    <th>이름</th>
+                    <th>학년</th>
+                    <th>전화번호</th>
+                    <th>작업</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.map((student) => (
+                    <tr key={student.id}>
+                      <td>{student.name}</td>
+                      <td>{student.grade}</td>
+                      <td>{student.contactInfo?.phone || '-'}</td>
+                      <td>
+                        <Button
+                          type="button"
+                          variant="danger"
+                          onClick={() => handleOpenDeleteModal(student.id, student.name, 'student')}
+                          className="delete-btn"
+                        >
+                          삭제
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             ) : (
-              <p>등록된 학생이 없습니다.</p>
+              <div className="no-results">
+                <p>등록된 학생이 없습니다.</p>
+                {(searchTerm || Object.values(filters).some(f => f)) && (
+                  <Button
+                    onClick={() => {
+                      dispatch(setSearchTerm(''));
+                      dispatch(setFilter({ key: 'grade', value: '' }));
+                      dispatch(fetchStudents());
+                    }}
+                    className="clear-filters-btn"
+                  >
+                    필터 초기화
+                  </Button>
+                )}
+              </div>
             )}
             <p className="students-count">등록된 학생: {students?.length || 0}명</p>
           </div>
