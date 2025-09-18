@@ -26,7 +26,7 @@
   margin: 0;
 }
 
-.close-btn {
+.teacher-close-btn {
   background: none;
   border: none;
   font-size: 24px;
@@ -37,7 +37,7 @@
   transition: background-color 0.2s;
 }
 
-.close-btn:hover {
+.teacher-close-btn:hover {
   background-color: #f0f0f0;
   color: #333;
 }
@@ -54,11 +54,11 @@
 /* 통계 카드 */
 .teacher-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
-.stat-card {
+.teacher-stat-card {
   background: #f8f9fa;
   padding: 20px 16px;
   border-radius: 8px;
@@ -67,19 +67,19 @@
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.stat-card:hover {
+.teacher-stat-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.stat-number {
+.teacher-stat-number {
   font-size: 32px;
   font-weight: 700;
   color: #1890ff;
   margin-bottom: 4px;
 }
 
-.stat-label {
+.teacher-stat-label {
   font-size: 14px;
   color: #666;
   font-weight: 500;
@@ -93,13 +93,13 @@
   margin: 0 0 16px 0;
 }
 
-.subject-tags {
+.teacher-subject-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.subject-tag {
+.teacher-subject-tag {
   background: #e6f7ff;
   color: #1890ff;
   padding: 6px 12px;
@@ -108,6 +108,7 @@
   font-weight: 500;
   border: 1px solid #91d5ff;
 }
+
 
 /* 주간 시간표 */
 .teacher-schedule h3,
@@ -236,16 +237,173 @@
   color: #666;
 }
 
+/* 수업별 수강생 현황 섹션 */
+.teacher-classes-and-students-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.teacher-classes-and-students-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 20px 0;
+}
+
+.teacher-classes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* 수업별 수강생 카드 */
+.teacher-class-student-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: 1px solid #e9ecef;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.teacher-class-student-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
+
+.teacher-class-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.teacher-class-name {
+  margin: 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.teacher-student-count {
+  background: #007bff;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.teacher-students-table-container {
+  overflow-x: auto;
+}
+
+.teacher-students-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.teacher-students-table th,
+.teacher-students-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.teacher-students-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.teacher-students-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.teacher-students-table td:first-child {
+  font-weight: 500;
+  color: #333;
+}
+
+.teacher-status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.teacher-status-badge.active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.teacher-status-badge.inactive {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.teacher-no-students {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.teacher-no-students p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* 로딩 및 에러 상태 */
+.teacher-loading-container,
+.teacher-error-container {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+}
+
+.teacher-loading-container p,
+.teacher-error-container p {
+  margin: 0 0 1rem 0;
+  font-size: 16px;
+}
+
+.teacher-retry-button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.teacher-retry-button:hover {
+  background: #0056b3;
+}
+
 /* 빈 상태 */
-.no-schedule,
-.no-classes {
+.teacher-no-schedule,
+.teacher-no-classes {
   text-align: center;
   padding: 40px 20px;
   color: #999;
 }
 
-.no-schedule p,
-.no-classes p {
+.teacher-no-schedule p,
+.teacher-no-classes p {
   margin: 0;
   font-size: 16px;
 }
@@ -256,7 +414,7 @@
     grid-template-columns: repeat(2, 1fr);
   }
   
-  .stat-number {
+  .teacher-stat-number {
     font-size: 24px;
   }
   
@@ -280,6 +438,31 @@
     flex-direction: column;
     gap: 4px;
   }
+
+  /* 수업별 수강생 현황 반응형 */
+  .teacher-classes-and-students-section {
+    padding: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .teacher-class-student-card {
+    padding: 1rem;
+  }
+
+  .teacher-class-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .teacher-students-table {
+    font-size: 12px;
+  }
+
+  .teacher-students-table th,
+  .teacher-students-table td {
+    padding: 0.5rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -287,7 +470,7 @@
     grid-template-columns: 1fr;
   }
   
-  .subject-tags {
+  .teacher-subject-tags {
     justify-content: center;
   }
 }

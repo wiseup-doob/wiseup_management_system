@@ -22,6 +22,23 @@ export interface ClassSectionWithDetails extends ClassSection {
   } | null;
 }
 
+// 수강생 정보를 포함한 ClassSectionWithDetails
+export interface ClassSectionWithStudents extends ClassSectionWithDetails {
+  enrolledStudents: EnrolledStudent[];
+}
+
+// 수강생 정보 인터페이스
+export interface EnrolledStudent {
+  id: string;
+  name: string;
+  grade: string;
+  status: 'active' | 'inactive';
+  contactInfo?: {
+    phone?: string;
+    email?: string;
+  };
+}
+
 export interface Class {
   id: string
   name: string

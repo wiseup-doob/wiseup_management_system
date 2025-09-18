@@ -33,6 +33,7 @@ import type {
   ClassSectionDependencies,
   ClassSectionHierarchicalDeleteResponse
 } from '@shared/types';
+import type { ClassSectionWithStudents } from '../features/class/types/class.types';
 import type { StudentTimetableResponse } from '../features/schedule/types/timetable.types';
 import {
   API_ENDPOINTS
@@ -964,6 +965,15 @@ class ApiService {
       );
     } catch (error) {
       throw normalizeError(error, '등록된 학생 목록 조회 중 오류가 발생했습니다.');
+    }
+  }
+
+  // 선생님의 수업 목록과 수강생 정보 조회
+  async getTeacherClassesWithStudents(teacherId: string): Promise<ApiResponse<ClassSectionWithStudents[]> & { statistics?: any }> {
+    try {
+      return await this.request<ClassSectionWithStudents[]>(`/api/teachers/${teacherId}/classes-with-students`);
+    } catch (error) {
+      throw normalizeError(error, '선생님 수업 및 수강생 정보 조회 중 오류가 발생했습니다.');
     }
   }
 }

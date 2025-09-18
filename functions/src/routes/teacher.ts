@@ -42,4 +42,7 @@ router.get('/:id/dependencies', teacherController.getTeacherDependencies.bind(te
 // 교사 계층적 삭제
 router.delete('/:id/hierarchical', teacherController.deleteTeacherHierarchically.bind(teacherController));
 
+// 선생님의 수업 목록과 수강생 정보 조회
+router.get('/:id/classes-with-students', teacherController.getTeacherClassesWithStudents.bind(teacherController));
+
 export { router as teacherRoutes };

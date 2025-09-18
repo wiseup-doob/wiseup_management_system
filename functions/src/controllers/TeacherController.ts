@@ -1,12 +1,15 @@
 import { Request, Response } from 'express';
 import { TeacherService } from '../services/TeacherService';
+import { ClassSectionService } from '../services/ClassSectionService';
 import type { CreateTeacherRequest, UpdateTeacherRequest, TeacherSearchParams } from '@shared/types';
 
 export class TeacherController {
   private teacherService: TeacherService;
+  private classSectionService: ClassSectionService;
 
   constructor() {
     this.teacherService = new TeacherService();
+    this.classSectionService = new ClassSectionService();
   }
 
   // 강사 생성
@@ -240,6 +243,91 @@ export class TeacherController {
         message: '교사 계층적 삭제 중 오류가 발생했습니다.',
         error: error instanceof Error ? error.message : '알 수 없는 오류'
       });
+    }
+  }
+
+  // 선생님의 수업 목록과 수강생 정보 조회
+  async getTeacherClassesWithStudents(req: Request, res: Response): Promise<void> {
+    try {
+      const { id: teacherId } = req.params;
+
+      // 1. 선생님의 수업 목록 조회 (teacherId로 필터링)
+      const allClassSections = await this.classSectionService.getAllClassSections();
+      const teacherClasses = allClassSections.filter(classSection => classSection.teacherId === teacherId);
+
+      if (teacherClasses.length === 0) {
+        res.json({
+          success: true,
+          data: [],
+          message: '해당 선생님의 수업이 없습니다.'
+        });
+        return;
+      }
+
+      // 2. 각 수업의 상세 정보와 수강생 목록 조회
+      const classesWithStudents = await Promise.all(
+        teacherClasses.map(async (classSection) => {
+          try {
+            // 수업 상세 정보 조회 (Course, Teacher, Classroom 포함)
+            const classWithDetails = await this.classSectionService.getClassSectionWithDetailsById(classSection.id);
+            
+            // 수강생 목록 조회
+            const enrolledStudents = await this.classSectionService.getEnrolledStudents(classSection.id);
+            
+            return {
+              ...classWithDetails,
+              enrolledStudents
+            };
+          } catch (error) {
+            console.error(`수업 ${classSection.id} 정보 조회 실패:`, error);
+            // 에러가 발생해도 기본 정보는 반환
+            return {
+              ...classSection,
+              course: null,
+              teacher: null,
+              classroom: null,
+              enrolledStudents: []
+            };
+          }
+        })
+      );
+
+      // 3. 수강생 통계 계산
+      const studentStatistics = this.calculateStudentStatistics(classesWithStudents);
+
+      res.json({
+        success: true,
+        data: classesWithStudents,
+        count: classesWithStudents.length,
+        statistics: studentStatistics
+      });
+    } catch (error) {
+      console.error('선생님 수업 및 수강생 정보 조회 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '선생님 수업 및 수강생 정보 조회 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    }
+  }
+
+  // 수강생 통계 계산 메서드 (간소화)
+  private calculateStudentStatistics(classesWithStudents: any[]): any {
+    try {
+      // 전체 수강생 수 (중복 포함)만 계산
+      const totalStudents = classesWithStudents.reduce((total, classItem) => {
+        return total + (classItem.enrolledStudents?.length || 0);
+      }, 0);
+
+      return {
+        totalStudents  // 전체 수강생 수만 반환
+      };
+    } catch (error) {
+      console.error('수강생 통계 계산 오류:', error);
+      // 에러 발생 시 기본값 반환
+      return {
+        totalStudents: 0
+      };
     }
   }
 }
