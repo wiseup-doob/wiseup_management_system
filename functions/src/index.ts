@@ -126,4 +126,7 @@ app._router.stack.forEach((layer: any) => {
 
 // Firebase Functions로 export
 // 강제 배포를 위한 타임스탬프: 2025-08-21 09:35:00
-export const api = functions.https.onRequest(app);
+// asia-northeast3 지역으로 배포 (Firestore와 동일한 지역)
+export const api = functions.https.onRequest({
+  region: 'asia-northeast3'
+}, app);
