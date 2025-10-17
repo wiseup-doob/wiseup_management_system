@@ -219,6 +219,31 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
     return colorsMap
   }, [availableClasses])
 
+  // 수업 목록 정렬 (추가된 수업을 맨 위로)
+  const sortedFilteredClasses = useMemo(() => {
+    if (!localTimetableData || !localTimetableData.classSections) {
+      return filteredClasses
+    }
+
+    // 추가된 수업 ID 목록
+    const addedClassIds = new Set(
+      localTimetableData.classSections.map((cls: any) => cls.id)
+    )
+
+    // 정렬: 추가된 수업(true) → 추가되지 않은 수업(false)
+    return [...filteredClasses].sort((a, b) => {
+      const aIsAdded = addedClassIds.has(a.id)
+      const bIsAdded = addedClassIds.has(b.id)
+
+      // 추가된 수업을 먼저 (true는 1, false는 0으로 변환하여 내림차순 정렬)
+      if (aIsAdded && !bIsAdded) return -1
+      if (!aIsAdded && bIsAdded) return 1
+
+      // 같은 그룹 내에서는 원래 순서 유지
+      return 0
+    })
+  }, [filteredClasses, localTimetableData])
+
   // 🎨 Phase 5: 색상 정보 요약 로깅
   useEffect(() => {
     if (availableClasses.length > 0) {
@@ -843,14 +868,14 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
                         )}
                         
                         {/* 수업 목록 표시 */}
-                        {!isLoading && !error && filteredClasses.length > 0 && (
-                          filteredClasses.map(classSection => (
+                        {!isLoading && !error && sortedFilteredClasses.length > 0 && (
+                          sortedFilteredClasses.map(classSection => (
                             <DraggableClassCard key={classSection.id} classSection={classSection} />
                           ))
                         )}
-                        
+
                         {/* 검색 결과가 없는 경우 */}
-                        {!isLoading && !error && searchTerm && filteredClasses.length === 0 && (
+                        {!isLoading && !error && searchTerm && sortedFilteredClasses.length === 0 && (
                           <div className="empty-state">
                             <Label variant="secondary" size="small">
                               "{searchTerm}"에 대한 검색 결과가 없습니다.
