@@ -129,6 +129,7 @@ export const searchClasses = createAsyncThunk(
   'class/searchClasses',
   async (searchParams: any, { rejectWithValue }) => {
     try {
+
       // 검색은 기본 API를 사용하고, 결과를 상세 정보와 함께 조회
       const response = await apiService.searchClassSections(searchParams)
       if (response.data && response.data.length > 0) {

@@ -13,6 +13,7 @@ import { classroomRoutes } from './routes/classroom';
 import { seatRoutes } from './routes/seat';
 import { seatAssignmentRoutes } from './routes/seat-assignment';
 import { studentTimetableRoutes } from './routes/student-timetable';
+import { timetableVersionRoutes } from './routes/timetable-version';
 import colorsRouter from './routes/colors';
 // import testDataRoutes from './routes/test-data';
 
@@ -43,16 +44,21 @@ app.use((req, res, next) => {
 
 // ===== 구체적인 경로를 먼저 등록 =====
 
+// 시간표 버전 관련 라우트 (가장 먼저 등록)
+console.log('🚀 [DEBUG] timetable-versions 라우터 등록 시작...');
+app.use('/api/timetable-versions', timetableVersionRoutes);
+console.log('✅ Timetable-versions routes registered successfully');
+
 // 학생 시간표 관련 라우트 (더 구체적인 경로)
 console.log('🚀 [DEBUG] student-timetables 라우터 등록 시작...');
 app.use('/api/student-timetables', (req, res, next) => {
   console.log('🎯 [DEBUG] /api/student-timetables 라우터로 요청 라우팅됨');
-  console.log('📝 라우팅 정보:', { 
-    method: req.method, 
-    url: req.url, 
-    path: req.path, 
+  console.log('📝 라우팅 정보:', {
+    method: req.method,
+    url: req.url,
+    path: req.path,
     originalUrl: req.originalUrl,
-    baseUrl: req.baseUrl 
+    baseUrl: req.baseUrl
   });
   next();
 }, studentTimetableRoutes);
@@ -130,3 +136,92 @@ app._router.stack.forEach((layer: any) => {
 export const api = functions.https.onRequest({
   region: 'asia-northeast3'
 }, app);
+
+// ===== 데이터 마이그레이션 Functions =====
+import { migrateTimetableVersions } from './scripts/migrate-timetable-versions';
+
+/**
+ * 시간표 버전 마이그레이션 Function
+ * URL: https://asia-northeast3-[project-id].cloudfunctions.net/migrateTimetableVersionsFunction
+ *
+ * 사용법:
+ * - GET: 마이그레이션 상태 확인
+ * - POST: 마이그레이션 실행
+ */
+export const migrateTimetableVersionsFunction = functions.https.onRequest({
+  region: 'asia-northeast3',
+  timeoutSeconds: 540, // 9분
+  memory: '1GiB'
+}, async (req: any, res: any) => {
+    // CORS 설정
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET, POST');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+      res.status(204).send('');
+      return;
+    }
+
+    try {
+      if (req.method === 'GET') {
+        // 상태 확인
+        console.log('📊 마이그레이션 상태 확인 요청');
+
+        // 상태 확인 로직 직접 구현
+        const { TimetableVersionService } = await import('./services/TimetableVersionService.js');
+        const { StudentTimetableService } = await import('./services/StudentTimetableService.js');
+
+        const versionService = new TimetableVersionService();
+        const timetableService = new StudentTimetableService();
+
+        const versions = await versionService.getAllVersions();
+        const activeVersion = await versionService.getActiveVersion();
+        const allTimetables = await timetableService.getAllStudentTimetables();
+        const withVersion = allTimetables.filter((t: any) => !!t.versionId);
+        const withoutVersion = allTimetables.filter((t: any) => !t.versionId);
+
+        res.status(200).json({
+          success: true,
+          status: {
+            versions: {
+              total: versions.length,
+              active: activeVersion ? activeVersion.name : null
+            },
+            timetables: {
+              total: allTimetables.length,
+              withVersion: withVersion.length,
+              withoutVersion: withoutVersion.length,
+              migrationNeeded: withoutVersion.length > 0
+            }
+          }
+        });
+
+      } else if (req.method === 'POST') {
+        // 마이그레이션 실행
+        console.log('🚀 마이그레이션 실행 요청');
+
+        const result = await migrateTimetableVersions();
+
+        res.status(200).json({
+          success: true,
+          message: 'Migration completed',
+          result
+        });
+
+      } else {
+        res.status(405).json({
+          success: false,
+          error: 'Method not allowed. Use GET to check status or POST to migrate.'
+        });
+      }
+
+    } catch (error: any) {
+      console.error('❌ 마이그레이션 Function 오류:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Migration failed',
+        details: error.toString()
+      });
+    }
+  });

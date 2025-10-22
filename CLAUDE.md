@@ -150,13 +150,33 @@ The root `tsconfig.json` provides path mappings:
 
 ### Emulator Setup
 - **Functions**: localhost:5001
-- **Firestore**: localhost:8080  
+- **Firestore**: localhost:8080
 - **UI**: localhost:4001
 - **Frontend**: localhost:5173
 
 ### Environment Variables
 - `JWT_SECRET`: Set in development via dev.sh script
 - `NODE_ENV`: Automatically configured based on build mode
+
+## Critical Architectural Patterns
+
+### Backend Service Layer Patterns
+1. **Transaction Pattern**: Use Firestore transactions for multi-step operations (e.g., `ClassSectionService.addStudentToClass:760-839`)
+2. **Batch Operations**: Process large datasets in batches of 500 (see `TimetableVersionService`)
+3. **Error Context**: Include version information in error messages for debugging
+4. **Auto-fallback**: Services auto-query active version when `versionId` not provided
+
+### Frontend-Backend Communication
+1. **Query Parameters for Versions**: Pass `versionId` as query param, not in request body
+2. **Optional Parameters**: Always make `versionId` optional with `?: string` for backward compatibility
+3. **Error Handling**: Catch version mismatch errors and guide users to migration tools
+4. **State Synchronization**: Load active version on component mount, re-load on version change events
+
+### Data Consistency Rules
+1. **Single Version Rule**: A student's timetable document should only reference classes from one version
+2. **Array Cleanup**: When migrating versions, clean `classSectionIds` arrays to remove stale references
+3. **Cascade Updates**: Version changes should trigger updates in dependent entities
+4. **Validation**: Always validate `versionId` matches between related entities before operations
 
 ## Development Workflow
 
@@ -179,13 +199,31 @@ The root `tsconfig.json` provides path mappings:
 
 ## Important Implementation Details
 
+### Version-Based Data Isolation System
+**Critical:** All data entities (ClassSection, Teacher, StudentTimetable) are isolated by `versionId`
+- **Active Version Pattern**: When `versionId` is not provided, backend automatically queries active version via `TimetableVersionService.getActiveVersion()`
+- **Version Filtering**: All queries must filter by `versionId` to prevent cross-version data contamination
+- **Controller Pattern**: Controllers must read `req.query.versionId` and pass to Service layer
+- **Frontend Pattern**: Always fetch active version first using `apiService.getActiveTimetableVersion()` before making data requests
+
+**Implementation Guidelines:**
+1. **Creating Entities**: Backend auto-assigns active `versionId` if not provided (see `TeacherService.createTeacher:20-39`, `ClassSectionService.addStudentToClass:760-839`)
+2. **Query Pattern**: Service layer checks for `versionId` parameter → fallback to active version → execute query
+3. **Frontend Flow**: Load active version → Store in component state → Pass to all API calls
+4. **Migration**: When switching versions, student timetables need migration (see `STUDENT_ENROLLMENT_VERSION_FIX.md`)
+
+**Common Pitfall:**
+- ❌ Calling API without `versionId` parameter and assuming backend handles it (Controller may not pass it to Service)
+- ✅ Always explicitly pass `versionId` from frontend, even if backend has fallback logic
+
 ### Timetable System
 - Advanced drag-and-drop interface using React DnD
 - Bulk download functionality for multiple timetables
 - Image generation using html2canvas
 - PDF compilation using JSZip and file-saver
+- Version-aware: Each timetable belongs to a specific version
 
-### Widget Component System  
+### Widget Component System
 - Base Widget class handles 25+ events (mouse, keyboard, touch, drag)
 - Inheritance pattern: Widget → Button → SidebarButton/IconButton
 - Accessibility features built-in (ARIA, keyboard navigation)
@@ -199,6 +237,7 @@ The root `tsconfig.json` provides path mappings:
 - Redux for complex state management
 - Custom hooks abstract API calls
 - Consistent error handling across components
+- Version context propagation through component tree
 
 ## Common Tasks
 
@@ -220,3 +259,86 @@ The root `tsconfig.json` provides path mappings:
 2. Add service methods in `functions/src/services/`
 3. Define routes in `functions/src/routes/`
 4. Update frontend API service calls
+5. **Version-aware endpoints**: Read `req.query.versionId` in controller and pass to service
+
+### Working with Version System
+**When adding version-aware features:**
+
+1. **Backend Controller** - Always read `versionId` from query:
+```typescript
+async myMethod(req: Request, res: Response): Promise<void> {
+  const versionId = req.query.versionId as string | undefined;
+  // Pass to service
+  await this.myService.myMethod(params, versionId);
+}
+```
+
+2. **Backend Service** - Support optional `versionId` with fallback:
+```typescript
+async myMethod(params: any, versionId?: string): Promise<T> {
+  let targetVersionId = versionId;
+  if (!targetVersionId) {
+    const activeVersion = await this.timetableVersionService.getActiveVersion();
+    targetVersionId = activeVersion.id;
+  }
+  // Use targetVersionId in query
+}
+```
+
+3. **Frontend API** - Add optional `versionId` parameter:
+```typescript
+async myMethod(params: any, versionId?: string): Promise<ApiResponse<T>> {
+  const url = versionId ? `${endpoint}?versionId=${versionId}` : endpoint;
+  return this.request(url, options);
+}
+```
+
+4. **Frontend Component** - Load and pass active version:
+```typescript
+const [activeVersionId, setActiveVersionId] = useState<string | null>(null);
+
+useEffect(() => {
+  const loadVersion = async () => {
+    const response = await apiService.getActiveTimetableVersion();
+    if (response.success) setActiveVersionId(response.data.id);
+  };
+  loadVersion();
+}, []);
+
+// Use in API calls
+await apiService.myMethod(params, activeVersionId);
+```
+
+### Data Migration Between Versions
+- See `STUDENT_ENROLLMENT_VERSION_FIX.md` for student timetable migration patterns
+- When activating new version, consider automatic migration of student enrollments
+- `classSectionIds` arrays must be cleaned to contain only same-version class IDs
+
+## Troubleshooting Common Issues
+
+### "학생 시간표를 찾을 수 없습니다" (Student timetable not found)
+**Cause**: Version mismatch - student has timetable in different version than active version
+**Solution**:
+1. Check active version ID
+2. Verify student's timetable `versionId` in Firestore
+3. Run version migration or manually update student timetable
+
+### Students appear in class management but not in timetable
+**Cause**: `getEnrolledStudents()` filters by both `classSectionIds` array-contains AND `versionId`
+**Solution**: Ensure student timetable `versionId` matches active version
+
+### Controller not passing versionId to Service
+**Symptoms**: Backend has version support in Service but queries don't filter by version
+**Fix**: Add to Controller:
+```typescript
+const versionId = req.query.versionId as string | undefined;
+await this.service.method(params, versionId);
+```
+
+### Frontend errors after version system changes
+**Common cause**: Redux slices fetching data without `versionId`
+**Fix**: Update Redux thunks to fetch active version first, then query with `versionId`
+
+### Mixed version IDs in classSectionIds array
+**Cause**: Manual data manipulation or version migration not completed
+**Solution**: Run cleanup script to filter `classSectionIds` by matching `ClassSection.versionId`

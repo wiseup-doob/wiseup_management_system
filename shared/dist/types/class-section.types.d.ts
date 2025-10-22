@@ -6,6 +6,7 @@ export interface ClassSchedule {
 }
 export interface ClassSection extends BaseEntity {
     id: string;
+    versionId: string;
     name: string;
     courseId: string;
     teacherId: string;
@@ -22,6 +23,7 @@ export interface ClassSection extends BaseEntity {
     updatedAt: FirestoreTimestamp;
 }
 export interface CreateClassSectionRequest {
+    versionId?: string;
     name: string;
     courseId: string;
     teacherId: string;
@@ -48,6 +50,7 @@ export interface UpdateClassSectionRequest {
     color?: string;
 }
 export interface ClassSectionSearchParams {
+    versionId?: string;
     name?: string;
     courseId?: string;
     teacherId?: string;

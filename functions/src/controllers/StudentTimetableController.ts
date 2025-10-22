@@ -1,22 +1,24 @@
 import { Request, Response } from 'express';
 import { StudentTimetableService } from '../services/StudentTimetableService';
+import { TimetableVersionService } from '../services/TimetableVersionService';
 import { ClassSectionService } from '../services/ClassSectionService';
 import { StudentService } from '../services/StudentService';
 import { TeacherService } from '../services/TeacherService';
 import { ClassroomService } from '../services/ClassroomService';
-import type { 
-  CreateStudentTimetableRequest, 
-  UpdateStudentTimetableRequest, 
-  StudentTimetableSearchParams 
+import type {
+  CreateStudentTimetableRequest,
+  UpdateStudentTimetableRequest,
+  StudentTimetableSearchParams
 } from '@shared/types';
-import type { 
-  CompleteTimetableData, 
+import type {
+  CompleteTimetableData,
   TimetableApiResponse,
   DayOfWeek
 } from '@shared/types';
 
 export class StudentTimetableController {
   private studentTimetableService: StudentTimetableService;
+  private versionService: TimetableVersionService;
   private classSectionService: ClassSectionService;
   private studentService: StudentService;
   private teacherService: TeacherService;
@@ -24,6 +26,7 @@ export class StudentTimetableController {
 
   constructor() {
     this.studentTimetableService = new StudentTimetableService();
+    this.versionService = new TimetableVersionService();
     this.classSectionService = new ClassSectionService();
     this.studentService = new StudentService();
     this.teacherService = new TeacherService();
@@ -181,6 +184,86 @@ export class StudentTimetableController {
       res.status(200).json(response);
     } catch (error) {
       console.error('Error fetching student timetable by student ID:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
+  }
+
+  // 학생별 버전 시간표 조회
+  async getStudentTimetableByVersion(req: Request, res: Response): Promise<void> {
+    try {
+      const { studentId, versionId } = req.params;
+
+      // 학생 존재 여부 확인
+      const student = await this.studentService.getStudentById(studentId);
+      if (!student) {
+        res.status(404).json({
+          success: false,
+          error: 'Student not found'
+        });
+        return;
+      }
+
+      // 버전 존재 여부 확인
+      const version = await this.versionService.getVersionById(versionId);
+      if (!version) {
+        res.status(404).json({
+          success: false,
+          error: 'Timetable version not found'
+        });
+        return;
+      }
+
+      const timetable = await this.studentTimetableService.getStudentTimetableByStudentIdAndVersion(studentId, versionId);
+
+      if (!timetable) {
+        // 시간표가 없는 경우 빈 시간표로 응답
+        const emptyTimetableData: CompleteTimetableData = {
+          studentId: student.id,
+          studentName: student.name,
+          grade: student.grade || '',
+          status: student.status || 'active',
+          classSections: []
+        };
+
+        const response: any = {
+          success: true,
+          message: 'Student timetable retrieved successfully (empty)',
+          data: emptyTimetableData,
+          meta: {
+            timestamp: new Date().toISOString(),
+            requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            classCount: 0,
+            versionId: versionId,
+            versionName: version.name
+          }
+        };
+
+        res.status(200).json(response);
+        return;
+      }
+
+      // 완전한 시간표 데이터 구성
+      const completeTimetableData = await this.buildCompleteTimetableData(studentId, timetable);
+
+      const response: any = {
+        success: true,
+        message: 'Student timetable retrieved successfully',
+        data: completeTimetableData,
+        meta: {
+          timestamp: new Date().toISOString(),
+          requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          classCount: completeTimetableData.classSections.length,
+          versionId: versionId,
+          versionName: version.name
+        }
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      console.error('Error fetching student timetable by version:', error);
       res.status(500).json({
         success: false,
         error: 'Internal server error'
@@ -594,13 +677,24 @@ export class StudentTimetableController {
         return;
       }
 
+      // ✅ 활성 버전 조회
+      const activeVersion = await this.versionService.getActiveVersion();
+      if (!activeVersion) {
+        res.status(404).json({
+          success: false,
+          error: 'No active timetable version found'
+        });
+        return;
+      }
+
       // 학생 시간표 조회 (없으면 생성)
-      let timetable = await this.studentTimetableService.getStudentTimetableByStudentId(studentId);
-      
+      let timetable = await this.studentTimetableService.getStudentTimetableByStudentId(studentId, activeVersion.id);
+
       if (!timetable) {
         // 시간표가 없으면 새로 생성
         const newTimetableId = await this.studentTimetableService.createStudentTimetable({
           studentId,
+          versionId: activeVersion.id,
           classSectionIds: []
         });
         if (!newTimetableId) {
@@ -779,15 +873,205 @@ export class StudentTimetableController {
       // 실제 등록된 학생 수 계산
       const enrolledStudents = await this.classSectionService.getEnrolledStudents(classSectionId);
       const actualStudentCount = enrolledStudents.length;
-      
+
       // currentStudents를 실제 값으로 업데이트
       await this.classSectionService.updateClassSection(classSectionId, {
         currentStudents: actualStudentCount
       });
-      
+
       console.log(`✅ ClassSection ${classSectionId} currentStudents 업데이트: ${actualStudentCount}`);
     } catch (error) {
-      console.error(`❌ currentStudents 업데이트 실패:`, error);
+      console.error('❌ currentStudents 업데이트 실패:', error);
+    }
+  }
+
+  // 버전별 수업 추가
+  async addClassToStudentTimetableByVersion(req: Request, res: Response): Promise<void> {
+    try {
+      const { studentId, versionId } = req.params;
+      const { classSectionId } = req.body;
+
+      if (!classSectionId) {
+        res.status(400).json({
+          success: false,
+          error: 'Class section ID is required'
+        });
+        return;
+      }
+
+      // 학생 존재 여부 확인
+      const student = await this.studentService.getStudentById(studentId);
+      if (!student) {
+        res.status(404).json({
+          success: false,
+          error: 'Student not found'
+        });
+        return;
+      }
+
+      // 버전 존재 여부 확인
+      const version = await this.versionService.getVersionById(versionId);
+      if (!version) {
+        res.status(404).json({
+          success: false,
+          error: 'Timetable version not found'
+        });
+        return;
+      }
+
+      // 학생 시간표 조회 (없으면 생성)
+      let timetable = await this.studentTimetableService.getStudentTimetableByStudentIdAndVersion(studentId, versionId);
+
+      if (!timetable) {
+        // 시간표가 없으면 새로 생성
+        const newTimetableId = await this.studentTimetableService.createStudentTimetable({
+          studentId,
+          versionId: versionId,
+          classSectionIds: []
+        });
+        if (!newTimetableId) {
+          res.status(500).json({
+            success: false,
+            error: 'Failed to create student timetable'
+          });
+          return;
+        }
+        // 생성된 시간표를 다시 조회
+        timetable = await this.studentTimetableService.getStudentTimetableById(newTimetableId);
+      }
+
+      if (!timetable) {
+        res.status(500).json({
+          success: false,
+          error: 'Failed to retrieve timetable'
+        });
+        return;
+      }
+
+      // 수업 추가
+      const updatedClassSectionIds = [...timetable.classSectionIds, classSectionId];
+      await this.studentTimetableService.updateStudentTimetable(timetable.id, {
+        classSectionIds: updatedClassSectionIds
+      });
+
+      // 업데이트된 시간표 조회
+      const updatedTimetable = await this.studentTimetableService.getStudentTimetableByStudentIdAndVersion(studentId, versionId);
+
+      if (!updatedTimetable) {
+        res.status(500).json({
+          success: false,
+          error: 'Failed to retrieve updated timetable'
+        });
+        return;
+      }
+
+      // 완전한 시간표 데이터 구성
+      const completeTimetableData = await this.buildCompleteTimetableData(studentId, updatedTimetable);
+
+      const response: TimetableApiResponse = {
+        success: true,
+        message: 'Class added successfully',
+        data: completeTimetableData,
+        meta: {
+          timestamp: new Date().toISOString(),
+          requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          classCount: completeTimetableData.classSections.length
+        }
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      console.error('Error adding class to student timetable by version:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
+  }
+
+  // 버전별 수업 제거
+  async removeClassFromStudentTimetableByVersion(req: Request, res: Response): Promise<void> {
+    try {
+      const { studentId, versionId } = req.params;
+      const { classSectionId } = req.body;
+
+      if (!classSectionId) {
+        res.status(400).json({
+          success: false,
+          error: 'Class section ID is required'
+        });
+        return;
+      }
+
+      // 학생 존재 여부 확인
+      const student = await this.studentService.getStudentById(studentId);
+      if (!student) {
+        res.status(404).json({
+          success: false,
+          error: 'Student not found'
+        });
+        return;
+      }
+
+      // 버전 존재 여부 확인
+      const version = await this.versionService.getVersionById(versionId);
+      if (!version) {
+        res.status(404).json({
+          success: false,
+          error: 'Timetable version not found'
+        });
+        return;
+      }
+
+      // 학생 시간표 조회
+      const timetable = await this.studentTimetableService.getStudentTimetableByStudentIdAndVersion(studentId, versionId);
+
+      if (!timetable) {
+        res.status(404).json({
+          success: false,
+          error: 'Student timetable not found'
+        });
+        return;
+      }
+
+      // 수업 제거
+      const updatedClassSectionIds = timetable.classSectionIds.filter(id => id !== classSectionId);
+      await this.studentTimetableService.updateStudentTimetable(timetable.id, {
+        classSectionIds: updatedClassSectionIds
+      });
+
+      // 업데이트된 시간표 조회
+      const updatedTimetable = await this.studentTimetableService.getStudentTimetableByStudentIdAndVersion(studentId, versionId);
+
+      if (!updatedTimetable) {
+        res.status(500).json({
+          success: false,
+          error: 'Failed to retrieve updated timetable'
+        });
+        return;
+      }
+
+      // 완전한 시간표 데이터 구성
+      const completeTimetableData = await this.buildCompleteTimetableData(studentId, updatedTimetable);
+
+      const response: TimetableApiResponse = {
+        success: true,
+        message: 'Class removed successfully',
+        data: completeTimetableData,
+        meta: {
+          timestamp: new Date().toISOString(),
+          requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          classCount: completeTimetableData.classSections.length
+        }
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      console.error('Error removing class from student timetable by version:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+      });
     }
   }
 }

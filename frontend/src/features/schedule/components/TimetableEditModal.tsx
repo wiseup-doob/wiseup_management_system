@@ -9,6 +9,7 @@ import { SearchInput } from '../../../components/SearchInput/SearchInput'
 import { TimetableWidget } from '../../../components/business/timetable/TimetableWidget'
 import { apiService } from '../../../services/api'
 import { transformStudentTimetableResponse, checkAllConflicts } from '../utils'
+import { useTimetableVersion } from '../../../contexts/TimetableVersionContext'
 import './TimetableEditModal.css'
 
 interface TimetableEditModalProps {
@@ -67,6 +68,9 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
   timetableData,
   onSave
 }) => {
+  // 버전 관리
+  const { selectedVersion } = useTimetableVersion()
+
   // 상태 관리
   const [availableClasses, setAvailableClasses] = useState<ClassSectionWithDetails[]>([])
   const [filteredClasses, setFilteredClasses] = useState<ClassSectionWithDetails[]>([])
@@ -80,23 +84,28 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
 
   // 모달이 열릴 때 데이터 로드
   useEffect(() => {
-    if (isOpen && student) {
+    if (isOpen && student && selectedVersion) {
       loadModalData(student.id)
     }
-  }, [isOpen, student])
+  }, [isOpen, student, selectedVersion])
 
   // 모달 데이터 로딩
   const loadModalData = async (studentId: string) => {
+    if (!selectedVersion) {
+      setError('활성 버전을 찾을 수 없습니다.')
+      return
+    }
+
     setIsLoading(true)
     setError(null)
-    
+
     try {
-      console.log(`📚 ${student?.name}의 모달 데이터 로드 시작...`)
-      
+      console.log(`📚 ${student?.name}의 모달 데이터 로드 시작 (버전: ${selectedVersion.displayName})...`)
+
       // 병렬로 데이터 로드
       const [classesResponse, timetableResponse] = await Promise.all([
         apiService.getClassSectionsWithDetails(), // 상세 정보 포함된 수업 목록 (🎨 색상 포함)
-        apiService.getStudentTimetable(studentId) // 학생 시간표
+        apiService.getStudentTimetableByVersion(studentId, selectedVersion.id) // 버전별 학생 시간표
       ])
       
       // 수업 목록 설정
@@ -706,12 +715,12 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
 
   // 수업 제거 함수
   const handleRemoveClass = async (classSectionId: string) => {
-    if (!student) return
-    
+    if (!student || !selectedVersion) return
+
     try {
-      console.log(`📚 ${student.name}에서 수업 제거 시작:`, classSectionId)
-      
-      const response = await apiService.removeClassFromStudentTimetable(student.id, classSectionId)
+      console.log(`📚 ${student.name}에서 수업 제거 시작 (버전: ${selectedVersion.displayName}):`, classSectionId)
+
+      const response = await apiService.removeClassFromStudentTimetableByVersion(student.id, selectedVersion.id, classSectionId)
       
       if (response.success && response.data) {
         console.log('✅ 수업 제거 성공:', response.data)
@@ -742,41 +751,41 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
   }
 
   const handleSave = async () => {
-    if (!student || !hasUnsavedChanges) {
+    if (!student || !selectedVersion || !hasUnsavedChanges) {
       onSave()
       onClose()
       return
     }
-    
+
     try {
       setIsLoading(true)
       setError(null)
-      
-      console.log('💾 시간표 저장 시작...')
-      
+
+      console.log(`💾 시간표 저장 시작 (버전: ${selectedVersion.displayName})...`)
+
       // 현재 로컬 데이터를 DB에 저장
       // 기존 수업들을 모두 제거하고 새로 추가
       const currentClassIds = originalTimetableData?.classSections?.map((cls: any) => cls.id) || []
       const newClassIds = localTimetableData?.classSections?.map((cls: any) => cls.id) || []
-      
+
       // 제거해야 할 수업들
       const classesToRemove = currentClassIds.filter((id: string) => !newClassIds.includes(id))
-      
+
       // 추가해야 할 수업들
       const classesToAdd = newClassIds.filter((id: string) => !currentClassIds.includes(id))
-      
+
       console.log('🗑️ 제거할 수업:', classesToRemove)
       console.log('➕ 추가할 수업:', classesToAdd)
-      
+
       // 수업 제거
       for (const classId of classesToRemove) {
-        await apiService.removeClassFromStudentTimetable(student.id, classId)
+        await apiService.removeClassFromStudentTimetableByVersion(student.id, selectedVersion.id, classId)
         console.log(`✅ 수업 제거 완료: ${classId}`)
       }
-      
+
       // 수업 추가
       for (const classId of classesToAdd) {
-        await apiService.addClassToStudentTimetable(student.id, classId)
+        await apiService.addClassToStudentTimetableByVersion(student.id, selectedVersion.id, classId)
         console.log(`✅ 수업 추가 완료: ${classId}`)
       }
       

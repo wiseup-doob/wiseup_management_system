@@ -2,6 +2,7 @@ import './App.css'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import routes from './routes/routerConfig'
 import { AppProvider } from './contexts/AppContext'
+import { TimetableVersionProvider } from './contexts/TimetableVersionContext'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 
@@ -12,7 +13,9 @@ function App() {
   return (
     <DndProvider backend={HTML5Backend}>
       <AppProvider>
-        <RouterProvider router={router} />
+        <TimetableVersionProvider>
+          <RouterProvider router={router} />
+        </TimetableVersionProvider>
       </AppProvider>
     </DndProvider>
   )

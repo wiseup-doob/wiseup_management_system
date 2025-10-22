@@ -158,7 +158,8 @@ export class ClassSectionController {
   // 모든 수업 조회
   async getAllClassSections(req: Request, res: Response): Promise<void> {
     try {
-      const classSections = await this.classSectionService.getAllClassSections();
+      const versionId = req.query.versionId as string | undefined;
+      const classSections = await this.classSectionService.getAllClassSections(versionId);
 
       res.json({
         success: true,
@@ -178,7 +179,8 @@ export class ClassSectionController {
   // 모든 수업을 상세 정보와 함께 조회 (Course, Teacher, Classroom 포함)
   async getAllClassSectionsWithDetails(req: Request, res: Response): Promise<void> {
     try {
-      const classSectionsWithDetails = await this.classSectionService.getClassSectionsWithDetails();
+      const versionId = req.query.versionId as string | undefined;
+      const classSectionsWithDetails = await this.classSectionService.getClassSectionsWithDetails(versionId);
 
       res.json({
         success: true,
@@ -366,6 +368,7 @@ export class ClassSectionController {
   async addStudentToClass(req: Request, res: Response): Promise<void> {
     try {
       const { id: classSectionId, studentId } = req.params;
+      const versionId = req.query.versionId as string | undefined;
 
       // 필수 파라미터 검증
       if (!classSectionId || !studentId) {
@@ -376,7 +379,7 @@ export class ClassSectionController {
         return;
       }
 
-      await this.classSectionService.addStudentToClass(classSectionId, studentId);
+      await this.classSectionService.addStudentToClass(classSectionId, studentId, versionId);
 
       res.json({
         success: true,
@@ -396,6 +399,7 @@ export class ClassSectionController {
   async removeStudentFromClass(req: Request, res: Response): Promise<void> {
     try {
       const { id: classSectionId, studentId } = req.params;
+      const versionId = req.query.versionId as string | undefined;
 
       // 필수 파라미터 검증
       if (!classSectionId || !studentId) {
@@ -406,7 +410,7 @@ export class ClassSectionController {
         return;
       }
 
-      await this.classSectionService.removeStudentFromClass(classSectionId, studentId);
+      await this.classSectionService.removeStudentFromClass(classSectionId, studentId, versionId);
 
       res.json({
         success: true,
@@ -426,6 +430,7 @@ export class ClassSectionController {
   async getEnrolledStudents(req: Request, res: Response): Promise<void> {
     try {
       const { id: classSectionId } = req.params;
+      const versionId = req.query.versionId as string | undefined;
 
       // 필수 파라미터 검증
       if (!classSectionId) {
@@ -436,7 +441,7 @@ export class ClassSectionController {
         return;
       }
 
-      const enrolledStudents = await this.classSectionService.getEnrolledStudents(classSectionId);
+      const enrolledStudents = await this.classSectionService.getEnrolledStudents(classSectionId, versionId);
 
       res.json({
         success: true,

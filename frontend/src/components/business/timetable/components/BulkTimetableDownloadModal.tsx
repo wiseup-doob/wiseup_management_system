@@ -166,7 +166,7 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
     setLoadedTimetables({})
     
     // 로드된 데이터를 추적하기 위한 로컬 변수
-    let localLoadedTimetables: Record<string, any> = {}
+    const localLoadedTimetables: Record<string, any> = {}
     
     try {
       const selectedStudentsList = localStudents.filter(s => s.isSelected)
@@ -317,7 +317,8 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
 
   // 모달 내에서 시간표 렌더링 및 캡쳐
   const renderAndCaptureTimetable = async (student: any, timetableData: any): Promise<Blob | null> => {
-    return new Promise(async (resolve) => {
+    return new Promise((resolve) => {
+      (async () => {
       try {
         // TimetableWidget을 모달 내 보이는 렌더링 영역에 렌더링
         const renderArea = document.getElementById('visible-timetable-render-area')
@@ -376,11 +377,12 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
         root.unmount()
         
         resolve(blob)
-        
+
       } catch (error) {
         console.error(`${student.name} 시간표 렌더링 및 캡쳐 실패:`, error)
         resolve(null)
       }
+      })()
     })
   }
 
@@ -412,7 +414,7 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
       const selectedStudents = localStudents.filter(s => s.isSelected)
       const results: Array<{ studentId: string; success: boolean; blob?: Blob; error?: string }> = []
       let successCount = 0
-      let failedCount = 0
+      const failedCount = 0
       
       // 🎯 이미 시간표 로드 단계에서 캡쳐가 완료되었으므로, 여기서는 ZIP 파일 생성만 진행
       // 캡쳐된 이미지들을 결과에 추가

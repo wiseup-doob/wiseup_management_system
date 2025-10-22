@@ -3,9 +3,7 @@ import { BaseWidget } from '../base/BaseWidget'
 import type { BaseWidgetProps } from '../../types/components'
 import './MainContent.css'
 
-export interface MainContentProps extends BaseWidgetProps {
-  // MainContent만의 추가 props
-}
+export type MainContentProps = BaseWidgetProps
 
 export const MainContent = forwardRef<HTMLDivElement, MainContentProps>(
   ({ children, className = '', ...props }, ref) => {

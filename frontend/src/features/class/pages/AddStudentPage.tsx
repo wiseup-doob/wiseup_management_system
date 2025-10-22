@@ -25,6 +25,7 @@ function AddStudentPage({ isOpen, onClose, classData, onStudentAdded }: AddStude
   const [isRemoving, setIsRemoving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [activeVersionId, setActiveVersionId] = useState<string | null>(null)
 
   // 학생 목록 로드
   const loadStudents = useCallback(async () => {
@@ -53,8 +54,8 @@ function AddStudentPage({ isOpen, onClose, classData, onStudentAdded }: AddStude
   const loadEnrolledStudents = useCallback(async () => {
     try {
       setIsLoadingEnrolled(true)
-      
-      const response = await apiService.getEnrolledStudents(classData.id)
+
+      const response = await apiService.getEnrolledStudents(classData.id, activeVersionId || undefined)
       if (response.success && response.data) {
         setEnrolledStudents(response.data)
       } else {
@@ -65,7 +66,7 @@ function AddStudentPage({ isOpen, onClose, classData, onStudentAdded }: AddStude
     } finally {
       setIsLoadingEnrolled(false)
     }
-  }, [classData.id])
+  }, [classData.id, activeVersionId])
 
   // 이미 등록된 학생 필터링 (student_timetables를 통해 확인)
   const availableStudents = useMemo(() => {
@@ -129,7 +130,7 @@ function AddStudentPage({ isOpen, onClose, classData, onStudentAdded }: AddStude
       
       // 각 학생을 수업에 등록
       for (const studentId of studentIds) {
-        await apiService.addStudentToClass(classData.id, studentId)
+        await apiService.addStudentToClass(classData.id, studentId, activeVersionId || undefined)
       }
       
       setSuccessMessage(`${selectedStudents.size}명의 학생이 성공적으로 등록되었습니다.`)
@@ -166,7 +167,7 @@ function AddStudentPage({ isOpen, onClose, classData, onStudentAdded }: AddStude
       setError(null)
       
       // 백엔드 API를 통해 학생을 수업에서 제거
-      const response = await apiService.removeStudentFromClass(classData.id, studentId)
+      const response = await apiService.removeStudentFromClass(classData.id, studentId, activeVersionId || undefined)
       
       if (response.success) {
         // 성공 시 프론트엔드 상태 업데이트
@@ -191,9 +192,27 @@ function AddStudentPage({ isOpen, onClose, classData, onStudentAdded }: AddStude
     }
   }, [classData.id, loadStudents])
 
+  // 활성 버전 로드
+  useEffect(() => {
+    const loadActiveVersion = async () => {
+      try {
+        const response = await apiService.getActiveTimetableVersion()
+        if (response.success && response.data) {
+          setActiveVersionId(response.data.id)
+        }
+      } catch (error) {
+        console.error('활성 버전 조회 실패:', error)
+      }
+    }
+
+    if (isOpen) {
+      loadActiveVersion()
+    }
+  }, [isOpen])
+
   // 모달 열릴 때 학생 목록 로드
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && activeVersionId) {
       loadStudents()
       loadEnrolledStudents()
       setSelectedStudents(new Set())
@@ -201,7 +220,7 @@ function AddStudentPage({ isOpen, onClose, classData, onStudentAdded }: AddStude
       setError(null)
       setSuccessMessage(null)
     }
-  }, [isOpen, loadStudents, loadEnrolledStudents])
+  }, [isOpen, activeVersionId, loadStudents, loadEnrolledStudents])
 
   // 검색어 변경 시 필터링
   useEffect(() => {

@@ -28,6 +28,13 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
     description: '학생 시간표 관리'
   },
   {
+    id: 'timetable-versions',
+    label: '시간표 버전 관리',
+    path: ROUTES.ADMIN_TIMETABLE_VERSIONS,
+    icon: SIDEBAR_IMPORTS.DEFAULT_ICON,
+    description: '시간표 버전 생성 및 관리'
+  },
+  {
     id: 'class',
     label: '수업 관리',
     path: ROUTES.CLASS,

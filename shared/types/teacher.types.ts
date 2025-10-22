@@ -5,6 +5,7 @@ import type { BaseEntity, FirestoreTimestamp, SubjectType } from './common.types
 // 교사 정보
 export interface Teacher extends BaseEntity {
   id: string;                    // 교사 고유 ID
+  versionId: string;             // 시간표 버전 ID (학기별 관리)
   name: string;                  // 교사 이름
   email?: string;                // 이메일 (선택사항)
   phone?: string;                // 전화번호 (선택사항)
@@ -15,6 +16,7 @@ export interface Teacher extends BaseEntity {
 
 // ===== 교사 생성 요청 타입 =====
 export interface CreateTeacherRequest {
+  versionId?: string;            // 시간표 버전 ID (선택사항 - 없으면 활성 버전 사용)
   name: string;                  // 교사 이름
   email?: string;                // 이메일 (선택사항)
   phone?: string;                // 전화번호 (선택사항)
@@ -31,6 +33,7 @@ export interface UpdateTeacherRequest {
 
 // ===== 교사 검색 파라미터 타입 =====
 export interface TeacherSearchParams {
+  versionId?: string;            // 버전별 검색 (선택사항 - 없으면 활성 버전 사용)
   name?: string;                 // 이름 검색
 }
 

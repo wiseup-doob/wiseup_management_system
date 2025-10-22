@@ -4,9 +4,7 @@ import type { BaseLabelProps } from '../../types/components'
 import { Label } from './Label'
 import './StatusLabels.css'
 
-export interface StatusLabelsProps extends BaseLabelProps {
-  // StatusLabels만의 추가 props
-}
+export type StatusLabelsProps = BaseLabelProps
 
 const statusConfig = [
   { label: '자리_등원', color: 'success' as const, bgColor: '#c8e6c9' },

@@ -1,0 +1,47 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "student_timetables",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "studentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "versionId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "student_timetables",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "classSectionIds",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "versionId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "timetable_versions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "order",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

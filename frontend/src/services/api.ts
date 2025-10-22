@@ -35,6 +35,7 @@ import type {
 } from '@shared/types';
 import type { ClassSectionWithStudents } from '../features/class/types/class.types';
 import type { StudentTimetableResponse } from '../features/schedule/types/timetable.types';
+import type { TimetableVersion, CreateTimetableVersionRequest, UpdateTimetableVersionRequest, CopyTimetableVersionRequest } from '../features/schedule/types/timetable-version.types';
 import {
   API_ENDPOINTS
 } from '@shared/constants';
@@ -231,6 +232,117 @@ class ApiService {
       }
     );
   }
+
+  // 학생별 버전별 시간표 조회
+  async getStudentTimetableByVersion(studentId: string, versionId: string): Promise<ApiResponse<StudentTimetableResponse['data']>> {
+    return this.request<StudentTimetableResponse['data']>(
+      API_ENDPOINTS.STUDENT_TIMETABLES.GET_BY_STUDENT_AND_VERSION(studentId, versionId)
+    );
+  }
+
+  // 학생 시간표에 수업 추가 (버전별)
+  async addClassToStudentTimetableByVersion(studentId: string, versionId: string, classSectionId: string): Promise<ApiResponse<StudentTimetableResponse['data']>> {
+    return this.request<StudentTimetableResponse['data']>(
+      API_ENDPOINTS.STUDENT_TIMETABLES.ADD_CLASS_BY_VERSION(studentId, versionId),
+      {
+        method: 'POST',
+        body: JSON.stringify({ classSectionId })
+      }
+    );
+  }
+
+  // 학생 시간표에서 수업 제거 (버전별)
+  async removeClassFromStudentTimetableByVersion(studentId: string, versionId: string, classSectionId: string): Promise<ApiResponse<StudentTimetableResponse['data']>> {
+    return this.request<StudentTimetableResponse['data']>(
+      API_ENDPOINTS.STUDENT_TIMETABLES.REMOVE_CLASS_BY_VERSION(studentId, versionId),
+      {
+        method: 'POST',
+        body: JSON.stringify({ classSectionId })
+      }
+    );
+  }
+
+  // ===== 시간표 버전 관리 API =====
+
+  // 모든 버전 조회
+  async getTimetableVersions(): Promise<ApiResponse<TimetableVersion[]>> {
+    return this.request<TimetableVersion[]>(API_ENDPOINTS.TIMETABLE_VERSIONS.GET_ALL);
+  }
+
+  // 활성 버전 조회
+  async getActiveTimetableVersion(): Promise<ApiResponse<TimetableVersion>> {
+    return this.request<TimetableVersion>(API_ENDPOINTS.TIMETABLE_VERSIONS.GET_ACTIVE);
+  }
+
+  // 버전 조회
+  async getTimetableVersionById(id: string): Promise<ApiResponse<TimetableVersion>> {
+    return this.request<TimetableVersion>(API_ENDPOINTS.TIMETABLE_VERSIONS.GET_BY_ID(id));
+  }
+
+  // 버전 생성
+  async createTimetableVersion(data: CreateTimetableVersionRequest): Promise<ApiResponse<{ id: string }>> {
+    return this.request<{ id: string }>(API_ENDPOINTS.TIMETABLE_VERSIONS.CREATE, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  // 버전 수정
+  async updateTimetableVersion(id: string, data: UpdateTimetableVersionRequest): Promise<ApiResponse<void>> {
+    return this.request<void>(API_ENDPOINTS.TIMETABLE_VERSIONS.UPDATE(id), {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+
+  // 버전 삭제
+  async deleteTimetableVersion(id: string): Promise<ApiResponse<void>> {
+    return this.request<void>(API_ENDPOINTS.TIMETABLE_VERSIONS.DELETE(id), {
+      method: 'DELETE'
+    });
+  }
+
+  // 버전 활성화
+  async activateTimetableVersion(id: string): Promise<ApiResponse<void>> {
+    return this.request<void>(API_ENDPOINTS.TIMETABLE_VERSIONS.ACTIVATE(id), {
+      method: 'POST'
+    });
+  }
+
+  // 버전 복사
+  async copyTimetableVersion(sourceVersionId: string, data: CopyTimetableVersionRequest): Promise<ApiResponse<{ id: string }>> {
+    return this.request<{ id: string }>(API_ENDPOINTS.TIMETABLE_VERSIONS.COPY(sourceVersionId), {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  // 특정 버전의 모든 학생 시간표 일괄 초기화
+  async bulkInitializeTimetables(versionId: string): Promise<ApiResponse<void>> {
+    return this.request<void>(API_ENDPOINTS.TIMETABLE_VERSIONS.BULK_INITIALIZE(versionId), {
+      method: 'POST'
+    });
+  }
+
+  async checkMigrationStatus(): Promise<ApiResponse<{total: number, migrated: number, unmigrated: number}>> {
+    return this.request<{total: number, migrated: number, unmigrated: number}>(API_ENDPOINTS.TIMETABLE_VERSIONS.MIGRATION_STATUS, {
+      method: 'GET'
+    });
+  }
+
+  async migrateTimetablesToVersion(versionId: string): Promise<ApiResponse<void>> {
+    return this.request<void>(API_ENDPOINTS.TIMETABLE_VERSIONS.MIGRATE(versionId), {
+      method: 'POST'
+    });
+  }
+
+  async migrateAllToVersion(versionId: string): Promise<ApiResponse<void>> {
+    return this.request<void>(`/api/timetable-versions/migration/${versionId}/all`, {
+      method: 'POST'
+    });
+  }
+
+  // ===== 학생 관리 API =====
 
   async createStudent(data: CreateStudentRequest): Promise<ApiResponse<Student>> {
     return this.request<Student>(API_ENDPOINTS.STUDENTS.CREATE, {
@@ -639,21 +751,21 @@ class ApiService {
 
   async searchClassSections(params: ClassSectionSearchParams): Promise<ApiResponse<ClassSection[]>> {
     let endpoint = API_ENDPOINTS.CLASS_SECTIONS.SEARCH;
-    
+
     if (params) {
       const searchParams = new URLSearchParams();
-      
+
       if (params.name) searchParams.append('name', params.name);
       if (params.courseId) searchParams.append('courseId', params.courseId);
       if (params.teacherId) searchParams.append('teacherId', params.teacherId);
       if (params.classroomId) searchParams.append('classroomId', params.classroomId);
       if (params.status) searchParams.append('status', params.status);
-      
+
       if (searchParams.toString()) {
         endpoint += `?${searchParams.toString()}`;
       }
     }
-    
+
     return this.request<ClassSection[]>(endpoint);
   }
 
@@ -929,11 +1041,14 @@ class ApiService {
   }
 
   // 수업에 학생 추가
-  async addStudentToClass(classSectionId: string, studentId: string): Promise<ApiResponse<any>> {
+  async addStudentToClass(classSectionId: string, studentId: string, versionId?: string): Promise<ApiResponse<any>> {
     try {
+      const endpoint = API_ENDPOINTS.CLASS_SECTIONS.ADD_STUDENT(classSectionId, studentId);
+      const url = versionId ? `${endpoint}?versionId=${versionId}` : endpoint;
+
       return await this.request(
-        API_ENDPOINTS.CLASS_SECTIONS.ADD_STUDENT(classSectionId, studentId),
-        { 
+        url,
+        {
           method: 'POST',
           body: JSON.stringify({ studentId })
         }
@@ -944,11 +1059,14 @@ class ApiService {
   }
 
   // 수업에서 학생 제거
-  async removeStudentFromClass(classSectionId: string, studentId: string): Promise<ApiResponse<any>> {
+  async removeStudentFromClass(classSectionId: string, studentId: string, versionId?: string): Promise<ApiResponse<any>> {
     try {
+      const endpoint = API_ENDPOINTS.CLASS_SECTIONS.REMOVE_STUDENT(classSectionId, studentId);
+      const url = versionId ? `${endpoint}?versionId=${versionId}` : endpoint;
+
       return await this.request(
-        API_ENDPOINTS.CLASS_SECTIONS.REMOVE_STUDENT(classSectionId, studentId),
-        { 
+        url,
+        {
           method: 'DELETE'
         }
       );
@@ -958,11 +1076,12 @@ class ApiService {
   }
 
   // 수업에 등록된 학생 목록 조회
-  async getEnrolledStudents(classSectionId: string): Promise<ApiResponse<Student[]>> {
+  async getEnrolledStudents(classSectionId: string, versionId?: string): Promise<ApiResponse<Student[]>> {
     try {
-      return await this.request(
-        API_ENDPOINTS.CLASS_SECTIONS.GET_ENROLLED_STUDENTS(classSectionId)
-      );
+      const endpoint = API_ENDPOINTS.CLASS_SECTIONS.GET_ENROLLED_STUDENTS(classSectionId);
+      const url = versionId ? `${endpoint}?versionId=${versionId}` : endpoint;
+
+      return await this.request(url);
     } catch (error) {
       throw normalizeError(error, '등록된 학생 목록 조회 중 오류가 발생했습니다.');
     }

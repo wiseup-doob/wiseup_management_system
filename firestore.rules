@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 기본적으로 모든 읽기/쓰기 허용 (개발 환경)
+    // 프로덕션 환경에서는 적절한 인증 규칙 추가 필요
+    match /{document=**} {
+      allow read, write: if true;
+    }
+
+    // 시간표 버전 컬렉션
+    match /timetable_versions/{versionId} {
+      allow read: if true;
+      allow write: if true; // 프로덕션에서는 관리자만 허용
+    }
+
+    // 학생 시간표 컬렉션
+    match /student_timetables/{timetableId} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

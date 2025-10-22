@@ -13,11 +13,32 @@ router.get('/student/:studentId', (req, res) => {
   studentTimetableController.getStudentTimetableByStudentId(req, res);
 });
 
+// 학생별 버전 시간표 조회
+router.get('/student/:studentId/version/:versionId', (req, res) => {
+  console.log('🔍 [DEBUG] student-timetable.ts: GET /student/:studentId/version/:versionId 라우트 매칭됨');
+  console.log('📝 요청 정보:', { method: req.method, url: req.url, path: req.path, params: req.params });
+  studentTimetableController.getStudentTimetableByVersion(req, res);
+});
+
 // 학생별 통합 시간표 조회 (수업 상세 정보 포함)
 router.get('/student/:studentId/schedule-with-details', (req, res) => {
   console.log('🔍 [DEBUG] student-timetable.ts: GET /student/:studentId/schedule-with-details 라우트 매칭됨');
   console.log('📝 요청 정보:', { method: req.method, url: req.url, path: req.path, params: req.params });
   studentTimetableController.getStudentScheduleWithDetails(req, res);
+});
+
+// 버전별 수업 추가
+router.post('/student/:studentId/version/:versionId/add-class', (req, res) => {
+  console.log('🔍 [DEBUG] student-timetable.ts: POST /student/:studentId/version/:versionId/add-class 라우트 매칭됨');
+  console.log('📝 요청 정보:', { method: req.method, url: req.url, path: req.path, params: req.params, body: req.body });
+  studentTimetableController.addClassToStudentTimetableByVersion(req, res);
+});
+
+// 버전별 수업 제거
+router.post('/student/:studentId/version/:versionId/remove-class', (req, res) => {
+  console.log('🔍 [DEBUG] student-timetable.ts: POST /student/:studentId/version/:versionId/remove-class 라우트 매칭됨');
+  console.log('📝 요청 정보:', { method: req.method, url: req.url, path: req.path, params: req.params, body: req.body });
+  studentTimetableController.removeClassFromStudentTimetableByVersion(req, res);
 });
 
 // 학생 ID 기반으로 수업 추가 (새로운 방식)

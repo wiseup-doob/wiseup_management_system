@@ -12,9 +12,7 @@ import { useAppDispatch } from '../../hooks/useAppDispatch'
 import { toggleSidebar } from '../../store/slices/uiSlice'
 import WiseupLogo from '../../img/Wiseup_logo.png'
 
-export interface SidebarProps extends BaseWidgetProps {
-  // Sidebar만의 추가 props
-}
+export type SidebarProps = BaseWidgetProps
 
 export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
   ({ className = '', ...props }, ref) => {

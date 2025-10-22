@@ -5,6 +5,7 @@ import StudentsPage from '../features/students/pages/StudentsPage'
 import ClassPage from '../features/class/pages/ClassPage'
 import AddClassPage from '../features/class/pages/AddClassPage'
 import SchedulePage from '../features/schedule/pages/SchedulePage'
+import { TimetableVersionManagementPage } from '../features/admin/pages/TimetableVersionManagementPage'
 
 
 const routes = [
@@ -35,6 +36,10 @@ const routes = [
       {
         path: 'schedule',
         element: <SchedulePage />
+      },
+      {
+        path: 'admin/timetable-versions',
+        element: <TimetableVersionManagementPage />
       }
     ]
   },

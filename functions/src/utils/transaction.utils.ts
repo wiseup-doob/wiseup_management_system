@@ -84,10 +84,9 @@ export class TransactionUtils {
   /**
    * 트랜잭션 타임아웃 설정
    * @param db Firestore 인스턴스
-   * @param timeoutMs 타임아웃 (밀리초, 기본값: 30초)
    * @returns 타임아웃이 설정된 Firestore 인스턴스
    */
-  static withTimeout(db: admin.firestore.Firestore, timeoutMs: number = 30000): admin.firestore.Firestore {
+  static withTimeout(db: admin.firestore.Firestore /* , timeoutMs: number = 30000 */): admin.firestore.Firestore {
     // Firestore 클라이언트에 타임아웃 설정
     // (실제로는 Firestore 설정에서 전역적으로 관리)
     return db;

@@ -129,7 +129,8 @@ export class TeacherController {
   // 모든 강사 조회
   async getAllTeachers(req: Request, res: Response): Promise<void> {
     try {
-      const teachers = await this.teacherService.getAllTeachers();
+      const versionId = req.query.versionId as string | undefined;
+      const teachers = await this.teacherService.getAllTeachers(versionId);
 
       res.json({
         success: true,

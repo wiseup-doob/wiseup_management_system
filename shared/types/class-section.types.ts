@@ -13,6 +13,7 @@ export interface ClassSchedule {
 // 수업 정보
 export interface ClassSection extends BaseEntity {
   id: string;                    // 수업 고유 ID
+  versionId: string;             // 시간표 버전 ID (학기별 관리)
   name: string;                  // 수업명 (예: "고등 수학 I - A반")
   courseId: string;              // `courses` 컬렉션의 ID
   teacherId: string;             // `teachers` 컬렉션의 ID
@@ -36,6 +37,7 @@ export interface ClassSection extends BaseEntity {
 
 // ===== 수업 생성 요청 타입 =====
 export interface CreateClassSectionRequest {
+  versionId?: string;            // 시간표 버전 ID (선택사항 - 없으면 활성 버전 사용)
   name: string;                  // 수업명
   courseId: string;              // 강의 ID
   teacherId: string;             // 교사 ID
@@ -66,6 +68,7 @@ export interface UpdateClassSectionRequest {
 
 // ===== 수업 검색 파라미터 타입 =====
 export interface ClassSectionSearchParams {
+  versionId?: string;            // 버전별 검색 (선택사항 - 없으면 활성 버전 사용)
   name?: string;                 // 수업명 검색
   courseId?: string;             // 강의별 검색
   teacherId?: string;            // 교사별 검색

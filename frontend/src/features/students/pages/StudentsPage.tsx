@@ -9,16 +9,22 @@ import { useStudents } from '../hooks/useStudents';
 import AddTeacherModal from '../components/AddTeacherModal';
 import { AddClassroomModal } from '../components/AddClassroomModal';
 import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
+import EditStudentModal from '../components/EditStudentModal';
+import EditTeacherModal from '../components/EditTeacherModal';
+import EditClassroomModal from '../components/EditClassroomModal';
 import type { BaseWidgetProps } from '../../../types/components';
-import type {  
-  StudentStatus, 
-  StudentFormData, 
-  StudentContactInfo 
+import type {
+  StudentStatus,
+  StudentFormData,
+  StudentContactInfo
 } from '../types/students.types';
 import type {
   StudentDependencies,
   TeacherDependencies,
-  ClassroomDependencies
+  ClassroomDependencies,
+  Student,
+  Teacher,
+  Classroom
 } from '@shared/types';
 import type { Grade } from '@shared/types/student.types';
 import { createStudentAsync, fetchStudents, setSearchTerm, setFilter, deleteStudentAsync, searchStudentsAsync } from '../slice/studentsSlice';
@@ -63,6 +69,14 @@ function StudentsPage() {
   const [classrooms, setClassrooms] = useState<any[]>([]);
   const [isLoadingClassrooms, setIsLoadingClassrooms] = useState(false);
   const [showAddClassroomModal, setShowAddClassroomModal] = useState(false);
+
+  // 편집 모달 상태
+  const [showEditStudentModal, setShowEditStudentModal] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [showEditTeacherModal, setShowEditTeacherModal] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
+  const [showEditClassroomModal, setShowEditClassroomModal] = useState(false);
+  const [selectedClassroom, setSelectedClassroom] = useState<Classroom | null>(null);
 
   // 삭제 확인 모달 상태
   const [deleteModal, setDeleteModal] = useState<{
@@ -233,6 +247,48 @@ function StudentsPage() {
     loadClassrooms();
   };
 
+  // 학생 편집 열기
+  const handleEditStudent = (student: Student) => {
+    setSelectedStudent(student);
+    setShowEditStudentModal(true);
+  };
+
+  // 학생 수정 완료
+  const handleStudentUpdated = (updatedStudent: Student) => {
+    console.log('학생 수정 완료:', updatedStudent);
+    dispatch(fetchStudents());
+    setShowEditStudentModal(false);
+    setSelectedStudent(null);
+  };
+
+  // 교사 편집 열기
+  const handleEditTeacher = (teacher: Teacher) => {
+    setSelectedTeacher(teacher);
+    setShowEditTeacherModal(true);
+  };
+
+  // 교사 수정 완료
+  const handleTeacherUpdated = (updatedTeacher: Teacher) => {
+    console.log('교사 수정 완료:', updatedTeacher);
+    loadTeachers();
+    setShowEditTeacherModal(false);
+    setSelectedTeacher(null);
+  };
+
+  // 강의실 편집 열기
+  const handleEditClassroom = (classroom: Classroom) => {
+    setSelectedClassroom(classroom);
+    setShowEditClassroomModal(true);
+  };
+
+  // 강의실 수정 완료
+  const handleClassroomUpdated = (updatedClassroom: Classroom) => {
+    console.log('강의실 수정 완료:', updatedClassroom);
+    loadClassrooms();
+    setShowEditClassroomModal(false);
+    setSelectedClassroom(null);
+  };
+
   // 삭제 모달 열기
   const handleOpenDeleteModal = async (itemId: string, itemName: string, itemType: 'student' | 'teacher' | 'classroom') => {
     // 학생인 경우 의존성 정보 미리 확인
@@ -310,7 +366,7 @@ function StudentsPage() {
       setIsDeleting(true);
       
       switch (itemType) {
-        case 'student':
+        case 'student': {
           // 학생인 경우 계층적 삭제 API 사용
           const studentResponse = await apiService.deleteStudentHierarchically(itemId);
           if (studentResponse.success) {
@@ -319,7 +375,8 @@ function StudentsPage() {
             throw new Error('학생 계층적 삭제 실패');
           }
           break;
-        case 'teacher':
+        }
+        case 'teacher': {
           // 교사인 경우 계층적 삭제 API 사용
           const teacherResponse = await apiService.deleteTeacherHierarchically(itemId);
           if (teacherResponse.success) {
@@ -328,7 +385,8 @@ function StudentsPage() {
             throw new Error('교사 계층적 삭제 실패');
           }
           break;
-        case 'classroom':
+        }
+        case 'classroom': {
           // 강의실인 경우 계층적 삭제 API 사용
           const classroomResponse = await apiService.deleteClassroomHierarchically(itemId);
           if (classroomResponse.success) {
@@ -337,6 +395,7 @@ function StudentsPage() {
             throw new Error('강의실 계층적 삭제 실패');
           }
           break;
+        }
       }
       
       // 삭제 성공 후 목록 새로고침
@@ -637,14 +696,24 @@ function StudentsPage() {
                       <td>{student.grade}</td>
                       <td>{student.contactInfo?.phone || '-'}</td>
                       <td>
-                        <Button
-                          type="button"
-                          variant="danger"
-                          onClick={() => handleOpenDeleteModal(student.id, student.name, 'student')}
-                          className="delete-btn"
-                        >
-                          삭제
-                        </Button>
+                        <div className="action-buttons">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => handleEditStudent(student)}
+                            className="edit-btn"
+                          >
+                            편집
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="danger"
+                            onClick={() => handleOpenDeleteModal(student.id, student.name, 'student')}
+                            className="delete-btn"
+                          >
+                            삭제
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -732,6 +801,14 @@ function StudentsPage() {
                     <div className="teacher-actions">
                       <Button
                         type="button"
+                        variant="secondary"
+                        onClick={() => handleEditTeacher(teacher)}
+                        className="edit-btn"
+                      >
+                        편집
+                      </Button>
+                      <Button
+                        type="button"
                         variant="danger"
                         onClick={() => handleOpenDeleteModal(teacher.id, teacher.name, 'teacher')}
                         className="delete-btn"
@@ -795,6 +872,14 @@ function StudentsPage() {
                     <div className="classroom-actions">
                       <Button
                         type="button"
+                        variant="secondary"
+                        onClick={() => handleEditClassroom(classroom)}
+                        className="edit-btn"
+                      >
+                        편집
+                      </Button>
+                      <Button
+                        type="button"
                         variant="danger"
                         onClick={() => handleOpenDeleteModal(classroom.id, classroom.name, 'classroom')}
                         className="delete-btn"
@@ -843,6 +928,45 @@ function StudentsPage() {
         teacherDependencies={teacherDependencies}
         classroomDependencies={classroomDependencies}
       />
+
+      {/* 학생 편집 모달 */}
+      {showEditStudentModal && selectedStudent && (
+        <EditStudentModal
+          isOpen={showEditStudentModal}
+          onClose={() => {
+            setShowEditStudentModal(false);
+            setSelectedStudent(null);
+          }}
+          onStudentUpdated={handleStudentUpdated}
+          student={selectedStudent}
+        />
+      )}
+
+      {/* 교사 편집 모달 */}
+      {showEditTeacherModal && selectedTeacher && (
+        <EditTeacherModal
+          isOpen={showEditTeacherModal}
+          onClose={() => {
+            setShowEditTeacherModal(false);
+            setSelectedTeacher(null);
+          }}
+          onTeacherUpdated={handleTeacherUpdated}
+          teacher={selectedTeacher}
+        />
+      )}
+
+      {/* 강의실 편집 모달 */}
+      {showEditClassroomModal && selectedClassroom && (
+        <EditClassroomModal
+          isOpen={showEditClassroomModal}
+          onClose={() => {
+            setShowEditClassroomModal(false);
+            setSelectedClassroom(null);
+          }}
+          onClassroomUpdated={handleClassroomUpdated}
+          classroom={selectedClassroom}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import type { BaseEntity, FirestoreTimestamp, SubjectType } from './common.types';
 export interface Teacher extends BaseEntity {
     id: string;
+    versionId: string;
     name: string;
     email?: string;
     phone?: string;
@@ -9,6 +10,7 @@ export interface Teacher extends BaseEntity {
     updatedAt: FirestoreTimestamp;
 }
 export interface CreateTeacherRequest {
+    versionId?: string;
     name: string;
     email?: string;
     phone?: string;
@@ -21,6 +23,7 @@ export interface UpdateTeacherRequest {
     subjects?: SubjectType[];
 }
 export interface TeacherSearchParams {
+    versionId?: string;
     name?: string;
 }
 export interface TeacherStatistics {

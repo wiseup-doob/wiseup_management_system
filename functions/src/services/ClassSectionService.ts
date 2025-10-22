@@ -1,10 +1,11 @@
 import * as admin from 'firebase-admin';
 import { BaseService } from './BaseService';
 import { ColorService } from './ColorService';
-import type { 
-  ClassSection, 
-  CreateClassSectionRequest, 
-  UpdateClassSectionRequest, 
+import { TimetableVersionService } from './TimetableVersionService';
+import type {
+  ClassSection,
+  CreateClassSectionRequest,
+  UpdateClassSectionRequest,
   ClassSectionSearchParams,
   ClassScheduleBlock,
   ClassScheduleGrid,
@@ -16,14 +17,26 @@ import type { Student } from '@shared/types';
 
 export class ClassSectionService extends BaseService {
   private colorService: ColorService;
+  private timetableVersionService: TimetableVersionService;
 
   constructor() {
     super('class_sections');
     this.colorService = new ColorService();
+    this.timetableVersionService = new TimetableVersionService();
   }
 
   // 수업 생성
   async createClassSection(data: CreateClassSectionRequest): Promise<string> {
+    // versionId가 없으면 활성 버전 사용
+    let versionId = data.versionId;
+    if (!versionId) {
+      const activeVersion = await this.timetableVersionService.getActiveVersion();
+      if (!activeVersion) {
+        throw new Error('활성화된 시간표 버전이 없습니다.');
+      }
+      versionId = activeVersion.id;
+    }
+
     // schedule 검증 로직 추가
     if (data.schedule && data.schedule.length > 0) {
       for (const schedule of data.schedule) {
@@ -70,6 +83,7 @@ export class ClassSectionService extends BaseService {
 
     const classSectionData: Omit<ClassSection, 'id'> = {
       ...data,
+      versionId, // 👈 활성 버전 ID 저장
       color, // 👈 생성된 색상 저장
       currentStudents: data.currentStudents ?? 0,
       status: data.status ?? 'active',
@@ -162,7 +176,18 @@ export class ClassSectionService extends BaseService {
     description?: string;
     notes?: string;
     color?: string; // 색상 필드 추가
+    versionId?: string; // versionId 추가
   }): Promise<{ course: any; classSection: ClassSection }> {
+    // versionId가 없으면 활성 버전 사용
+    let versionId = data.versionId;
+    if (!versionId) {
+      const activeVersion = await this.timetableVersionService.getActiveVersion();
+      if (!activeVersion) {
+        throw new Error('활성화된 시간표 버전이 없습니다.');
+      }
+      versionId = activeVersion.id;
+    }
+
     // 1단계: Course 찾기 또는 생성
     let courseId: string;
     let course: any;
@@ -202,6 +227,7 @@ export class ClassSectionService extends BaseService {
     // 2단계: ClassSection 생성
     const classSectionData: Omit<ClassSection, 'id'> = {
       name: data.name,
+      versionId,
       courseId,
       teacherId: data.teacherId,
       classroomId: data.classroomId,
@@ -227,15 +253,43 @@ export class ClassSectionService extends BaseService {
     return { course, classSection };
   }
 
-  // 모든 수업 조회
-  async getAllClassSections(): Promise<ClassSection[]> {
-    return this.getAll<ClassSection>();
+  // 모든 수업 조회 (versionId로 필터링)
+  async getAllClassSections(versionId?: string): Promise<ClassSection[]> {
+    // versionId가 없으면 활성 버전 사용
+    if (!versionId) {
+      const activeVersion = await this.timetableVersionService.getActiveVersion();
+      if (!activeVersion) {
+        throw new Error('활성화된 시간표 버전이 없습니다.');
+      }
+      versionId = activeVersion.id;
+    }
+
+    const query = this.db.collection(this.collectionName).where('versionId', '==', versionId);
+    return this.search<ClassSection>(query);
+  }
+
+  // 특정 버전의 특정 수업 조회
+  async getByIdAndVersion(id: string, versionId?: string): Promise<ClassSection | null> {
+    // versionId가 없으면 활성 버전 사용
+    if (!versionId) {
+      const activeVersion = await this.timetableVersionService.getActiveVersion();
+      if (!activeVersion) {
+        throw new Error('활성화된 시간표 버전이 없습니다.');
+      }
+      versionId = activeVersion.id;
+    }
+
+    const classSection = await this.getById<ClassSection>(id);
+    if (!classSection || classSection.versionId !== versionId) {
+      return null;
+    }
+    return classSection;
   }
 
   // 모든 수업을 상세 정보와 함께 조회 (Course, Teacher, Classroom 포함)
-  async getClassSectionsWithDetails(): Promise<any[]> {
+  async getClassSectionsWithDetails(versionId?: string): Promise<any[]> {
     try {
-      const classSections = await this.getAllClassSections();
+      const classSections = await this.getAllClassSections(versionId);
       
       // 🔄 점진적 색상 생성: 색상이 없는 수업들만 배치 처리
       const sectionsWithColors = await this.ensureBatchClassSectionsHaveColors(classSections);
@@ -311,6 +365,17 @@ export class ClassSectionService extends BaseService {
   // 수업 검색
   async searchClassSections(params: ClassSectionSearchParams): Promise<ClassSection[]> {
     let query: admin.firestore.Query = this.db.collection(this.collectionName);
+
+    // versionId로 검색 (없으면 활성 버전 사용)
+    let versionId = params.versionId;
+    if (!versionId) {
+      const activeVersion = await this.timetableVersionService.getActiveVersion();
+      if (!activeVersion) {
+        throw new Error('활성화된 시간표 버전이 없습니다.');
+      }
+      versionId = activeVersion.id;
+    }
+    query = query.where('versionId', '==', versionId);
 
     // 수업명으로 검색
     if (params.name) {
@@ -692,77 +757,92 @@ export class ClassSectionService extends BaseService {
   }
 
   // 수업에 학생 추가
-  async addStudentToClass(classSectionId: string, studentId: string): Promise<void> {
+  async addStudentToClass(classSectionId: string, studentId: string, versionId?: string): Promise<void> {
     try {
+      // ✅ 트랜잭션 전에 버전 결정
+      let targetVersionId = versionId;
+      if (!targetVersionId) {
+        const versionService = new TimetableVersionService();
+        const activeVersion = await versionService.getActiveVersion();
+        if (!activeVersion) {
+          throw new Error('활성 시간표 버전이 없습니다.');
+        }
+        targetVersionId = activeVersion.id;
+      }
+
       // 트랜잭션 시작
       await this.runTransaction(async (transaction) => {
         // === 1단계: 모든 읽기 작업을 먼저 수행 ===
-        
+
         // 수업 존재 여부 확인
         const classSectionRef = this.db.collection('class_sections').doc(classSectionId);
         const classSectionDoc = await transaction.get(classSectionRef);
-        
+
         if (!classSectionDoc.exists) {
           throw new Error('수업을 찾을 수 없습니다.');
         }
-        
+
         const classSectionData = classSectionDoc.data() as ClassSection;
-        
+
         // 학생 존재 여부 확인
         const studentRef = this.db.collection('students').doc(studentId);
         const studentDoc = await transaction.get(studentRef);
-        
+
         if (!studentDoc.exists) {
           throw new Error('학생을 찾을 수 없습니다.');
         }
-        
+
         // 수업 정원 확인
         if ((classSectionData.currentStudents || 0) >= classSectionData.maxStudents) {
           throw new Error('수업 정원이 가득 찼습니다.');
         }
-        
-        // 학생 시간표 조회 (없으면 생성)
-        const studentTimetableRef = this.db.collection('student_timetables').doc(studentId);
-        const studentTimetableDoc = await transaction.get(studentTimetableRef);
-        
+
+        // ✅ 수정: studentId + versionId로 시간표 조회
+        const timetableQuery = this.db.collection('student_timetables')
+          .where('studentId', '==', studentId)
+          .where('versionId', '==', targetVersionId)
+          .limit(1);
+        const timetableSnapshot = await transaction.get(timetableQuery);
+
         // === 2단계: 모든 쓰기 작업을 수행 ===
-        
-        if (studentTimetableDoc.exists) {
+
+        if (!timetableSnapshot.empty) {
           // 기존 시간표에 수업 추가
-          const timetableData = studentTimetableDoc.data();
-          if (!timetableData) {
-            throw new Error('학생 시간표 데이터를 읽을 수 없습니다.');
-          }
-          
+          const timetableDoc = timetableSnapshot.docs[0];
+          const timetableData = timetableDoc.data();
+
           const classSectionIds = timetableData.classSectionIds || [];
-          
+
           // 이미 등록된 수업인지 확인
           if (classSectionIds.includes(classSectionId)) {
             throw new Error('이미 등록된 수업입니다.');
           }
-          
+
           // 수업 ID 추가
-          transaction.update(studentTimetableRef, {
+          transaction.update(timetableDoc.ref, {
             classSectionIds: [...classSectionIds, classSectionId],
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
           });
         } else {
-          // 새로운 학생 시간표 생성
-          transaction.set(studentTimetableRef, {
+          // ✅ 새로운 학생 시간표 생성 (자동 생성 ID 사용)
+          const newTimetableRef = this.db.collection('student_timetables').doc();
+          transaction.set(newTimetableRef, {
             studentId,
+            versionId: targetVersionId,
             classSectionIds: [classSectionId],
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            notes: '',
+            createAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
           });
         }
-        
+
         // 수업의 현재 학생 수 증가
         transaction.update(classSectionRef, {
           currentStudents: admin.firestore.FieldValue.increment(1),
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
       });
-      
+
     } catch (error) {
       console.error('학생 추가 실패:', error);
       throw error;
@@ -770,63 +850,75 @@ export class ClassSectionService extends BaseService {
   }
 
   // 수업에서 학생 제거
-  async removeStudentFromClass(classSectionId: string, studentId: string): Promise<void> {
+  async removeStudentFromClass(classSectionId: string, studentId: string, versionId?: string): Promise<void> {
     try {
+      // ✅ 트랜잭션 전에 버전 결정
+      let targetVersionId = versionId;
+      if (!targetVersionId) {
+        const versionService = new TimetableVersionService();
+        const activeVersion = await versionService.getActiveVersion();
+        if (!activeVersion) {
+          throw new Error('활성 시간표 버전이 없습니다.');
+        }
+        targetVersionId = activeVersion.id;
+      }
+
       // 트랜잭션 시작
       await this.runTransaction(async (transaction) => {
         // === 1단계: 모든 읽기 작업을 먼저 수행 ===
-        
+
         // 수업 존재 여부 확인
         const classSectionRef = this.db.collection('class_sections').doc(classSectionId);
         const classSectionDoc = await transaction.get(classSectionRef);
-        
+
         if (!classSectionDoc.exists) {
           throw new Error('수업을 찾을 수 없습니다.');
         }
-        
-        // 학생 시간표 조회
-        const studentTimetableRef = this.db.collection('student_timetables').doc(studentId);
-        const studentTimetableDoc = await transaction.get(studentTimetableRef);
-        
-        if (!studentTimetableDoc.exists) {
-          throw new Error('학생 시간표를 찾을 수 없습니다.');
+
+        // ✅ 수정: studentId + versionId로 시간표 조회
+        const timetableQuery = this.db.collection('student_timetables')
+          .where('studentId', '==', studentId)
+          .where('versionId', '==', targetVersionId)
+          .limit(1);
+        const timetableSnapshot = await transaction.get(timetableQuery);
+
+        if (timetableSnapshot.empty) {
+          throw new Error(`버전 ${targetVersionId}에서 학생 시간표를 찾을 수 없습니다. 학생이 해당 버전에 등록되어 있는지 확인하세요.`);
         }
-        
-        const timetableData = studentTimetableDoc.data();
-        if (!timetableData) {
-          throw new Error('학생 시간표 데이터를 읽을 수 없습니다.');
-        }
-        
+
+        const timetableDoc = timetableSnapshot.docs[0];
+        const timetableData = timetableDoc.data();
+
         const classSectionIds = timetableData.classSectionIds || [];
-        
+
         // 수업이 등록되어 있는지 확인
         if (!classSectionIds.includes(classSectionId)) {
           throw new Error('등록되지 않은 수업입니다.');
         }
-        
+
         // === 2단계: 모든 쓰기 작업을 수행 ===
-        
+
         // 학생 시간표에서 수업 ID 제거
         const updatedClassSectionIds = classSectionIds.filter((id: string) => id !== classSectionId);
-        
+
         if (updatedClassSectionIds.length === 0) {
-          // 수업이 하나도 없으면 학생 시간표 문서 삭제
-          transaction.delete(studentTimetableRef);
+          // ✅ 수업이 하나도 없으면 학생 시간표 문서 삭제
+          transaction.delete(timetableDoc.ref);
         } else {
           // 수업 ID 목록 업데이트
-          transaction.update(studentTimetableRef, {
+          transaction.update(timetableDoc.ref, {
             classSectionIds: updatedClassSectionIds,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
           });
         }
-        
+
         // 수업의 현재 학생 수 감소
         transaction.update(classSectionRef, {
           currentStudents: admin.firestore.FieldValue.increment(-1),
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
       });
-      
+
     } catch (error) {
       console.error('학생 제거 실패:', error);
       throw error;
@@ -834,35 +926,49 @@ export class ClassSectionService extends BaseService {
   }
 
   // 수업에 등록된 학생 목록 조회
-  async getEnrolledStudents(classSectionId: string): Promise<Student[]> {
+  async getEnrolledStudents(classSectionId: string, versionId?: string): Promise<Student[]> {
     try {
-      // student_timetables 컬렉션에서 해당 수업을 듣는 학생들 조회
-      const studentTimetableQuery = this.db.collection('student_timetables')
+      // ✅ 버전 결정
+      let targetVersionId = versionId;
+      if (!targetVersionId) {
+        const versionService = new TimetableVersionService();
+        const activeVersion = await versionService.getActiveVersion();
+        if (activeVersion) {
+          targetVersionId = activeVersion.id;
+        }
+      }
+
+      // ✅ student_timetables 컬렉션에서 해당 수업을 듣는 학생들 조회 (버전 필터링 추가)
+      let studentTimetableQuery: admin.firestore.Query = this.db.collection('student_timetables')
         .where('classSectionIds', 'array-contains', classSectionId);
-      
+
+      if (targetVersionId) {
+        studentTimetableQuery = studentTimetableQuery.where('versionId', '==', targetVersionId);
+      }
+
       const studentTimetableDocs = await studentTimetableQuery.get();
-      
+
       if (studentTimetableDocs.empty) {
         return [];
       }
-      
-      // 학생 ID 목록 추출
-      const studentIds = studentTimetableDocs.docs.map(doc => doc.data().studentId);
-      
-      if (studentIds.length === 0) {
+
+      // ✅ 고유한 학생 ID 목록 추출 (중복 제거)
+      const uniqueStudentIds = Array.from(new Set(studentTimetableDocs.docs.map(doc => doc.data().studentId)));
+
+      if (uniqueStudentIds.length === 0) {
         return [];
       }
-      
+
       // 학생 상세 정보 조회
       const students: Student[] = [];
-      
+
       // Firestore의 'in' 쿼리 제한(10개)을 고려하여 청크 단위로 처리
       const chunkSize = 10;
-      for (let i = 0; i < studentIds.length; i += chunkSize) {
-        const chunk = studentIds.slice(i, i + chunkSize);
+      for (let i = 0; i < uniqueStudentIds.length; i += chunkSize) {
+        const chunk = uniqueStudentIds.slice(i, i + chunkSize);
         const studentsQuery = this.db.collection('students')
           .where(admin.firestore.FieldPath.documentId(), 'in', chunk);
-        
+
         const studentsDocs = await studentsQuery.get();
         studentsDocs.forEach(doc => {
           const studentData = doc.data() as Student;
@@ -1098,7 +1204,7 @@ export class ClassSectionService extends BaseService {
       }
 
       // 🔄 충돌이 있는 경우 대체 색상 생성
-      console.log(`⚠️ 색상 충돌 감지, 대체 색상 생성 중...`);
+      console.log('⚠️ 색상 충돌 감지, 대체 색상 생성 중...');
       
       // 다른 색상 팔레트에서 색상 선택
       const alternativeColors = this.colorService.getAvailableColors();
@@ -1126,7 +1232,7 @@ export class ClassSectionService extends BaseService {
       }
 
       // 모든 색상이 충돌하는 경우 기본 색상 반환
-      console.log(`⚠️ 모든 색상이 충돌, 기본 색상 사용`);
+      console.log('⚠️ 모든 색상이 충돌, 기본 색상 사용');
       return '#3498db';
 
     } catch (error) {

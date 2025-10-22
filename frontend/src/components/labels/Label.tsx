@@ -3,9 +3,7 @@ import { BaseLabel } from '../base/BaseLabel'
 import type { BaseLabelProps } from '../../types/components'
 import './Label.css'
 
-export interface LabelProps extends BaseLabelProps {
-  // Label만의 추가 props
-}
+export type LabelProps = BaseLabelProps
 
 export const Label = forwardRef<HTMLDivElement, LabelProps>(
   ({ 

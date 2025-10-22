@@ -10,6 +10,7 @@ export * from './classroom.types';
 export * from './seat.types';
 export * from './seat-assignment.types';
 export * from './student-timetable.types';
+export * from './timetable-version.types';
 export * from './student-summary.types';
 export * from './attendance.types';
 export * from './timetable.types';

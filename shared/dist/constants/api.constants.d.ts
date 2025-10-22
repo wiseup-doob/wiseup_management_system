@@ -89,8 +89,24 @@ export declare const API_ENDPOINTS: {
         UPDATE: (id: string) => string;
         DELETE: (id: string) => string;
         GET_BY_STUDENT: (studentId: string) => string;
+        GET_BY_STUDENT_AND_VERSION: (studentId: string, versionId: string) => string;
         ADD_CLASS: (studentId: string) => string;
+        ADD_CLASS_BY_VERSION: (studentId: string, versionId: string) => string;
         REMOVE_CLASS: (studentId: string) => string;
+        REMOVE_CLASS_BY_VERSION: (studentId: string, versionId: string) => string;
+    };
+    TIMETABLE_VERSIONS: {
+        GET_ALL: string;
+        GET_ACTIVE: string;
+        GET_BY_ID: (id: string) => string;
+        CREATE: string;
+        UPDATE: (id: string) => string;
+        DELETE: (id: string) => string;
+        ACTIVATE: (id: string) => string;
+        COPY: (sourceVersionId: string) => string;
+        BULK_INITIALIZE: (versionId: string) => string;
+        MIGRATION_STATUS: string;
+        MIGRATE: (versionId: string) => string;
     };
     TIMETABLES: {
         GET_ALL: string;

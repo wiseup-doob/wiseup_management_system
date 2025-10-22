@@ -10,11 +10,16 @@ import { useStudents, useStudentSearch } from '../hooks'
 import { TimetableEditModal } from '../components/TimetableEditModal'
 import { ClassDetailModal } from '../../../components/business/ClassDetailModal'
 import { apiService } from '../../../services/api'
+import { TimetableVersionSelector } from '../../../components/TimetableVersionSelector'
+import { useTimetableVersion } from '../../../contexts/TimetableVersionContext'
 
 function SchedulePage() {
+  // 시간표 버전 관리
+  const { selectedVersion } = useTimetableVersion()
+
   // 학생 목록 관리
   const { students, isLoading, error, loadStudents } = useStudents()
-  
+
   // 학생 검색 및 필터링
   const {
     searchValue,
@@ -41,29 +46,29 @@ function SchedulePage() {
   const [isClassDetailModalOpen, setIsClassDetailModalOpen] = useState(false)
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
 
-  // 학생 선택 시 시간표 로드
+  // 학생 선택 시 또는 버전 변경 시 시간표 로드
   useEffect(() => {
-    if (selectedStudent) {
+    if (selectedStudent && selectedVersion) {
       loadTimetable(selectedStudent)
     }
-  }, [selectedStudent])
+  }, [selectedStudent, selectedVersion])
 
   // 시간표 로드 함수
   const loadTimetable = useCallback(async (student: Student) => {
-    if (!student) return
+    if (!student || !selectedVersion) return
 
     setIsTimetableLoading(true)
     setTimetableError(null)
     setTimetableData(null) // 기존 데이터 초기화
 
     try {
-      console.log(`📚 ${student.name}의 시간표 로드 시작...`)
-      
-      const response = await apiService.getStudentTimetable(student.id)
-      
+      console.log(`📚 ${student.name}의 시간표 로드 시작 (버전: ${selectedVersion.displayName})...`)
+
+      const response = await apiService.getStudentTimetableByVersion(student.id, selectedVersion.id)
+
       if (response.success && response.data && response.data.classSections) {
         console.log('✅ 시간표 데이터 로드 성공:', response.data)
-        
+
         // useTimetable 훅이 기대하는 구조로 변환
         const data = {
           classSections: response.data.classSections,
@@ -74,13 +79,13 @@ function SchedulePage() {
             totalTeachers: 0
           }
         }
-        
+
         setTimetableData(data)
         console.log(`📚 ${student.name}의 시간표 로드 완료`, data)
-        
+
       } else {
         // 시간표가 없는 경우
-        if (response.message?.includes('not found') || 
+        if (response.message?.includes('not found') ||
             response.message?.includes('Student timetable not found') ||
             response.message?.includes('Resource not found')) {
           console.log(`📚 ${student.name}의 시간표가 없습니다.`)
@@ -97,7 +102,7 @@ function SchedulePage() {
           console.error('❌ 시간표 로드 실패:', errorMessage)
         }
       }
-      
+
     } catch (err) {
       const errorMessage = '시간표를 불러오는 중 오류가 발생했습니다.'
       setTimetableError(errorMessage)
@@ -106,7 +111,7 @@ function SchedulePage() {
     } finally {
       setIsTimetableLoading(false)
     }
-  }, [])
+  }, [selectedVersion])
 
   // 학생 선택 핸들러
   const handleStudentSelect = useCallback((student: Student) => {
@@ -184,7 +189,7 @@ function SchedulePage() {
       {/* 검색 및 필터 섹션 */}
       <div className="search-filter-section">
         <div className="search-container">
-          <SearchInput 
+          <SearchInput
             placeholder="학생 이름 검색"
             value={searchValue}
             onChange={handleSearch}
@@ -194,10 +199,13 @@ function SchedulePage() {
             size="md"
           />
         </div>
-        
+
         <div className="filter-buttons">
-          <select 
-            value={filters.grade} 
+          {/* 시간표 버전 선택 */}
+          <TimetableVersionSelector style={{ marginRight: '12px' }} />
+
+          <select
+            value={filters.grade}
             onChange={(e) => handleFilter('grade', e.target.value)}
             className="filter-select"
           >
@@ -209,8 +217,8 @@ function SchedulePage() {
             <option value="고2">고2</option>
             <option value="고3">고3</option>
           </select>
-          
-          <Button 
+
+          <Button
             onClick={handleOpenBulkDownloadModal}
             className="bulk-download-btn"
             variant="primary"

@@ -710,14 +710,83 @@
   transform: translateY(0);
 }
 
+/* 액션 버튼 그룹 */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.edit-btn {
+  background-color: #1890ff;
+  color: white;
+  border: 1px solid #1890ff;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edit-btn:hover {
+  background-color: #40a9ff;
+  border-color: #40a9ff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(24, 144, 255, 0.3);
+}
+
+.edit-btn:active {
+  transform: translateY(0);
+}
+
+/* 교사 액션 버튼 */
+.teacher-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.teacher-actions .edit-btn,
+.teacher-actions .delete-btn {
+  flex: 1;
+  padding: 8px 16px;
+}
+
+/* 강의실 액션 버튼 */
+.classroom-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.classroom-actions .edit-btn,
+.classroom-actions .delete-btn {
+  flex: 1;
+  padding: 8px 16px;
+}
+
 /* 반응형 디자인에서 삭제 버튼 */
 @media (max-width: 768px) {
+  .action-buttons {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .action-buttons .edit-btn,
+  .action-buttons .delete-btn {
+    width: 100%;
+  }
+
   .teacher-actions,
   .classroom-actions {
     justify-content: center;
+    flex-direction: column;
   }
 
-  .delete-btn {
+  .teacher-actions .edit-btn,
+  .teacher-actions .delete-btn,
+  .classroom-actions .edit-btn,
+  .classroom-actions .delete-btn {
     width: 100%;
     padding: 0.75rem;
   }

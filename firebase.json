@@ -1,4 +1,8 @@
 {
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
   "hosting": {
     "public": "frontend/dist",
     "ignore": [
@@ -36,6 +40,7 @@
     "ui": {
       "enabled": true,
       "port": 4001
-    }
+    },
+    "singleProjectMode": true
   }
 }

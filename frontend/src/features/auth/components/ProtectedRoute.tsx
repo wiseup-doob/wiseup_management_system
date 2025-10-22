@@ -8,8 +8,8 @@ interface ProtectedRouteProps {
   redirectTo?: string
 }
 
-export const ProtectedRoute = ({ 
-  children, 
+export const ProtectedRoute = ({
+  children,
   fallback = <div>인증이 필요합니다.</div>,
   redirectTo = '/login'
 }: ProtectedRouteProps) => {
@@ -21,6 +21,13 @@ export const ProtectedRoute = ({
       fetchCurrentUser()
     }
   }, [isAuthenticated, isLoading, user, fetchCurrentUser])
+
+  // 인증되지 않은 경우 리다이렉트 처리 (항상 최상위에서 호출)
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      window.location.href = redirectTo
+    }
+  }, [isLoading, isAuthenticated, redirectTo])
 
   // 로딩 중일 때
   if (isLoading) {
@@ -34,11 +41,6 @@ export const ProtectedRoute = ({
 
   // 인증되지 않은 경우
   if (!isAuthenticated) {
-    // 리다이렉트 처리
-    useEffect(() => {
-      window.location.href = redirectTo
-    }, [redirectTo])
-    
     return <>{fallback}</>
   }
 

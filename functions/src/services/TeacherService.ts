@@ -1,21 +1,36 @@
 import * as admin from 'firebase-admin';
 import { BaseService } from './BaseService';
-import type { 
-  Teacher, 
-  CreateTeacherRequest, 
-  UpdateTeacherRequest, 
+import { TimetableVersionService } from './TimetableVersionService';
+import type {
+  Teacher,
+  CreateTeacherRequest,
+  UpdateTeacherRequest,
   TeacherSearchParams
 } from '@shared/types';
 
 export class TeacherService extends BaseService {
+  private timetableVersionService: TimetableVersionService;
+
   constructor() {
     super('teachers');
+    this.timetableVersionService = new TimetableVersionService();
   }
 
   // 강사 생성
   async createTeacher(data: CreateTeacherRequest): Promise<string> {
+    // versionId가 없으면 활성 버전 사용
+    let versionId = data.versionId;
+    if (!versionId) {
+      const activeVersion = await this.timetableVersionService.getActiveVersion();
+      if (!activeVersion) {
+        throw new Error('활성화된 시간표 버전이 없습니다.');
+      }
+      versionId = activeVersion.id;
+    }
+
     const teacherData: Omit<Teacher, 'id'> = {
       ...data,
+      versionId,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
@@ -43,14 +58,53 @@ export class TeacherService extends BaseService {
     await this.delete(id);
   }
 
-  // 모든 강사 조회
-  async getAllTeachers(): Promise<Teacher[]> {
-    return this.getAll<Teacher>();
+  // 모든 강사 조회 (versionId로 필터링)
+  async getAllTeachers(versionId?: string): Promise<Teacher[]> {
+    // versionId가 없으면 활성 버전 사용
+    if (!versionId) {
+      const activeVersion = await this.timetableVersionService.getActiveVersion();
+      if (!activeVersion) {
+        throw new Error('활성화된 시간표 버전이 없습니다.');
+      }
+      versionId = activeVersion.id;
+    }
+
+    const query = this.db.collection(this.collectionName).where('versionId', '==', versionId);
+    return this.search<Teacher>(query);
+  }
+
+  // 특정 버전의 특정 교사 조회
+  async getByIdAndVersion(id: string, versionId?: string): Promise<Teacher | null> {
+    // versionId가 없으면 활성 버전 사용
+    if (!versionId) {
+      const activeVersion = await this.timetableVersionService.getActiveVersion();
+      if (!activeVersion) {
+        throw new Error('활성화된 시간표 버전이 없습니다.');
+      }
+      versionId = activeVersion.id;
+    }
+
+    const teacher = await this.getById<Teacher>(id);
+    if (!teacher || teacher.versionId !== versionId) {
+      return null;
+    }
+    return teacher;
   }
 
   // 강사 검색
   async searchTeachers(params: TeacherSearchParams): Promise<Teacher[]> {
     let query: admin.firestore.Query = this.db.collection(this.collectionName);
+
+    // versionId로 검색 (없으면 활성 버전 사용)
+    let versionId = params.versionId;
+    if (!versionId) {
+      const activeVersion = await this.timetableVersionService.getActiveVersion();
+      if (!activeVersion) {
+        throw new Error('활성화된 시간표 버전이 없습니다.');
+      }
+      versionId = activeVersion.id;
+    }
+    query = query.where('versionId', '==', versionId);
 
     // 이름으로 검색
     if (params.name) {

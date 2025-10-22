@@ -17,6 +17,7 @@ export function ClassDetailPanel({ selectedClass, isLoading, onRefreshClasses }:
   const [enrolledStudents, setEnrolledStudents] = useState<Student[]>([])
   const [isLoadingStudents, setIsLoadingStudents] = useState(false)
   const [studentsError, setStudentsError] = useState<string | null>(null)
+  const [activeVersionId, setActiveVersionId] = useState<string | null>(null)
   
   // 모달 관련 상태
   const [isClassDetailModalOpen, setIsClassDetailModalOpen] = useState(false)
@@ -42,12 +43,33 @@ export function ClassDetailPanel({ selectedClass, isLoading, onRefreshClasses }:
     setSelectedClassId(null)
   }, [])
 
+  // 활성 버전 로드
+  useEffect(() => {
+    const loadActiveVersion = async () => {
+      try {
+        const response = await apiService.getActiveTimetableVersion()
+        if (response.success && response.data) {
+          setActiveVersionId(response.data.id)
+        }
+      } catch (error) {
+        console.error('활성 버전 조회 실패:', error)
+      }
+    }
+
+    loadActiveVersion()
+  }, [])
+
   // 수강 인원 데이터 가져오기
   const fetchEnrolledStudents = useCallback(async (classSectionId: string) => {
+    if (!activeVersionId) {
+      console.warn('활성 버전 ID가 없습니다.')
+      return
+    }
+
     setIsLoadingStudents(true)
     setStudentsError(null)
     try {
-      const response = await apiService.getEnrolledStudents(classSectionId)
+      const response = await apiService.getEnrolledStudents(classSectionId, activeVersionId)
       if (response.success && response.data) {
         setEnrolledStudents(response.data)
       }
@@ -57,7 +79,7 @@ export function ClassDetailPanel({ selectedClass, isLoading, onRefreshClasses }:
     } finally {
       setIsLoadingStudents(false)
     }
-  }, [])
+  }, [activeVersionId])
 
   // selectedClass가 변경될 때 수강 인원 데이터 로딩
   useEffect(() => {

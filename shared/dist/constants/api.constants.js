@@ -167,12 +167,43 @@ export const API_ENDPOINTS = {
         UPDATE: (id) => `/api/student-timetables/${id}`,
         // DELETE /api/student-timetables/:id - 학생 시간표 삭제
         DELETE: (id) => `/api/student-timetables/${id}`,
-        // GET /api/student-timetables/student/:studentId - 학생별 시간표
+        // GET /api/student-timetables/student/:studentId - 학생별 시간표 (활성 버전)
         GET_BY_STUDENT: (studentId) => `/api/student-timetables/student/${studentId}`,
-        // POST /api/student-timetables/student/:studentId/add-class - 수업 추가
+        // GET /api/student-timetables/student/:studentId/version/:versionId - 학생별 버전별 시간표
+        GET_BY_STUDENT_AND_VERSION: (studentId, versionId) => `/api/student-timetables/student/${studentId}/version/${versionId}`,
+        // POST /api/student-timetables/student/:studentId/add-class - 수업 추가 (활성 버전)
         ADD_CLASS: (studentId) => `/api/student-timetables/student/${studentId}/add-class`,
-        // POST /api/student-timetables/student/:studentId/remove-class - 수업 제거
-        REMOVE_CLASS: (studentId) => `/api/student-timetables/student/${studentId}/remove-class`
+        // POST /api/student-timetables/student/:studentId/version/:versionId/add-class - 버전별 수업 추가
+        ADD_CLASS_BY_VERSION: (studentId, versionId) => `/api/student-timetables/student/${studentId}/version/${versionId}/add-class`,
+        // POST /api/student-timetables/student/:studentId/remove-class - 수업 제거 (활성 버전)
+        REMOVE_CLASS: (studentId) => `/api/student-timetables/student/${studentId}/remove-class`,
+        // POST /api/student-timetables/student/:studentId/version/:versionId/remove-class - 버전별 수업 제거
+        REMOVE_CLASS_BY_VERSION: (studentId, versionId) => `/api/student-timetables/student/${studentId}/version/${versionId}/remove-class`
+    },
+    // 시간표 버전 관리 API
+    TIMETABLE_VERSIONS: {
+        // GET /api/timetable-versions - 모든 버전 조회
+        GET_ALL: '/api/timetable-versions',
+        // GET /api/timetable-versions/active - 활성 버전 조회
+        GET_ACTIVE: '/api/timetable-versions/active',
+        // GET /api/timetable-versions/:id - 버전 조회
+        GET_BY_ID: (id) => `/api/timetable-versions/${id}`,
+        // POST /api/timetable-versions - 버전 생성
+        CREATE: '/api/timetable-versions',
+        // PUT /api/timetable-versions/:id - 버전 수정
+        UPDATE: (id) => `/api/timetable-versions/${id}`,
+        // DELETE /api/timetable-versions/:id - 버전 삭제
+        DELETE: (id) => `/api/timetable-versions/${id}`,
+        // POST /api/timetable-versions/:id/activate - 버전 활성화
+        ACTIVATE: (id) => `/api/timetable-versions/${id}/activate`,
+        // POST /api/timetable-versions/:sourceVersionId/copy - 버전 복사
+        COPY: (sourceVersionId) => `/api/timetable-versions/${sourceVersionId}/copy`,
+        // POST /api/timetable-versions/:versionId/bulk-initialize - 버전의 모든 학생 시간표 일괄 초기화
+        BULK_INITIALIZE: (versionId) => `/api/timetable-versions/${versionId}/bulk-initialize`,
+        // GET /api/timetable-versions/migration/status - 마이그레이션 상태 확인
+        MIGRATION_STATUS: '/api/timetable-versions/migration/status',
+        // POST /api/timetable-versions/migration/:versionId - 데이터 마이그레이션 실행
+        MIGRATE: (versionId) => `/api/timetable-versions/migration/${versionId}`
     },
     // 시간표 관리 API
     TIMETABLES: {
