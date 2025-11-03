@@ -125,58 +125,58 @@ function AddStudentPage({ isOpen, onClose, classData, onStudentAdded }: AddStude
     try {
       setIsAdding(true)
       setError(null)
-      
+
       const studentIds = Array.from(selectedStudents)
-      
+
       // 각 학생을 수업에 등록
       for (const studentId of studentIds) {
         await apiService.addStudentToClass(classData.id, studentId, activeVersionId || undefined)
       }
-      
+
       setSuccessMessage(`${selectedStudents.size}명의 학생이 성공적으로 등록되었습니다.`)
-      
+
       // 선택 초기화
       setSelectedStudents(new Set())
-      
+
       // 등록된 학생 목록 새로고침
       await loadEnrolledStudents()
-      
+
       // 학생 목록도 새로고침 (등록 가능한 학생 목록 업데이트를 위해)
       await loadStudents()
-      
+
       // 콜백 호출
       onStudentAdded()
-      
+
       // 2초 후 성공 메시지 숨김
       setTimeout(() => {
         setSuccessMessage(null)
         onClose()
       }, 2000)
-      
+
     } catch (error) {
       setError('학생 등록에 실패했습니다. 다시 시도해주세요.')
     } finally {
       setIsAdding(false)
     }
-  }, [selectedStudents, classData.id, onStudentAdded, onClose, loadEnrolledStudents, loadStudents])
+  }, [selectedStudents, classData.id, onStudentAdded, onClose, loadEnrolledStudents, loadStudents, activeVersionId])
 
   // 학생 삭제
   const handleRemoveStudent = useCallback(async (studentId: string) => {
     try {
       setIsRemoving(true)
       setError(null)
-      
+
       // 백엔드 API를 통해 학생을 수업에서 제거
       const response = await apiService.removeStudentFromClass(classData.id, studentId, activeVersionId || undefined)
-      
+
       if (response.success) {
         // 성공 시 프론트엔드 상태 업데이트
-        setEnrolledStudents(prev => prev.filter(student => student.id !== studentId))
         setSuccessMessage('학생이 수업에서 제거되었습니다.')
-        
-        // 학생 목록 새로고침 (등록 가능한 학생 목록 업데이트를 위해)
+
+        // 등록된 학생 목록과 전체 학생 목록 새로고침
+        await loadEnrolledStudents()
         await loadStudents()
-        
+
         // 2초 후 성공 메시지 숨김
         setTimeout(() => {
           setSuccessMessage(null)
@@ -184,13 +184,13 @@ function AddStudentPage({ isOpen, onClose, classData, onStudentAdded }: AddStude
       } else {
         throw new Error(response.message || '학생 제거에 실패했습니다.')
       }
-      
+
     } catch (error) {
       setError('학생 제거에 실패했습니다. 다시 시도해주세요.')
     } finally {
       setIsRemoving(false)
     }
-  }, [classData.id, loadStudents])
+  }, [classData.id, loadEnrolledStudents, loadStudents, activeVersionId])
 
   // 활성 버전 로드
   useEffect(() => {
@@ -366,10 +366,10 @@ function AddStudentPage({ isOpen, onClose, classData, onStudentAdded }: AddStude
                   {filteredStudents.map(student => (
                     <div
                       key={student.id}
-                      className={`student-item ${selectedStudents.has(student.id) ? 'selected' : ''}`}
+                      className={`add-student-item ${selectedStudents.has(student.id) ? 'selected' : ''}`}
                       onClick={() => toggleStudentSelection(student.id)}
                     >
-                      <label className="student-checkbox">
+                      <label className="add-student-checkbox">
                         <input
                           type="checkbox"
                           checked={selectedStudents.has(student.id)}
@@ -377,12 +377,12 @@ function AddStudentPage({ isOpen, onClose, classData, onStudentAdded }: AddStude
                         />
                         <span className="checkmark"></span>
                       </label>
-                      
-                      <div className="student-info">
-                        <div className="student-name">{student.name}</div>
-                        <div className="student-details">
-                          <span className="grade">{student.grade || '학년 미정'}</span>
-                          <span className="status">{student.status || '상태 미정'}</span>
+
+                      <div className="add-student-info">
+                        <div className="add-student-name">{student.name}</div>
+                        <div className="add-student-details">
+                          <span className="add-student-grade">{student.grade || '학년 미정'}</span>
+                          <span className="add-student-status">{student.status || '상태 미정'}</span>
                         </div>
                       </div>
                     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useDrag } from 'react-dnd'
 import type { Student } from '@shared/types'
 import type { StudentTimetableResponse } from '../types/timetable.types'
@@ -82,15 +82,8 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // 모달이 열릴 때 데이터 로드
-  useEffect(() => {
-    if (isOpen && student && selectedVersion) {
-      loadModalData(student.id)
-    }
-  }, [isOpen, student, selectedVersion])
-
   // 모달 데이터 로딩
-  const loadModalData = async (studentId: string) => {
+  const loadModalData = useCallback(async (studentId: string) => {
     if (!selectedVersion) {
       setError('활성 버전을 찾을 수 없습니다.')
       return
@@ -107,13 +100,13 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
         apiService.getClassSectionsWithDetails(), // 상세 정보 포함된 수업 목록 (🎨 색상 포함)
         apiService.getStudentTimetableByVersion(studentId, selectedVersion.id) // 버전별 학생 시간표
       ])
-      
+
       // 수업 목록 설정
       if (classesResponse.success && classesResponse.data) {
         setAvailableClasses(classesResponse.data)
         setFilteredClasses(classesResponse.data) // 초기에는 모든 수업 표시
         console.log('✅ 수업 목록 로드 성공:', classesResponse.data.length, '개')
-        
+
         // 교사명, 강의실명, 색상 디버깅
         console.log('🔍 첫 번째 수업 상세 정보:', {
           name: classesResponse.data[0]?.name,
@@ -127,17 +120,17 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
         setAvailableClasses([])
         setFilteredClasses([])
       }
-      
+
       // 학생 시간표 설정
       if (timetableResponse.success && timetableResponse.data) {
         console.log('✅ 학생 시간표 로드 성공:', timetableResponse.data)
-        
+
         // 원본 백엔드 데이터 저장
         setOriginalTimetableData(timetableResponse.data)
-        
+
         // 로컬 편집 데이터 초기화
         setLocalTimetableData(timetableResponse.data)
-        
+
         // useTimetable 훅이 기대하는 구조로 변환
         const timetableForDisplay = {
           classSections: timetableResponse.data.classSections,
@@ -149,12 +142,12 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
             status: timetableResponse.data.status
           }
         }
-        
+
         setCurrentTimetable(timetableForDisplay)
       } else {
         // 시간표가 없는 경우 빈 시간표 생성
         console.log('🔍 학생 시간표가 없습니다. 빈 시간표를 생성합니다.')
-        
+
         if (student) {
           const emptyTimetableData = {
             studentId: studentId,
@@ -163,10 +156,10 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
             status: 'active' as const,
             classSections: []
           }
-          
+
           // 로컬 편집 데이터 초기화
           setLocalTimetableData(emptyTimetableData)
-          
+
           // useTimetable 훅이 기대하는 구조로 변환
           const emptyTimetableForDisplay = {
             classSections: emptyTimetableData.classSections,
@@ -178,15 +171,15 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
               status: emptyTimetableData.status
             }
           }
-          
+
           setCurrentTimetable(emptyTimetableForDisplay)
         }
       }
-      
+
     } catch (err) {
       console.error('❌ 모달 데이터 로드 오류:', err)
       setError('데이터를 불러오는 중 오류가 발생했습니다.')
-      
+
       // 에러 시에도 빈 시간표는 표시
       if (student) {
         const emptyTimetableData = {
@@ -196,10 +189,10 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
           status: 'active' as const,
           classSections: []
         }
-        
+
         // 로컬 편집 데이터 초기화
         setLocalTimetableData(emptyTimetableData)
-        
+
         // useTimetable 훅이 기대하는 구조로 변환
         const emptyTimetableForDisplay = {
           classSections: emptyTimetableData.classSections,
@@ -213,11 +206,18 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
         }
         setCurrentTimetable(emptyTimetableForDisplay)
       }
-      
+
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [student, selectedVersion])
+
+  // 모달이 열릴 때 데이터 로드
+  useEffect(() => {
+    if (isOpen && student && selectedVersion) {
+      loadModalData(student.id)
+    }
+  }, [isOpen, student, selectedVersion, loadModalData])
 
   // 색상 관련 성능 최적화
   const classColorsMap = useMemo(() => {
@@ -400,12 +400,10 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
     )
   }
 
-  if (!isOpen) return null
-
   // 검색 핸들러
-  const handleSearch = (value: string) => {
+  const handleSearch = useCallback((value: string) => {
     setSearchTerm(value)
-    
+
     if (!value.trim()) {
       // 검색어가 없으면 모든 수업 표시
       setFilteredClasses(availableClasses)
@@ -423,10 +421,10 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
       })
       setFilteredClasses(filtered)
     }
-  }
+  }, [availableClasses])
 
   // 수업 추가 함수
-  const handleAddClass = async (classSectionId: string) => {
+  const handleAddClass = useCallback(async (classSectionId: string) => {
     if (!student) return
     
     try {
@@ -614,10 +612,10 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
       
       setError(errorMessage)
     }
-  }
+  }, [student, availableClasses, currentTimetable, localTimetableData])
 
   // 드롭 이벤트 처리 함수 (자동 배치)
-  const handleDrop = async (item: any) => {
+  const handleDrop = useCallback(async (item: any) => {
     console.log('🎯 드롭 이벤트 처리:', item)
     
     if (item.type === 'class-section' && item.classSection) {
@@ -711,10 +709,10 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
         setError('수업에 스케줄 정보가 없습니다. 먼저 수업 시간을 설정해주세요.')
       }
     }
-  }
+  }, [handleAddClass])
 
   // 수업 제거 함수
-  const handleRemoveClass = async (classSectionId: string) => {
+  const handleRemoveClass = useCallback(async (classSectionId: string) => {
     if (!student || !selectedVersion) return
 
     try {
@@ -748,9 +746,9 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
       console.error('❌ 수업 제거 실패:', err)
       setError('수업을 제거하는 중 오류가 발생했습니다.')
     }
-  }
+  }, [student, selectedVersion])
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!student || !selectedVersion || !hasUnsavedChanges) {
       onSave()
       onClose()
@@ -802,11 +800,13 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [student, selectedVersion, hasUnsavedChanges, originalTimetableData, localTimetableData, onSave, onClose])
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     onClose()
-  }
+  }, [onClose])
+
+  if (!isOpen) return null
 
   return (
     <div className="modal-overlay" onClick={onClose}>

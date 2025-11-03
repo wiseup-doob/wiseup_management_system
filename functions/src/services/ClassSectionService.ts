@@ -732,20 +732,38 @@ export class ClassSectionService extends BaseService {
 
   // 수업을 듣는 학생 수 조회
   private async getAffectedStudentCountByClassSectionId(classSectionId: string): Promise<number> {
-    const studentTimetableQuery = this.db.collection('student_timetables');
-    const studentTimetables = await this.search<{ studentId: string; classSectionIds?: string[] }>(studentTimetableQuery);
-    
-    // 해당 수업을 듣는 학생들 카운트
-    let affectedStudentCount = 0;
-    studentTimetables.forEach(timetable => {
-      if (timetable.classSectionIds && Array.isArray(timetable.classSectionIds)) {
-        if (timetable.classSectionIds.includes(classSectionId)) {
-          affectedStudentCount++;
-        }
-      }
-    });
+    // ✅ 해당 수업의 버전 ID 가져오기
+    const classSectionDoc = await this.db.collection('class_sections').doc(classSectionId).get();
+    if (!classSectionDoc.exists) {
+      return 0;
+    }
 
-    return affectedStudentCount;
+    const classSectionData = classSectionDoc.data();
+    let versionId = classSectionData?.versionId;
+
+    // ✅ 수업에 버전이 없으면 활성 버전 사용
+    if (!versionId) {
+      const versionService = new TimetableVersionService();
+      const activeVersion = await versionService.getActiveVersion();
+      if (activeVersion) {
+        versionId = activeVersion.id;
+      }
+    }
+
+    // ✅ 버전이 없으면 0 반환
+    if (!versionId) {
+      console.warn('⚠️ 버전을 찾을 수 없어서 영향받는 학생 수를 조회할 수 없습니다.');
+      return 0;
+    }
+
+    // ✅ 버전 필터링 적용하여 학생 시간표 조회
+    const studentTimetableQuery = this.db.collection('student_timetables')
+      .where('classSectionIds', 'array-contains', classSectionId)
+      .where('versionId', '==', versionId);
+
+    const studentTimetables = await studentTimetableQuery.get();
+
+    return studentTimetables.size;
   }
 
   // 수업의 출석 기록 수 조회
@@ -852,15 +870,22 @@ export class ClassSectionService extends BaseService {
   // 수업에서 학생 제거
   async removeStudentFromClass(classSectionId: string, studentId: string, versionId?: string): Promise<void> {
     try {
+      console.log('🗑️ [removeStudentFromClass] 시작');
+      console.log('📝 파라미터:', { classSectionId, studentId, versionId });
+
       // ✅ 트랜잭션 전에 버전 결정
       let targetVersionId = versionId;
       if (!targetVersionId) {
+        console.log('⚠️ versionId가 제공되지 않음, 활성 버전 조회 중...');
         const versionService = new TimetableVersionService();
         const activeVersion = await versionService.getActiveVersion();
         if (!activeVersion) {
           throw new Error('활성 시간표 버전이 없습니다.');
         }
         targetVersionId = activeVersion.id;
+        console.log('✅ 활성 버전 ID:', targetVersionId);
+      } else {
+        console.log('✅ 제공된 버전 ID 사용:', targetVersionId);
       }
 
       // 트랜잭션 시작
@@ -868,48 +893,75 @@ export class ClassSectionService extends BaseService {
         // === 1단계: 모든 읽기 작업을 먼저 수행 ===
 
         // 수업 존재 여부 확인
+        console.log('🔍 수업 존재 여부 확인 중...', classSectionId);
         const classSectionRef = this.db.collection('class_sections').doc(classSectionId);
         const classSectionDoc = await transaction.get(classSectionRef);
 
         if (!classSectionDoc.exists) {
+          console.error('❌ 수업을 찾을 수 없음:', classSectionId);
           throw new Error('수업을 찾을 수 없습니다.');
         }
+        console.log('✅ 수업 확인됨');
 
         // ✅ 수정: studentId + versionId로 시간표 조회
+        console.log('🔍 학생 시간표 조회 중...', { studentId, targetVersionId });
         const timetableQuery = this.db.collection('student_timetables')
           .where('studentId', '==', studentId)
           .where('versionId', '==', targetVersionId)
           .limit(1);
         const timetableSnapshot = await transaction.get(timetableQuery);
 
+        console.log('📊 시간표 조회 결과:', {
+          empty: timetableSnapshot.empty,
+          size: timetableSnapshot.size,
+          docs: timetableSnapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }))
+        });
+
         if (timetableSnapshot.empty) {
-          throw new Error(`버전 ${targetVersionId}에서 학생 시간표를 찾을 수 없습니다. 학생이 해당 버전에 등록되어 있는지 확인하세요.`);
-        }
-
-        const timetableDoc = timetableSnapshot.docs[0];
-        const timetableData = timetableDoc.data();
-
-        const classSectionIds = timetableData.classSectionIds || [];
-
-        // 수업이 등록되어 있는지 확인
-        if (!classSectionIds.includes(classSectionId)) {
-          throw new Error('등록되지 않은 수업입니다.');
-        }
-
-        // === 2단계: 모든 쓰기 작업을 수행 ===
-
-        // 학생 시간표에서 수업 ID 제거
-        const updatedClassSectionIds = classSectionIds.filter((id: string) => id !== classSectionId);
-
-        if (updatedClassSectionIds.length === 0) {
-          // ✅ 수업이 하나도 없으면 학생 시간표 문서 삭제
-          transaction.delete(timetableDoc.ref);
-        } else {
-          // 수업 ID 목록 업데이트
-          transaction.update(timetableDoc.ref, {
-            classSectionIds: updatedClassSectionIds,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          console.warn('⚠️ 학생 시간표를 찾을 수 없음 - 시간표 없이 진행');
+          console.warn('🔍 디버깅 정보:', {
+            studentId,
+            targetVersionId,
+            classSectionId,
+            message: '학생에게 시간표가 없지만 수업의 currentStudents는 감소시킵니다.'
           });
+          // 시간표가 없어도 계속 진행 (수업의 currentStudents만 감소)
+        } else {
+          // 시간표가 있는 경우 시간표 업데이트
+          const timetableDoc = timetableSnapshot.docs[0];
+          const timetableData = timetableDoc.data();
+
+          const classSectionIds = timetableData.classSectionIds || [];
+
+          // 수업이 등록되어 있는지 확인 (경고만 출력)
+          if (!classSectionIds.includes(classSectionId)) {
+            console.warn('⚠️ 시간표에 해당 수업이 등록되어 있지 않음 - 그래도 시간표는 업데이트');
+            console.warn('🔍 디버깅 정보:', {
+              studentId,
+              targetVersionId,
+              classSectionId,
+              currentClassSectionIds: classSectionIds,
+              message: '시간표에 해당 수업이 없지만 안전하게 필터링하여 시간표를 업데이트합니다.'
+            });
+          }
+
+          // === 2단계: 모든 쓰기 작업을 수행 ===
+
+          // 학생 시간표에서 수업 ID 제거 (없어도 filter는 안전하게 처리)
+          const updatedClassSectionIds = classSectionIds.filter((id: string) => id !== classSectionId);
+
+          if (updatedClassSectionIds.length === 0) {
+            // ✅ 수업이 하나도 없으면 학생 시간표 문서 삭제
+            console.log('🗑️ 시간표에 수업이 하나도 없으므로 시간표 문서 삭제');
+            transaction.delete(timetableDoc.ref);
+          } else {
+            // 수업 ID 목록 업데이트
+            console.log('✅ 시간표에서 수업 제거 (또는 이미 없었음)');
+            transaction.update(timetableDoc.ref, {
+              classSectionIds: updatedClassSectionIds,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+          }
         }
 
         // 수업의 현재 학생 수 감소
@@ -938,13 +990,15 @@ export class ClassSectionService extends BaseService {
         }
       }
 
-      // ✅ student_timetables 컬렉션에서 해당 수업을 듣는 학생들 조회 (버전 필터링 추가)
-      let studentTimetableQuery: admin.firestore.Query = this.db.collection('student_timetables')
-        .where('classSectionIds', 'array-contains', classSectionId);
-
-      if (targetVersionId) {
-        studentTimetableQuery = studentTimetableQuery.where('versionId', '==', targetVersionId);
+      // ✅ student_timetables 컬렉션에서 해당 수업을 듣는 학생들 조회 (버전 필터링 필수)
+      if (!targetVersionId) {
+        console.warn('⚠️ 활성 버전을 찾을 수 없어서 등록된 학생을 조회할 수 없습니다.');
+        return [];
       }
+
+      const studentTimetableQuery = this.db.collection('student_timetables')
+        .where('classSectionIds', 'array-contains', classSectionId)
+        .where('versionId', '==', targetVersionId);
 
       const studentTimetableDocs = await studentTimetableQuery.get();
 

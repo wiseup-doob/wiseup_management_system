@@ -188,7 +188,7 @@
   gap: 12px;
 }
 
-.student-item {
+.schedule-student-item {
   background-color: #f8f9fa;
   border: 1px solid #e9ecef;
   border-radius: 8px;
@@ -198,33 +198,33 @@
   position: relative;
 }
 
-.student-item:hover {
+.schedule-student-item:hover {
   background-color: #e9ecef;
   border-color: #adb5bd;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.student-item.selected {
+.schedule-student-item.selected {
   background-color: #e3f2fd;
   border-color: #1976d2;
   box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
 }
 
-.student-item-header {
+.schedule-student-item-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
 }
 
-.student-item-name {
+.schedule-student-item-name {
   font-weight: 600;
   color: #333;
   font-size: 16px;
 }
 
-.student-status {
+.schedule-student-status {
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
@@ -232,22 +232,22 @@
   text-transform: uppercase;
 }
 
-.student-status.active {
+.schedule-student-status.active {
   background-color: #d4edda;
   color: #155724;
 }
 
-.student-status.inactive {
+.schedule-student-status.inactive {
   background-color: #f8d7da;
   color: #721c24;
 }
 
-.student-status.completed {
+.schedule-student-status.completed {
   background-color: #d1ecf1;
   color: #0c5460;
 }
 
-.student-item-details {
+.schedule-student-item-details {
   display: flex;
   flex-direction: column;
   gap: 6px;

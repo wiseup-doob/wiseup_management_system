@@ -378,8 +378,10 @@ function ClassPage() {
   // 검색 결과 하이라이트 함수
   const highlightText = (text: string, searchTerm: string) => {
     if (!searchTerm.trim()) return text
-    
-    const regex = new RegExp(`(${searchTerm})`, 'gi')
+
+    // 정규표현식 특수 문자를 이스케이프 처리하여 리터럴 문자로 취급
+    const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const regex = new RegExp(`(${escapedTerm})`, 'gi')
     return text.replace(regex, '<mark class="search-highlight">$1</mark>')
   }
 

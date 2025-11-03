@@ -628,14 +628,14 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
               {/* 학생 목록 */}
               <div className="students-list">
                 {localStudents.map((student) => (
-                  <div key={student.id} className="student-item">
+                  <div key={student.id} className="bulk-download-student-item">
                     <label>
                       <input
                         type="checkbox"
                         checked={student.isSelected}
                         onChange={(e) => {
-                          const newStudents = localStudents.map(s => 
-                            s.id === student.id 
+                          const newStudents = localStudents.map(s =>
+                            s.id === student.id
                               ? { ...s, isSelected: e.target.checked }
                               : s
                           )
@@ -644,9 +644,9 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
                           setStudents(newStudents)
                         }}
                       />
-                      <span className="student-name">{student.name}</span>
-                      <span className="student-grade">{student.grade}</span>
-                      <span className={`student-status ${student.status}`}>
+                      <span className="bulk-download-student-name">{student.name}</span>
+                      <span className="bulk-download-student-grade">{student.grade}</span>
+                      <span className={`bulk-download-student-status ${student.status}`}>
                         {student.status === 'active' ? '활성' : '비활성'}
                       </span>
                     </label>

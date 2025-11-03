@@ -176,7 +176,7 @@
   border-radius: 8px;
 }
 
-.student-item {
+.add-student-item {
   display: flex;
   align-items: center;
   padding: 16px;
@@ -185,49 +185,49 @@
   transition: background-color 0.2s;
 }
 
-.student-item:last-child {
+.add-student-item:last-child {
   border-bottom: none;
 }
 
-.student-item:hover {
+.add-student-item:hover {
   background-color: #f9fafb;
 }
 
-.student-item.selected {
+.add-student-item.selected {
   background-color: #eff6ff;
   border-left: 3px solid #3b82f6;
 }
 
-.student-checkbox {
+.add-student-checkbox {
   display: flex;
   align-items: center;
   margin-right: 16px;
 }
 
-.student-checkbox input[type="checkbox"] {
+.add-student-checkbox input[type="checkbox"] {
   margin-right: 8px;
 }
 
-.student-info {
+.add-student-info {
   flex: 1;
 }
 
-.student-name {
+.add-student-name {
   font-size: 16px;
   font-weight: 500;
   color: #111827;
   margin-bottom: 4px;
 }
 
-.student-details {
+.add-student-details {
   display: flex;
   gap: 12px;
   font-size: 14px;
   color: #6b7280;
 }
 
-.grade,
-.status {
+.add-student-grade,
+.add-student-status {
   padding: 2px 8px;
   background-color: #f3f4f6;
   border-radius: 4px;

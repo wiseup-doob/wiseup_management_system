@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { Button, Table, Modal, Form, Input, DatePicker, message, Tag } from 'antd'
 import { useTimetableVersion } from '../../../contexts/TimetableVersionContext'
 import { apiService } from '../../../services/api'
@@ -26,7 +26,7 @@ export const TimetableVersionManagementPage: React.FC = () => {
   const [copyForm] = Form.useForm()
 
   // 버전 생성
-  const handleCreate = async (values: any) => {
+  const handleCreate = useCallback(async (values: any) => {
     try {
       await apiService.createTimetableVersion({
         name: values.name,
@@ -45,10 +45,10 @@ export const TimetableVersionManagementPage: React.FC = () => {
       console.error('버전 생성 실패:', error)
       message.error('버전 생성에 실패했습니다.')
     }
-  }
+  }, [form, loadVersions])
 
   // 버전 활성화
-  const handleActivate = async (versionId: string) => {
+  const handleActivate = useCallback(async (versionId: string) => {
     try {
       await activateVersion(versionId)
       message.success('버전이 활성화되었습니다.')
@@ -56,17 +56,17 @@ export const TimetableVersionManagementPage: React.FC = () => {
       console.error('버전 활성화 실패:', error)
       message.error('버전 활성화에 실패했습니다.')
     }
-  }
+  }, [activateVersion])
 
   // 버전 삭제 확인 모달 열기
-  const handleDeleteClick = (version: TimetableVersion) => {
+  const handleDeleteClick = useCallback((version: TimetableVersion) => {
     console.log('🗑️ 삭제 버튼 클릭:', version)
     setVersionToDelete(version)
     setIsDeleteConfirmOpen(true)
-  }
+  }, [])
 
   // 버전 삭제 실행
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = useCallback(async () => {
     if (!versionToDelete) return
 
     try {
@@ -80,10 +80,10 @@ export const TimetableVersionManagementPage: React.FC = () => {
       console.error('버전 삭제 실패:', error)
       message.error('버전 삭제에 실패했습니다.')
     }
-  }
+  }, [versionToDelete, loadVersions])
 
   // 버전 복사
-  const handleCopy = async (values: any) => {
+  const handleCopy = useCallback(async (values: any) => {
     if (!selectedVersion) return
 
     try {
@@ -105,10 +105,10 @@ export const TimetableVersionManagementPage: React.FC = () => {
       console.error('버전 복사 실패:', error)
       message.error('버전 복사에 실패했습니다.')
     }
-  }
+  }, [selectedVersion, copyForm, loadVersions])
 
   // 모든 학생 시간표 초기화
-  const handleBulkInitialize = async (versionId: string) => {
+  const handleBulkInitialize = useCallback(async (versionId: string) => {
     Modal.confirm({
       title: '모든 학생의 시간표를 초기화하시겠습니까?',
       content: '활성 상태의 모든 학생에게 빈 시간표가 생성됩니다.',
@@ -124,10 +124,10 @@ export const TimetableVersionManagementPage: React.FC = () => {
         }
       }
     })
-  }
+  }, [])
 
   // 마이그레이션 상태 확인
-  const checkMigrationStatus = async () => {
+  const checkMigrationStatus = useCallback(async () => {
     try {
       console.log('🔍 마이그레이션 상태 확인 시작...')
       const response = await apiService.checkMigrationStatus()
@@ -157,10 +157,10 @@ export const TimetableVersionManagementPage: React.FC = () => {
       console.error('❌ 마이그레이션 상태 확인 실패:', error)
       message.error('마이그레이션 상태를 확인할 수 없습니다.')
     }
-  }
+  }, [])
 
   // 데이터 마이그레이션 실행 (교사, 수업, 학생 시간표 모두)
-  const handleMigrate = async (versionId: string) => {
+  const handleMigrate = useCallback(async (versionId: string) => {
     try {
       console.log('🚀 전체 마이그레이션 시작:', versionId)
       await apiService.migrateAllToVersion(versionId)
@@ -173,21 +173,21 @@ export const TimetableVersionManagementPage: React.FC = () => {
       console.error('❌ 마이그레이션 실패:', error)
       message.error('데이터 마이그레이션에 실패했습니다.')
     }
-  }
+  }, [checkMigrationStatus])
 
   // 마이그레이션 확인
-  const handleMigrationConfirm = (version: TimetableVersion) => {
+  const handleMigrationConfirm = useCallback((version: TimetableVersion) => {
     console.log('📝 마이그레이션 확인 모달 열기:', version.id, version.name)
     setSelectedMigrationVersion(version)
     setIsMigrationConfirmOpen(true)
-  }
+  }, [])
 
   // 마이그레이션 모달 열기
-  const openMigrationModal = async () => {
+  const openMigrationModal = useCallback(async () => {
     console.log('📂 마이그레이션 모달 열기, 현재 버전 수:', versions.length)
     await checkMigrationStatus()
     setIsMigrationModalOpen(true)
-  }
+  }, [versions, checkMigrationStatus])
 
   const columns: ColumnsType<TimetableVersion> = [
     {

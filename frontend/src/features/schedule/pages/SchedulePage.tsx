@@ -46,13 +46,6 @@ function SchedulePage() {
   const [isClassDetailModalOpen, setIsClassDetailModalOpen] = useState(false)
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
 
-  // 학생 선택 시 또는 버전 변경 시 시간표 로드
-  useEffect(() => {
-    if (selectedStudent && selectedVersion) {
-      loadTimetable(selectedStudent)
-    }
-  }, [selectedStudent, selectedVersion])
-
   // 시간표 로드 함수
   const loadTimetable = useCallback(async (student: Student) => {
     if (!student || !selectedVersion) return
@@ -112,6 +105,13 @@ function SchedulePage() {
       setIsTimetableLoading(false)
     }
   }, [selectedVersion])
+
+  // 학생 선택 시 또는 버전 변경 시 시간표 로드
+  useEffect(() => {
+    if (selectedStudent && selectedVersion) {
+      loadTimetable(selectedStudent)
+    }
+  }, [selectedStudent, selectedVersion, loadTimetable])
 
   // 학생 선택 핸들러
   const handleStudentSelect = useCallback((student: Student) => {
@@ -267,22 +267,22 @@ function SchedulePage() {
             ) : (
               <div className="student-list">
                 {searchResults.map((student) => (
-                  <div 
-                    key={student.id} 
+                  <div
+                    key={student.id}
                     data-student-id={student.id}
-                    className={`student-item ${selectedStudent?.id === student.id ? 'selected' : ''}`}
+                    className={`schedule-student-item ${selectedStudent?.id === student.id ? 'selected' : ''}`}
                     onClick={() => handleStudentSelect(student)}
                   >
-                    <div className="student-item-header">
-                      <div className="student-item-name">
+                    <div className="schedule-student-item-header">
+                      <div className="schedule-student-item-name">
                         {student.name}
                       </div>
-                      <span className={`student-status ${student.status}`}>
-                        {student.status === 'active' ? '활성' : 
+                      <span className={`schedule-student-status ${student.status}`}>
+                        {student.status === 'active' ? '활성' :
                          student.status === 'inactive' ? '비활성' : '완료'}
                       </span>
                     </div>
-                    <div className="student-item-details">
+                    <div className="schedule-student-item-details">
                       <div className="detail-row">
                         <span className="detail-label">학년:</span>
                         <span className="detail-value">{student.grade}</span>

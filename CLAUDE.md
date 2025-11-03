@@ -46,6 +46,7 @@ npm run build:watch    # Watch mode
 # Shared modules
 cd shared
 npx tsc                # Build shared types/utilities
+npm run dev            # Watch mode for development
 ```
 
 ### Linting and Quality
@@ -67,6 +68,9 @@ cd functions && npm run logs
 
 # Complete Firebase deployment
 firebase deploy
+
+# Interactive deployment script (prompts for environment selection)
+./deploy.sh
 ```
 
 ## Architecture Overview
@@ -102,7 +106,7 @@ wiseUp_management_system/
 
 #### State Management
 - Redux store with feature-based slices
-- Context API for UI state (AppContext)
+- Context API for UI state (AppContext) and version management (TimetableVersionContext)
 - Custom hooks for data fetching and business logic
 
 ### Backend Architecture
@@ -115,14 +119,20 @@ wiseUp_management_system/
 
 #### API Structure
 ```
-/api/students          # Student management
-/api/attendance        # Attendance tracking  
-/api/teachers          # Teacher management
-/api/class-section     # Class/section management
-/api/student-timetable # Timetable operations
-/api/courses           # Course management
-/api/classrooms        # Classroom management
-/api/seats             # Seating arrangements
+/api/students              # Student management
+/api/attendance            # Attendance tracking
+/api/teachers              # Teacher management
+/api/class-sections        # Class/section management
+/api/student-timetables    # Student timetable operations
+/api/timetable-versions    # Timetable version management
+/api/courses               # Course management
+/api/classrooms            # Classroom management
+/api/seats                 # Seating arrangements
+/api/seat-assignments      # Seat assignment operations
+/api/student-summaries     # Student summary data
+/api/parents               # Parent management
+/api/colors                # Color palette management
+/api/initialization        # Test data initialization (emulator only)
 ```
 
 #### Shared Module
@@ -140,10 +150,16 @@ wiseUp_management_system/
 The root `tsconfig.json` provides path mappings:
 ```typescript
 "@shared/*": ["shared/*"]
-"@frontend/*": ["frontend/src/*"]  
+"@frontend/*": ["frontend/src/*"]
 "@functions/*": ["functions/src/*"]
+"@backend/*": ["functions/src/*"]
 "@components/*": ["frontend/src/components/*"]
 "@features/*": ["frontend/src/features/*"]
+"@hooks/*": ["frontend/src/hooks/*"]
+"@services/*": ["frontend/src/services/*"]
+"@store/*": ["frontend/src/store/*"]
+"@config/*": ["frontend/src/config/*"]
+"@utils/*": ["frontend/src/utils/*"]
 ```
 
 ## Firebase Configuration
@@ -151,8 +167,12 @@ The root `tsconfig.json` provides path mappings:
 ### Emulator Setup
 - **Functions**: localhost:5001
 - **Firestore**: localhost:8080
-- **UI**: localhost:4001
-- **Frontend**: localhost:5173
+- **Emulator UI**: localhost:4001 or localhost:4002 (auto-fallback)
+- **Frontend Dev Server**: localhost:5173
+
+### Firebase Deployment Region
+- **Functions Region**: asia-northeast3 (configured for data residency with Firestore)
+- This region alignment is critical for performance and data compliance
 
 ### Environment Variables
 - `JWT_SECRET`: Set in development via dev.sh script
@@ -182,9 +202,15 @@ The root `tsconfig.json` provides path mappings:
 
 ### Making Changes
 1. Use `./dev.sh` to start the complete development environment
+   - This script kills existing processes, builds all modules, starts emulators, initializes sample data, and starts the frontend dev server
+   - Includes automatic health checks for all services
 2. Frontend changes hot-reload automatically
-3. Backend changes require restart (npm run build:watch helps)
-4. Shared module changes require rebuilding: `cd shared && npx tsc`
+3. Backend changes require restart (use `npm run build:watch` in functions/ for continuous compilation)
+4. Shared module changes require rebuilding: `cd shared && npx tsc` (or use `npm run dev` for watch mode)
+5. **Build Order Dependency**: Always build in this order when making type changes:
+   - Shared module first (`cd shared && npx tsc`)
+   - Backend second (`cd functions && npm run build`)
+   - Frontend last (`cd frontend && npm run build`)
 
 ### Code Style
 - ESLint configured for both frontend and backend
@@ -342,3 +368,17 @@ await this.service.method(params, versionId);
 ### Mixed version IDs in classSectionIds array
 **Cause**: Manual data manipulation or version migration not completed
 **Solution**: Run cleanup script to filter `classSectionIds` by matching `ClassSection.versionId`
+
+## Additional Documentation
+
+The repository contains extensive planning and implementation documentation:
+
+- **timetable-version-system-plan.md** - Comprehensive version system architecture and implementation details
+- **STUDENT_ENROLLMENT_VERSION_FIX.md** - Student enrollment migration patterns and troubleshooting
+- **VERSION_BASED_CLASS_TEACHER_PLAN.md** - Class and teacher versioning architecture
+- **EDIT_MODAL_IMPLEMENTATION_PLAN.md** - Modal dialog implementation patterns
+- **database_structure.md** - Firestore schema documentation
+- **FIRESTORE_INDEXES.md** - Required Firestore indexes for queries
+- **README.md** - Project overview with Korean documentation
+
+Consult these documents when working on related features or troubleshooting issues.
