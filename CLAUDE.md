@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 WiseUp Management System is a full-stack educational management application for online academies. It features a React + TypeScript frontend with Vite, and a Firebase Functions + Firestore backend. The system manages students, teachers, classes, attendance, and timetables with advanced features like drag-and-drop timetable editing and bulk PDF/image generation.
 
+**Node.js Version**: Functions require Node.js 20 (specified in functions/package.json engines field). The Firebase Functions runtime enforces this version.
+
 ## Development Commands
 
 ### Starting the Development Environment
@@ -40,7 +42,7 @@ npm run build:test     # Test environment build
 
 # Backend
 cd functions
-npm run build          # TypeScript compilation
+npm run build          # TypeScript compilation (includes post-build script for cleanup)
 npm run build:watch    # Watch mode
 
 # Shared modules
@@ -69,8 +71,14 @@ cd functions && npm run logs
 # Complete Firebase deployment
 firebase deploy
 
-# Interactive deployment script (prompts for environment selection)
+# Interactive deployment script (RECOMMENDED for production/test deployments)
 ./deploy.sh
+# This script:
+# 1. Prompts for project selection (production vs test)
+# 2. Cleans existing build files
+# 3. Builds shared modules, frontend (environment-specific), and functions
+# 4. Prompts for deployment type (full/hosting/functions only)
+# 5. Deploys to selected Firebase project with environment-specific configs
 ```
 
 ## Architecture Overview
@@ -137,9 +145,11 @@ wiseUp_management_system/
 
 #### Shared Module
 - Common types and utilities in `shared/`
+- Package name: `@wiseup/shared`
 - Centralized constants and API types
 - Database utilities and error handling
 - Built separately and imported by both frontend and backend
+- Must be built before frontend/backend when types change
 
 ### Database Design
 - **Firestore collections**: students, teachers, classes, attendance, timetables, etc.
@@ -167,16 +177,21 @@ The root `tsconfig.json` provides path mappings:
 ### Emulator Setup
 - **Functions**: localhost:5001
 - **Firestore**: localhost:8080
-- **Emulator UI**: localhost:4001 or localhost:4002 (auto-fallback)
-- **Frontend Dev Server**: localhost:5173
+- **Emulator UI**: localhost:4001 (configured in firebase.json; may auto-select 4002 if port conflict)
+- **Frontend Dev Server**: localhost:5173 (Vite default)
 
 ### Firebase Deployment Region
 - **Functions Region**: asia-northeast3 (configured for data residency with Firestore)
 - This region alignment is critical for performance and data compliance
 
 ### Environment Variables
-- `JWT_SECRET`: Set in development via dev.sh script
+- `JWT_SECRET`: Set in development via dev.sh script (exported before emulator start)
 - `NODE_ENV`: Automatically configured based on build mode
+- Frontend environment files:
+  - `.env` - Production configuration (used by `npm run build`)
+  - `.env.test` - Test configuration (used by `npm run build:test`)
+  - `.env.local` - Local development configuration (used by `npm run build:local`)
+- Critical frontend env vars: `VITE_API_BASE_URL`, `VITE_FIREBASE_PROJECT_ID`
 
 ## Critical Architectural Patterns
 
