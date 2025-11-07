@@ -426,3 +426,87 @@
     min-width: 250px;
   }
 }
+
+/* 🆕 드래그 앤 드롭 관련 스타일 */
+
+/* 수업 목록 드롭 존 - 상대 위치 지정 */
+.class-list-section {
+  position: relative;
+  transition: background-color 0.2s, border 0.2s;
+}
+
+/* 드롭 가능한 상태 - 테두리 표시 */
+.class-list-section.drop-can {
+  border: 2px dashed #ff4d4f;
+  border-radius: 8px;
+}
+
+/* 드롭 오버 상태 - 배경색 변경 */
+.class-list-section.drop-over {
+  background-color: rgba(255, 77, 79, 0.05);
+}
+
+/* 드롭 힌트 메시지 */
+.drop-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 32px;
+  background-color: rgba(255, 77, 79, 0.95);
+  color: white;
+  border-radius: 12px;
+  font-weight: 600;
+  pointer-events: none;
+  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(255, 77, 79, 0.3);
+  animation: pulse-hint 0.8s ease-in-out infinite;
+}
+
+.drop-hint-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.drop-hint-text {
+  font-size: 16px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+@keyframes pulse-hint {
+  0%, 100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+}
+
+/* 시간표 위젯 내 드래그 가능한 수업 카드 스타일 */
+.timetable-class-overlay.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: grabbing !important;
+}
+
+.timetable-class-overlay {
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+/* 드래그 중일 때 커서 스타일 */
+.edit-timetable-widget .timetable-class-overlay {
+  cursor: move;
+}
+
+.edit-timetable-widget .timetable-class-overlay:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}

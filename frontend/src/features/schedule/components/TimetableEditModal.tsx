@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { useDrag } from 'react-dnd'
+import { useDrag, useDrop } from 'react-dnd'
 import type { Student } from '@shared/types'
 import type { StudentTimetableResponse } from '../types/timetable.types'
 import type { ClassSectionWithDetails } from '../../class/types/class.types'
@@ -59,6 +59,170 @@ const logColorInfo = (classSection: ClassSectionWithDetails, context: string): v
     finalColor: getClassColor(classSection),
     hasCustomColor: !!classSection.color
   })
+}
+
+// 드래그 가능한 수업 카드 컴포넌트 (모달 외부로 이동하여 재렌더링 시 재생성 방지)
+interface DraggableClassCardProps {
+  classSection: ClassSectionWithDetails
+  localTimetableData: any
+  student: Student | null
+  onRemove: (classSectionId: string) => void
+}
+
+const DraggableClassCard: React.FC<DraggableClassCardProps> = ({
+  classSection,
+  localTimetableData,
+  student,
+  onRemove
+}) => {
+  // 이미 시간표에 추가된 수업인지 확인 (로컬 편집 데이터와 직접 비교)
+  const isAlreadyAdded = useMemo(() => {
+    if (!localTimetableData || !localTimetableData.classSections) {
+      console.log(`🔍 ${classSection.name}: localTimetableData가 아직 로드되지 않음`)
+      return false
+    }
+
+    // 로컬 편집 데이터의 classSections에서 직접 ID 비교
+    const result = localTimetableData.classSections.some((cls: any) => cls.id === classSection.id)
+
+    console.log(`🔍 ${classSection.name}: 이미 추가됨 = ${result} (총 ${localTimetableData.classSections.length}개 수업)`)
+    return result
+  }, [localTimetableData, classSection.id, classSection.name])
+
+  const [{ isDragging }, drag] = useDrag({
+    type: 'class-section',
+    item: {
+      type: 'class-section',
+      classSection,
+      id: classSection.id
+    },
+    canDrag: !isAlreadyAdded, // 이미 추가된 수업은 드래그 불가
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging()
+    })
+  })
+
+  const dragRef = useRef<HTMLDivElement>(null)
+
+  // useEffect로 drag ref 연결 관리
+  useEffect(() => {
+    if (!isAlreadyAdded && dragRef.current) {
+      drag(dragRef.current)
+    }
+  }, [isAlreadyAdded, drag])
+
+  // 제거 버튼 클릭 핸들러
+  const handleRemoveClick = async () => {
+    if (!student) return
+
+    try {
+      console.log(`📚 ${student.name}에서 수업 제거 시작:`, classSection.id)
+      onRemove(classSection.id)
+    } catch (err) {
+      console.error('❌ 수업 제거 실패:', err)
+    }
+  }
+
+  return (
+    <div
+      ref={dragRef}
+      className={`class-card ${isDragging ? 'dragging' : ''} ${isAlreadyAdded ? 'disabled' : ''}`}
+      title={isAlreadyAdded ? '이미 시간표에 추가된 수업입니다' : '드래그하여 시간표에 추가'}
+    >
+      <div className="class-card-header">
+        <Label variant="heading" size="small">{classSection.name}</Label>
+        {isAlreadyAdded && (
+          <div className="already-added-badge">
+            <Label variant="secondary" size="small">추가됨</Label>
+          </div>
+        )}
+      </div>
+      <div className="class-card-details">
+        <Label variant="secondary" size="small">
+          선생님: {classSection.teacher?.name || '미정'}
+        </Label>
+        <Label variant="secondary" size="small">
+          강의실: {classSection.classroom?.name || '미정'}
+        </Label>
+        <Label variant="secondary" size="small">
+          학생: {classSection.currentStudents || 0}/{classSection.maxStudents}
+        </Label>
+      </div>
+      <div className="class-card-schedules">
+        {classSection.schedule && classSection.schedule.length > 0 ? (
+          classSection.schedule.map((schedule, index) => {
+            const dayName = DAY_MAPPING[schedule.dayOfWeek] || schedule.dayOfWeek
+            return (
+              <div key={index} className="schedule-item">
+                {dayName} {schedule.startTime}~{schedule.endTime}
+              </div>
+            )
+          })
+        ) : (
+          <div className="schedule-item no-schedule">시간 미정</div>
+        )}
+      </div>
+
+      {/* 제거 버튼 - 이미 추가된 수업에만 표시 */}
+      {isAlreadyAdded && (
+        <div className="class-card-actions" onClick={(e) => e.stopPropagation()}>
+          <Button
+            onClick={handleRemoveClick}
+            variant="danger"
+            size="small"
+            className="remove-button"
+          >
+            제거
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// 수업 목록 드롭 존 컴포넌트 (모달 외부로 이동하여 재렌더링 시 재생성 방지)
+interface ClassListDropZoneProps {
+  children: React.ReactNode
+  onRemoveClass: (classSectionId: string) => void
+}
+
+const ClassListDropZone: React.FC<ClassListDropZoneProps> = ({ children, onRemoveClass }) => {
+  const [{ isOver, canDrop }, drop] = useDrop({
+    accept: 'timetable-class-remove',
+    drop: (item: any) => {
+      if (item.source === 'timetable' && item.classSection) {
+        console.log('🗑️ 드롭 존에서 수업 제거:', item.classSection.id)
+        onRemoveClass(item.classSection.id)
+      }
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+      canDrop: monitor.canDrop()
+    })
+  })
+
+  const dropRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (dropRef.current) {
+      drop(dropRef.current)
+    }
+  }, [drop])
+
+  return (
+    <div
+      ref={dropRef}
+      className={`class-list-section ${isOver ? 'drop-over' : ''} ${canDrop ? 'drop-can' : ''}`}
+    >
+      {children}
+      {isOver && canDrop && (
+        <div className="drop-hint">
+          <div className="drop-hint-icon">🗑️</div>
+          <div className="drop-hint-text">여기에 놓으면 시간표에서 제거됩니다</div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
@@ -244,12 +408,12 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
       const aIsAdded = addedClassIds.has(a.id)
       const bIsAdded = addedClassIds.has(b.id)
 
-      // 추가된 수업을 먼저 (true는 1, false는 0으로 변환하여 내림차순 정렬)
+      // 1차 정렬: 추가된 수업을 먼저 (true는 1, false는 0으로 변환하여 내림차순 정렬)
       if (aIsAdded && !bIsAdded) return -1
       if (!aIsAdded && bIsAdded) return 1
 
-      // 같은 그룹 내에서는 원래 순서 유지
-      return 0
+      // 2차 정렬: 같은 그룹 내에서 이름 오름차순 (ㄱ → ㅎ)
+      return a.name.localeCompare(b.name, 'ko')
     })
   }, [filteredClasses, localTimetableData])
 
@@ -269,140 +433,48 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
     }
   }, [availableClasses])
 
-  // 드래그 가능한 수업 카드 컴포넌트
-  const DraggableClassCard: React.FC<{ classSection: ClassSectionWithDetails }> = ({ classSection }) => {
-    // 이미 시간표에 추가된 수업인지 확인 (로컬 편집 데이터와 직접 비교)
-    const isAlreadyAdded = useMemo(() => {
-      if (!localTimetableData || !localTimetableData.classSections) {
-        console.log(`🔍 ${classSection.name}: localTimetableData가 아직 로드되지 않음`)
-        return false
+  // 제거 핸들러 (외부 DraggableClassCard 컴포넌트에서 사용)
+  const handleRemoveFromCard = useCallback(async (classSectionId: string) => {
+    if (!student) return
+
+    try {
+      console.log(`📚 ${student.name}에서 수업 제거 시작:`, classSectionId)
+
+      // 로컬 상태에서만 제거 (DB에는 저장하지 않음)
+      const updatedLocalData = {
+        ...localTimetableData,
+        classSections: localTimetableData.classSections.filter((cls: any) => cls.id !== classSectionId)
       }
-      
-      // 로컬 편집 데이터의 classSections에서 직접 ID 비교
-      const result = localTimetableData.classSections.some((cls: any) => cls.id === classSection.id)
-      
-      console.log(`🔍 ${classSection.name}: 이미 추가됨 = ${result} (총 ${localTimetableData.classSections.length}개 수업)`)
-      return result
-    }, [localTimetableData, classSection.id])
 
-    const [{ isDragging }, drag] = useDrag({
-      type: 'class-section',
-      item: {
-        type: 'class-section',
-        classSection,
-        id: classSection.id
-      },
-      canDrag: !isAlreadyAdded, // 이미 추가된 수업은 드래그 불가
-      collect: (monitor) => ({
-        isDragging: monitor.isDragging()
-      })
-    })
+      setLocalTimetableData(updatedLocalData)
 
-    const dragRef = useRef<HTMLDivElement>(null)
-    
-    // useEffect로 drag ref 연결 관리
-    useEffect(() => {
-      if (!isAlreadyAdded && dragRef.current) {
-        drag(dragRef.current)
-      }
-    }, [isAlreadyAdded, drag])
-
-    // 제거 버튼 클릭 핸들러
-    const handleRemoveClick = async () => {
-      if (!student) return
-      
-      try {
-        console.log(`📚 ${student.name}에서 수업 제거 시작:`, classSection.id)
-        
-        // 로컬 상태에서만 제거 (DB에는 저장하지 않음)
-        const updatedLocalData = {
-          ...localTimetableData,
-          classSections: localTimetableData.classSections.filter((cls: any) => cls.id !== classSection.id)
+      // 시간표 UI 업데이트 - useTimetable 훅이 기대하는 구조로 변환
+      const updatedTimetableForDisplay = {
+        classSections: updatedLocalData.classSections,
+        conflicts: [],
+        metadata: {
+          studentId: updatedLocalData.studentId,
+          studentName: updatedLocalData.studentName,
+          grade: updatedLocalData.grade,
+          status: updatedLocalData.status
         }
-        
-        setLocalTimetableData(updatedLocalData)
-        
-        // 시간표 UI 업데이트 - useTimetable 훅이 기대하는 구조로 변환
-        const updatedTimetableForDisplay = {
-          classSections: updatedLocalData.classSections,
-          conflicts: [],
-          metadata: {
-            studentId: updatedLocalData.studentId,
-            studentName: updatedLocalData.studentName,
-            grade: updatedLocalData.grade,
-            status: updatedLocalData.status
-          }
-        }
-        
-        setCurrentTimetable(updatedTimetableForDisplay)
-        setError(null)
-        setHasUnsavedChanges(true) // 저장되지 않은 변경사항 표시
-        
-        console.log('🎉 로컬 시간표에서 수업이 제거되었습니다. (저장 버튼을 눌러주세요)')
-        
-      } catch (err) {
-        console.error('❌ 수업 제거 실패:', err)
-        setError('수업을 제거하는 중 오류가 발생했습니다.')
       }
+
+      setCurrentTimetable(updatedTimetableForDisplay)
+      setError(null)
+      setHasUnsavedChanges(true) // 저장되지 않은 변경사항 표시
+
+      console.log('🎉 로컬 시간표에서 수업이 제거되었습니다. (저장 버튼을 눌러주세요)')
+
+    } catch (err) {
+      console.error('❌ 수업 제거 실패:', err)
+      setError('수업을 제거하는 중 오류가 발생했습니다.')
     }
+  }, [student, localTimetableData, setLocalTimetableData, setCurrentTimetable, setError, setHasUnsavedChanges])
 
-    return (
-      <div 
-        ref={dragRef}
-        className={`class-card ${isDragging ? 'dragging' : ''} ${isAlreadyAdded ? 'disabled' : ''}`}
-        title={isAlreadyAdded ? '이미 시간표에 추가된 수업입니다' : '드래그하여 시간표에 추가'}
-      >
-        <div className="class-card-header">
-          <Label variant="heading" size="small">{classSection.name}</Label>
-          {isAlreadyAdded && (
-            <div className="already-added-badge">
-              <Label variant="secondary" size="small">추가됨</Label>
-            </div>
-          )}
-        </div>
-        <div className="class-card-details">
-          <Label variant="secondary" size="small">
-            선생님: {classSection.teacher?.name || '미정'}
-          </Label>
-          <Label variant="secondary" size="small">
-            강의실: {classSection.classroom?.name || '미정'}
-          </Label>
-        </div>
-        <div className="class-card-schedules">
-          {classSection.schedule && classSection.schedule.length > 0 ? (
-            classSection.schedule.map((schedule, index) => {
-              const dayName = DAY_MAPPING[schedule.dayOfWeek] || schedule.dayOfWeek
-              return (
-                <div key={index} className="schedule-item">
-                  {dayName} {schedule.startTime}~{schedule.endTime}
-                </div>
-              )
-            })
-          ) : (
-            <div className="schedule-item no-schedule">시간 미정</div>
-          )}
-        </div>
-        
-        {/* 제거 버튼 - 이미 추가된 수업에만 표시 */}
-        {isAlreadyAdded && (
-          <div className="class-card-actions" onClick={(e) => e.stopPropagation()}>
-            <Button
-              onClick={handleRemoveClick}
-              variant="danger"
-              size="small"
-              className="remove-button"
-            >
-              제거
-            </Button>
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  // 검색 핸들러
+  // 검색 핸들러 (onChange에서 이미 setSearchTerm을 호출하므로 중복 제거)
   const handleSearch = useCallback((value: string) => {
-    setSearchTerm(value)
+    // setSearchTerm(value) ← 제거: onChange prop이 이미 호출함
 
     if (!value.trim()) {
       // 검색어가 없으면 모든 수업 표시
@@ -711,7 +783,46 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
     }
   }, [handleAddClass])
 
-  // 수업 제거 함수
+  // 🆕 드래그로 시간표에서 제거하는 핸들러 (로컬 상태만 변경)
+  const handleRemoveFromTimetable = useCallback(async (classSectionId: string) => {
+    if (!student) return
+
+    try {
+      console.log(`🗑️ 드래그로 수업 제거:`, classSectionId)
+
+      // 로컬 상태에서만 제거 (DB에는 저장하지 않음)
+      const updatedLocalData = {
+        ...localTimetableData,
+        classSections: localTimetableData.classSections.filter((cls: any) => cls.id !== classSectionId)
+      }
+
+      setLocalTimetableData(updatedLocalData)
+
+      // 시간표 UI 업데이트 - useTimetable 훅이 기대하는 구조로 변환
+      const updatedTimetableForDisplay = {
+        classSections: updatedLocalData.classSections,
+        conflicts: [],
+        metadata: {
+          studentId: updatedLocalData.studentId,
+          studentName: updatedLocalData.studentName,
+          grade: updatedLocalData.grade,
+          status: updatedLocalData.status
+        }
+      }
+
+      setCurrentTimetable(updatedTimetableForDisplay)
+      setError(null)
+      setHasUnsavedChanges(true) // 저장되지 않은 변경사항 표시
+
+      console.log('🎉 드래그로 시간표에서 제거되었습니다. (저장 버튼을 눌러주세요)')
+
+    } catch (err) {
+      console.error('❌ 드래그 제거 실패:', err)
+      setError('수업을 제거하는 중 오류가 발생했습니다.')
+    }
+  }, [student, localTimetableData])
+
+  // 수업 제거 함수 (DB에 즉시 저장 - 사용되지 않음, 기존 코드 유지)
   const handleRemoveClass = useCallback(async (classSectionId: string) => {
     if (!student || !selectedVersion) return
 
@@ -820,14 +931,14 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
             ×
           </button>
         </div>
-                            {/* 좌측: 수업 카드 목록 */}
-                    <div className="class-list-section">
+                            {/* 좌측: 수업 카드 목록 - 🆕 드롭 존으로 감싸기 */}
+                    <ClassListDropZone onRemoveClass={handleRemoveFromTimetable}>
                       <div className="section-header">
                         <Label variant="heading" size="small">
                           수업 목록
                         </Label>
                         <div className="search-container">
-                          <SearchInput 
+                          <SearchInput
                             placeholder="수업명, 교사, 강의실, 과목으로 검색"
                             value={searchTerm}
                             onChange={setSearchTerm}
@@ -838,7 +949,7 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
                           />
                         </div>
                       </div>
-                      
+
                                             <div className="class-cards">
                         {/* 로딩 상태 */}
                         {isLoading && (
@@ -879,7 +990,13 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
                         {/* 수업 목록 표시 */}
                         {!isLoading && !error && sortedFilteredClasses.length > 0 && (
                           sortedFilteredClasses.map(classSection => (
-                            <DraggableClassCard key={classSection.id} classSection={classSection} />
+                            <DraggableClassCard
+                              key={classSection.id}
+                              classSection={classSection}
+                              localTimetableData={localTimetableData}
+                              student={student}
+                              onRemove={handleRemoveFromCard}
+                            />
                           ))
                         )}
 
@@ -899,8 +1016,8 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
                           </div>
                         )}
                       </div>
-                    </div>
-                    
+                    </ClassListDropZone>
+
                     {/* 우측: 학생 시간표 */}
                     <div className="timetable-section">
                       <div className="section-header">
@@ -922,12 +1039,13 @@ export const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
                         
                         {/* 시간표 표시 (데이터가 없어도 빈 레이아웃 표시) */}
                         {!isLoading && currentTimetable && (
-                          <TimetableWidget 
+                          <TimetableWidget
                             data={currentTimetable}
                             className="edit-timetable-widget"
                             startHour={TIMETABLE_CONFIG.startHour}
                             endHour={TIMETABLE_CONFIG.endHour}
                             onDrop={handleDrop}
+                            enableRemoveDrag={true} // 🆕 드래그로 제거 기능 활성화
                           />
                         )}
                       </div>

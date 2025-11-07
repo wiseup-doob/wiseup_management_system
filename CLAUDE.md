@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 WiseUp Management System is a full-stack educational management application for online academies. It features a React + TypeScript frontend with Vite, and a Firebase Functions + Firestore backend. The system manages students, teachers, classes, attendance, and timetables with advanced features like drag-and-drop timetable editing and bulk PDF/image generation.
 
-**Node.js Version**: Functions require Node.js 20 (specified in functions/package.json engines field). The Firebase Functions runtime enforces this version.
+**Key Technologies**: React 19, TypeScript, Vite, Firebase Functions, Firestore, Redux Toolkit, Ant Design, React DnD
+
+**Node.js Version**: Functions require Node.js 20 (specified in [functions/package.json](functions/package.json) engines field). The Firebase Functions runtime enforces this version.
 
 ## Development Commands
 
@@ -15,17 +17,19 @@ WiseUp Management System is a full-stack educational management application for 
 # Start complete development environment (recommended)
 ./dev.sh
 # This script:
-# 1. Kills existing processes
-# 2. Builds frontend, shared modules, and backend
-# 3. Starts Firebase emulators (functions, firestore, ui)
-# 4. Initializes sample data
-# 5. Starts frontend dev server
+# 1. Kills existing processes on ports: 5001, 4001, 4002, 4400-4502, 8080, 9099, 5173, 3000, 4173
+# 2. Builds frontend, shared modules, and backend (stops on build errors)
+# 3. Starts Firebase emulators (functions, firestore, ui) with JWT_SECRET env var
+# 4. Performs health checks on all services
+# 5. Initializes sample data via POST /api/initialization/all
+# 6. Starts frontend dev server
+# Logs written to: firebase-emulator.log
 
 # Alternative manual approach:
 # Frontend only
 cd frontend && npm run dev
 
-# Backend only  
+# Backend only
 cd functions && npm run serve
 
 # Build shared modules
@@ -180,6 +184,13 @@ The root `tsconfig.json` provides path mappings:
 - **Emulator UI**: localhost:4001 (configured in firebase.json; may auto-select 4002 if port conflict)
 - **Frontend Dev Server**: localhost:5173 (Vite default)
 
+### Firebase Projects
+The project is configured with multiple Firebase environments (in `.firebaserc`):
+- **Production**: `wiseupmanagementsystem-a6189` (default)
+- **Test**: `wiseupmanagementprogramtest` (test_project, test)
+
+Use `firebase use <project-name>` to switch between environments or use the `./deploy.sh` script which provides an interactive selection.
+
 ### Firebase Deployment Region
 - **Functions Region**: asia-northeast3 (configured for data residency with Firestore)
 - This region alignment is critical for performance and data compliance
@@ -187,11 +198,15 @@ The root `tsconfig.json` provides path mappings:
 ### Environment Variables
 - `JWT_SECRET`: Set in development via dev.sh script (exported before emulator start)
 - `NODE_ENV`: Automatically configured based on build mode
-- Frontend environment files:
+- Frontend environment files in `frontend/`:
   - `.env` - Production configuration (used by `npm run build`)
+    - `VITE_API_BASE_URL=https://asia-northeast3-wiseupmanagementsystem-a6189.cloudfunctions.net/api`
+    - `VITE_FIREBASE_PROJECT_ID=wiseupmanagementsystem-a6189`
   - `.env.test` - Test configuration (used by `npm run build:test`)
-  - `.env.local` - Local development configuration (used by `npm run build:local`)
-- Critical frontend env vars: `VITE_API_BASE_URL`, `VITE_FIREBASE_PROJECT_ID`
+    - `VITE_API_BASE_URL=https://asia-northeast3-wiseupmanagementprogramtest.cloudfunctions.net/api`
+    - `VITE_FIREBASE_PROJECT_ID=wiseupmanagementprogramtest`
+  - `.env.local` - Local development configuration (used by `npm run build:local`) - create if needed for local overrides
+- Critical frontend env vars: `VITE_API_BASE_URL`, `VITE_FIREBASE_PROJECT_ID`, `VITE_ENVIRONMENT`
 
 ## Critical Architectural Patterns
 
@@ -218,7 +233,12 @@ The root `tsconfig.json` provides path mappings:
 ### Making Changes
 1. Use `./dev.sh` to start the complete development environment
    - This script kills existing processes, builds all modules, starts emulators, initializes sample data, and starts the frontend dev server
-   - Includes automatic health checks for all services
+   - Includes automatic health checks for all services (Functions, Firestore, Emulator UI)
+   - Health check endpoints:
+     - Functions: `http://localhost:5001/wiseupmanagementsystem/us-central1/wiseupApi/api/health`
+     - Firestore: `http://localhost:8080/v1/projects/wiseupmanagementsystem/databases/(default)/documents`
+   - Automatically calls `/api/initialization/all` endpoint to populate sample data
+   - Logs are written to `firebase-emulator.log` in the root directory
 2. Frontend changes hot-reload automatically
 3. Backend changes require restart (use `npm run build:watch` in functions/ for continuous compilation)
 4. Shared module changes require rebuilding: `cd shared && npx tsc` (or use `npm run dev` for watch mode)
@@ -227,6 +247,8 @@ The root `tsconfig.json` provides path mappings:
    - Backend second (`cd functions && npm run build`)
    - Frontend last (`cd frontend && npm run build`)
 
+   **IMPORTANT**: The shared module (`@wiseup/shared`) is a critical dependency. Any changes to types or utilities in the shared module require rebuilding it first before rebuilding dependent projects (functions and frontend).
+
 ### Code Style
 - ESLint configured for both frontend and backend
 - TypeScript strict mode enabled
@@ -234,9 +256,10 @@ The root `tsconfig.json` provides path mappings:
 - Consistent naming conventions across modules
 
 ### Testing
-- Backend has Firebase Functions testing setup
+- Backend has Firebase Functions testing setup (firebase-functions-test)
 - Frontend uses Vite's built-in testing capabilities
 - Always run linting before committing
+- Use Firebase emulators for integration testing (started automatically by `./dev.sh`)
 
 ## Important Implementation Details
 
@@ -357,6 +380,14 @@ await apiService.myMethod(params, activeVersionId);
 
 ## Troubleshooting Common Issues
 
+### Port already in use errors
+**Symptoms**: Cannot start emulators or dev server, "port already in use" errors
+**Cause**: Previous processes not properly terminated
+**Solution**:
+- The `./dev.sh` script automatically kills existing processes on ports: 5001, 4001, 4002, 4400-4502, 8080, 9099, 5173, 3000, 4173
+- If manual cleanup needed: `lsof -ti:<port> | xargs kill -9`
+- Check running Firebase processes: `ps aux | grep -E "(firebase|emulator)"`
+
 ### "학생 시간표를 찾을 수 없습니다" (Student timetable not found)
 **Cause**: Version mismatch - student has timetable in different version than active version
 **Solution**:
@@ -388,12 +419,40 @@ await this.service.method(params, versionId);
 
 The repository contains extensive planning and implementation documentation:
 
-- **timetable-version-system-plan.md** - Comprehensive version system architecture and implementation details
-- **STUDENT_ENROLLMENT_VERSION_FIX.md** - Student enrollment migration patterns and troubleshooting
-- **VERSION_BASED_CLASS_TEACHER_PLAN.md** - Class and teacher versioning architecture
-- **EDIT_MODAL_IMPLEMENTATION_PLAN.md** - Modal dialog implementation patterns
-- **database_structure.md** - Firestore schema documentation
-- **FIRESTORE_INDEXES.md** - Required Firestore indexes for queries
-- **README.md** - Project overview with Korean documentation
+- **[timetable-version-system-plan.md](timetable-version-system-plan.md)** - Comprehensive version system architecture and implementation details
+- **[STUDENT_ENROLLMENT_VERSION_FIX.md](STUDENT_ENROLLMENT_VERSION_FIX.md)** - Student enrollment migration patterns and troubleshooting
+- **[VERSION_BASED_CLASS_TEACHER_PLAN.md](VERSION_BASED_CLASS_TEACHER_PLAN.md)** - Class and teacher versioning architecture
+- **[EDIT_MODAL_IMPLEMENTATION_PLAN.md](EDIT_MODAL_IMPLEMENTATION_PLAN.md)** - Modal dialog implementation patterns
+- **[database_structure.md](database_structure.md)** - Firestore schema documentation
+- **[FIRESTORE_INDEXES.md](FIRESTORE_INDEXES.md)** - Required Firestore indexes for queries
+- **[README.md](README.md)** - Project overview with Korean documentation
+- **[ACTIVE_VERSION_PLAN_REVIEW.md](ACTIVE_VERSION_PLAN_REVIEW.md)** - Review of active version implementation
+- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Summary of implementation progress
 
 Consult these documents when working on related features or troubleshooting issues.
+
+## Key Project Modules and Files
+
+### Frontend Structure
+- **[components/business/timetable/](frontend/src/components/business/timetable/)** - Timetable widget with drag-and-drop, download, and PDF generation
+  - `TimetableWidget.tsx` - Main timetable component
+  - `TimetableDownloadModal.tsx` - Individual timetable download
+  - `BulkTimetableDownloadModal.tsx` - Bulk timetable download to ZIP
+  - `utils/timetableImageGenerator.ts` - html2canvas-based image/PDF generation
+- **[features/schedule/](frontend/src/features/schedule/)** - Schedule management with Redux
+  - `components/TimetableEditModal.tsx` - Modal for editing timetables
+  - `slice/classSlice.ts` - Redux slice for class/schedule state
+- **[features/](frontend/src/features/)** - Feature-based modules (attendance, auth, class, grades, schedule, students)
+- **[services/](frontend/src/services/)** - API service layer for backend communication
+
+### Backend Structure
+- **[functions/src/controllers/](functions/src/controllers/)** - Request/response handlers
+- **[functions/src/services/](functions/src/services/)** - Business logic layer
+- **[functions/src/routes/](functions/src/routes/)** - API route definitions
+- **[functions/src/index.ts](functions/src/index.ts)** - Express server setup and main entry point
+
+### Shared Module
+- **[shared/types/](shared/types/)** - TypeScript type definitions shared between frontend and backend
+- **[shared/constants/](shared/constants/)** - Shared constants and enums
+- **[shared/utils/](shared/utils/)** - Shared utility functions
+- **[shared/index.ts](shared/index.ts)** - Module exports

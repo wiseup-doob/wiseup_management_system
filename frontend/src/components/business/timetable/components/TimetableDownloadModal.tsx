@@ -54,18 +54,14 @@ export const TimetableDownloadModal: React.FC<TimetableDownloadModalProps> = ({
   const calculateTimetableSize = useCallback(() => {
     if (timetableRef.current) {
       const rect = timetableRef.current.getBoundingClientRect()
-      const computedStyle = window.getComputedStyle(timetableRef.current)
-      
-      // 스크롤바를 포함한 전체 크기 계산
       const scrollWidth = timetableRef.current.scrollWidth
       const scrollHeight = timetableRef.current.scrollHeight
-      
-      console.log('시간표 크기 계산:', {
-        rect: { width: rect.width, height: rect.height },
-        scroll: { width: scrollWidth, height: scrollHeight },
-        computed: { width: computedStyle.width, height: computedStyle.height }
+
+      console.log('시간표 미리보기 컨테이너 크기 계산:', {
+        표시크기: { width: rect.width, height: rect.height },
+        실제크기: { width: scrollWidth, height: scrollHeight }
       })
-      
+
       setTimetableSize({
         width: Math.max(scrollWidth, rect.width),
         height: Math.max(scrollHeight, rect.height)
@@ -131,23 +127,29 @@ export const TimetableDownloadModal: React.FC<TimetableDownloadModalProps> = ({
   
   // 다운로드 실행
   const handleDownload = async () => {
-    // 미리보기 영역 전체를 캡쳐
-    const previewElement = document.querySelector('.timetable-preview')
-    if (!previewElement) {
-      console.error('미리보기 영역을 찾을 수 없습니다.')  
+    // 학생 이름 + 시간표 컨테이너를 캡쳐
+    const containerElement = document.querySelector('.timetable-with-name')
+    if (!containerElement) {
+      console.error('시간표 컨테이너를 찾을 수 없습니다.')
       return
     }
-    
+
     // 커스텀 파일명이 있으면 옵션에 적용
     if (customFilename.trim()) {
       updateDownloadOptions({ filename: customFilename.trim() })
     }
-    
-    console.log('미리보기 영역 캡쳐 시작:', previewElement)
-    console.log('시간표 크기:', timetableSize)
-    
-    // 미리보기 영역 전체를 캡쳐
-    await downloadTimetable(previewElement as HTMLElement)
+
+    console.log('시간표 컨테이너 캡쳐 시작:', containerElement)
+    console.log('컨테이너 실제 크기:', {
+      clientWidth: containerElement.clientWidth,
+      clientHeight: containerElement.clientHeight,
+      scrollWidth: containerElement.scrollWidth,
+      scrollHeight: containerElement.scrollHeight
+    })
+    console.log('계산된 시간표 크기:', timetableSize)
+
+    // 학생 이름 + 시간표 전체를 캡쳐
+    await downloadTimetable(containerElement as HTMLElement)
   }
   
   // 다운로드 옵션 변경 핸들러들
@@ -388,7 +390,24 @@ export const TimetableDownloadModal: React.FC<TimetableDownloadModalProps> = ({
             </div>
             
             {/* 시간표 미리보기 */}
-            <div className="timetable-preview" ref={timetableRef}>
+            <div className="timetable-with-name" style={{
+              background: 'white',
+              padding: '20px',
+              width: '100%',
+              boxSizing: 'border-box'
+            }}>
+              {studentInfo?.name && (
+                <h2 style={{
+                  margin: '0 0 16px 0',
+                  fontSize: '24px',
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  color: '#1a1a1a',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {studentInfo.name}
+                </h2>
+              )}
               <TimetableWidget
                 data={timetableData}
                 startHour={9}
@@ -396,7 +415,6 @@ export const TimetableDownloadModal: React.FC<TimetableDownloadModalProps> = ({
                 showConflicts={true}
                 showEmptySlots={true}
                 showTimeLabels={true}
-                className="download-preview-timetable"
               />
             </div>
             

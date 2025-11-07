@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useEffect, useState, useMemo } from 'react'
-import { useDrop } from 'react-dnd'
+import { useDrop, useDrag } from 'react-dnd'
 import type { TimetableGrid, TimetableClass } from './types/timetable.types'
 import { TIMETABLE_CONSTANTS, DAYS } from './constants/timetable.constants'
 import { timeCalculations } from './utils/timeCalculations'
@@ -19,6 +19,7 @@ export interface TimetableWidgetProps {
   showTimeLabels?: boolean
   onClassClick?: (classData: TimetableClass) => void
   onDrop?: (item: any) => void
+  enableRemoveDrag?: boolean // 🆕 시간표에서 드래그로 제거 기능 활성화 옵션
   className?: string
 }
 
@@ -85,6 +86,83 @@ const processOverlappingClasses = (classes: TimetableClass[]): (TimetableClass &
   }))
 }
 
+// 🆕 드래그 가능한 시간표 수업 카드 컴포넌트
+interface DraggableTimetableClassProps {
+  cls: TimetableClass
+  dayOfWeek: string
+  position: { left: number; top: number; width: number; height: number }
+  isOverlapped: boolean
+  overlapWidth: number
+  overlapLeft: number
+  zIndex: number
+  onClassClick?: (classData: TimetableClass) => void
+  enableDrag: boolean
+}
+
+const DraggableTimetableClass: React.FC<DraggableTimetableClassProps> = ({
+  cls,
+  dayOfWeek,
+  position,
+  isOverlapped,
+  overlapWidth,
+  overlapLeft,
+  zIndex,
+  onClassClick,
+  enableDrag
+}) => {
+  const [{ isDragging }, drag] = useDrag({
+    type: 'timetable-class-remove',
+    item: {
+      type: 'timetable-class-remove',
+      classSection: cls,
+      id: cls.id,
+      source: 'timetable',
+      dayOfWeek
+    },
+    canDrag: enableDrag,
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging()
+    })
+  })
+
+  const dragRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (enableDrag && dragRef.current) {
+      drag(dragRef.current)
+    }
+  }, [enableDrag, drag])
+
+  return (
+    <div
+      ref={dragRef}
+      className={`timetable-class-overlay ${isDragging ? 'dragging' : ''}`}
+      style={{
+        position: 'absolute',
+        left: isOverlapped
+          ? `${position.left + (overlapLeft * position.width / 100)}px`
+          : `${position.left}px`,
+        top: `${position.top}px`,
+        width: isOverlapped
+          ? `${overlapWidth * position.width / 100}px`
+          : `${position.width}px`,
+        height: `${position.height}px`,
+        backgroundColor: cls.color || 'var(--timetable-accent-color)',
+        zIndex: zIndex,
+        cursor: enableDrag ? 'move' : (onClassClick ? 'pointer' : 'default'),
+        opacity: isDragging ? 0.5 : 1,
+        transition: isDragging ? 'none' : 'opacity 0.2s, transform 0.2s'
+      }}
+      onClick={() => !isDragging && onClassClick?.(cls)}
+    >
+      <TimetableCell
+        classData={cls}
+        className="timetable-cell-overlay"
+      />
+    </div>
+  )
+}
+
 export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
   data = [],
   startHour = 9,
@@ -95,6 +173,7 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
   showTimeLabels = true,
   onClassClick,
   onDrop,
+  enableRemoveDrag = false,
   className = ''
 }) => {
   // 드롭 존 설정
@@ -313,44 +392,33 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
       {daySchedules?.map((daySchedule) => {
         const dayIndex = DAYS.indexOf(daySchedule.dayOfWeek)
         if (dayIndex === -1) return null
-        
+
         return daySchedule.classes.map((cls) => {
           const key = `${cls.id}-${daySchedule.dayOfWeek}`
           const position = classPositions[key]
-          
+
           if (!position) return null
-          
+
           // 겹침 레이아웃 정보 계산
           const isOverlapped = cls.layoutInfo?.isOverlapped || false
           const overlapWidth = isOverlapped && cls.layoutInfo ? parseFloat(cls.layoutInfo.width) : 100
           const overlapLeft = isOverlapped && cls.layoutInfo ? parseFloat(cls.layoutInfo.left) : 0
           const zIndex = cls.layoutInfo?.zIndex || 10
-          
+
+          // 🆕 드래그 가능한 컴포넌트 사용
           return (
-            <div
+            <DraggableTimetableClass
               key={key}
-              className="timetable-class-overlay"
-              style={{
-                position: 'absolute',
-                left: isOverlapped 
-                  ? `${position.left + (overlapLeft * position.width / 100)}px`
-                  : `${position.left}px`,
-                top: `${position.top}px`,
-                width: isOverlapped 
-                  ? `${overlapWidth * position.width / 100}px`
-                  : `${position.width}px`,
-                height: `${position.height}px`,
-                backgroundColor: cls.color || 'var(--timetable-accent-color)',
-                zIndex: zIndex,
-                cursor: onClassClick ? 'pointer' : 'default'
-              }}
-              onClick={() => onClassClick?.(cls)}
-            >
-              <TimetableCell 
-                classData={cls}
-                className="timetable-cell-overlay"
-              />
-            </div>
+              cls={cls}
+              dayOfWeek={daySchedule.dayOfWeek}
+              position={position}
+              isOverlapped={isOverlapped}
+              overlapWidth={overlapWidth}
+              overlapLeft={overlapLeft}
+              zIndex={zIndex}
+              onClassClick={onClassClick}
+              enableDrag={enableRemoveDrag}
+            />
           )
         })
       })}

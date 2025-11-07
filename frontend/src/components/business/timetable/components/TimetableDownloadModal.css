@@ -246,30 +246,8 @@
   font-size: 16px;
 }
 
-.timetable-preview {
-  width: 740px;
-  height: 892px;
-  margin: 0 auto;
-  overflow: hidden; /* 잘림 방지 */
-  box-sizing: border-box;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  background: white;
-  position: relative;
-}
-
-.download-preview-timetable {
-  width: 700px !important;
-  height: 852px !important;
-  min-width: 700px !important;
-  max-width: 700px !important;
-  min-height: 852px !important;
-  max-height: 852px !important;
-  overflow: hidden !important;
-  transform: scale(1) !important; /* 크기 고정 */
-  transform-origin: top left !important;
-  position: relative !important;
-}
+/* 시간표 미리보기 컨테이너 - 인라인 스타일 사용으로 CSS 제거됨 */
+/* .timetable-with-name 클래스는 인라인 스타일로 정의됨 */
 
 /* 시간표 크기 정보 */
 .timetable-size-info {
@@ -573,8 +551,9 @@
   .timetable-preview {
     padding: 12px;
   }
-  
+
   .download-preview-timetable {
-    min-width: 600px;
+    min-width: unset !important; /* 600px 제거 - 부모 크기에 맞춤 */
+    width: 100% !important;
   }
 }

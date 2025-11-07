@@ -339,7 +339,22 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
         
         root.render(
           <DndProvider backend={HTML5Backend}>
-            <div style={{ padding: '20px', background: 'white' }}>
+            <div className="timetable-with-name" style={{
+              background: 'white',
+              padding: '20px',
+              width: '100%',
+              boxSizing: 'border-box'
+            }}>
+              <h2 style={{
+                margin: '0 0 16px 0',
+                fontSize: '24px',
+                fontWeight: 'bold',
+                textAlign: 'center',
+                color: '#1a1a1a',
+                whiteSpace: 'nowrap'
+              }}>
+                {student.name}
+              </h2>
               <TimetableWidget
                 data={[timetableData]}
                 showConflicts={false}
@@ -349,18 +364,31 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
             </div>
           </DndProvider>
         )
-        
+
         // 렌더링 완료 대기
         await new Promise(resolve => setTimeout(resolve, 1000))
-        
+
         // html2canvas로 캡쳐
         const html2canvas = (await import('html2canvas')).default
-        const canvas = await html2canvas(renderArea, {
+
+        // 학생 이름 + 시간표 전체를 캡쳐
+        const containerElement = renderArea.querySelector('.timetable-with-name')
+        if (!containerElement) {
+          throw new Error('시간표 컨테이너를 찾을 수 없습니다')
+        }
+
+        const actualWidth = Math.max(containerElement.scrollWidth, containerElement.clientWidth)
+        const actualHeight = Math.max(containerElement.scrollHeight, containerElement.clientHeight)
+
+        console.log(`${student.name} 시간표 실제 크기:`, { actualWidth, actualHeight })
+
+        // 학생 이름 + 시간표 전체를 캡쳐
+        const canvas = await html2canvas(containerElement as HTMLElement, {
           allowTaint: true,
           useCORS: true,
           background: downloadOptions.backgroundColor || '#ffffff',
-          width: 740,
-          height: 892,
+          width: actualWidth,
+          height: actualHeight,
           logging: true
         })
         
@@ -696,26 +724,19 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
                 </div>
               </div>
               
-              {/* 🎯 시간표 렌더링 영역 추가 */}
-              <div className="timetable-render-area">
-                <h4>시간표 미리보기</h4>
-                <div 
-                  id="visible-timetable-render-area"
-                  style={{
-                    width: '100%',
-                    maxWidth: '800px',
-                    margin: '0 auto',
-                    padding: '20px',
-                    background: 'white',
-                    border: '1px solid #ddd',
-                    borderRadius: '8px',
-                    minHeight: '400px',
-                    overflow: 'hidden'
-                  }}
-                >
-                  <div className="timetable-placeholder">
-                    시간표가 여기에 렌더링됩니다...
-                  </div>
+              {/* 시간표 렌더링 영역 - 간소화 */}
+              <div
+                id="visible-timetable-render-area"
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  margin: '20px auto',
+                  overflow: 'auto'
+                }}
+              >
+                <div className="timetable-placeholder">
+                  시간표가 여기에 렌더링됩니다...
                 </div>
               </div>
               

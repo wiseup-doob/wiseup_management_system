@@ -299,7 +299,7 @@ const initialState: ClassState = {
   classes: [],
   selectedClass: null,
   searchTerm: '',
-  isLoading: false,
+  isLoading: true,  // 초기 로딩 상태를 true로 설정하여 마운트 시 스켈레톤 표시
   error: null,
   filters: {
     teacherName: '',

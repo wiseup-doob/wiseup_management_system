@@ -13,19 +13,30 @@ export class TimetableImageGenerator {
       
       // HTML2Canvas 동적 로딩
       const html2canvas = (await import('html2canvas')).default
-      
-      // 이미지 생성 옵션 설정 (미리보기 영역 최적화)
+
+      // 실제 시간표 콘텐츠 크기를 동적으로 계산
+      const actualWidth = Math.max(element.scrollWidth, element.clientWidth)
+      const actualHeight = Math.max(element.scrollHeight, element.clientHeight)
+
+      console.log('시간표 실제 크기 측정:', {
+        clientWidth: element.clientWidth,
+        clientHeight: element.clientHeight,
+        scrollWidth: element.scrollWidth,
+        scrollHeight: element.scrollHeight,
+        actualWidth,
+        actualHeight
+      })
+
+      // 이미지 생성 옵션 설정 (실제 콘텐츠 크기 기준)
       const canvasOptions = {
         allowTaint: true,
         useCORS: true,
         scale: downloadOptions.scale || 1,
         backgroundColor: downloadOptions.backgroundColor || '#ffffff',
-        width: 740, // 미리보기 영역 고정 너비
-        height: 892, // 미리보기 영역 고정 높이
+        width: actualWidth, // 실제 콘텐츠 너비 (약 700px)
+        height: actualHeight, // 실제 콘텐츠 높이 (약 890px)
         scrollX: 0,
         scrollY: 0,
-        windowWidth: 740,
-        windowHeight: 892,
         logging: false, // 로깅 비활성화
         removeContainer: true, // 컨테이너 제거
         foreignObjectRendering: false // 외부 객체 렌더링 비활성화
