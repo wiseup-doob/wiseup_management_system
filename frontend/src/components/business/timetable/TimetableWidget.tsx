@@ -20,6 +20,7 @@ export interface TimetableWidgetProps {
   onClassClick?: (classData: TimetableClass) => void
   onDrop?: (item: any) => void
   enableRemoveDrag?: boolean // 🆕 시간표에서 드래그로 제거 기능 활성화 옵션
+  onRenderComplete?: () => void // 🆕 시간표 렌더링 완료 콜백
   className?: string
 }
 
@@ -174,6 +175,7 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
   onClassClick,
   onDrop,
   enableRemoveDrag = false,
+  onRenderComplete, // 🆕 추가
   className = ''
 }) => {
   // 드롭 존 설정
@@ -318,10 +320,12 @@ export const TimetableWidget: React.FC<TimetableWidgetProps> = ({
   useEffect(() => {
     const timer = setTimeout(() => {
       calculateClassPositions()
+      // 🆕 렌더링 완료 콜백 호출
+      onRenderComplete?.()
     }, 100) // DOM 렌더링 완료 후 계산
-    
+
     return () => clearTimeout(timer)
-  }, [calculateClassPositions])
+  }, [calculateClassPositions, onRenderComplete]) // 🆕 dependency에 onRenderComplete 추가
 
   // 윈도우 리사이즈 시 재계산
   useEffect(() => {

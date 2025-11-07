@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import type { BulkTimetableDownloadModalProps } from '../types/bulk-download.types'
@@ -18,7 +18,10 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
 }) => {
   // 현재 단계 (options -> selection -> load -> progress)
   const [currentStep, setCurrentStep] = useState<'options' | 'selection' | 'load' | 'progress'>('options')
-  
+
+  // 🆕 TimetableWidget 렌더링 완료 콜백용 ref
+  const renderCompleteResolverRef = useRef<(() => void) | null>(null)
+
   // 커스텀 ZIP 파일명
   const [customZipFilename, setCustomZipFilename] = useState('전체학생시간표')
   
@@ -171,14 +174,30 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
     try {
       const selectedStudentsList = localStudents.filter(s => s.isSelected)
       let loadedCount = 0
-      
-      for (const student of selectedStudentsList) {
-        try {
-          // apiService를 사용하여 학생 시간표 로드
-          const response = await apiService.getStudentTimetable(student.id)
-          
-          if (response.success && response.data && response.data.classSections) {
-            // 백엔드 API 응답을 TimetableWidget이 기대하는 구조로 변환
+
+      // ✅ Phase 2.1: 배치 크기 설정 (동시에 5개씩 처리)
+      const BATCH_SIZE = 5
+
+      // ✅ Phase 2.1: 배치 단위로 병렬 처리
+      for (let i = 0; i < selectedStudentsList.length; i += BATCH_SIZE) {
+        const batch = selectedStudentsList.slice(i, Math.min(i + BATCH_SIZE, selectedStudentsList.length))
+
+        console.log(`📦 배치 ${Math.floor(i / BATCH_SIZE) + 1} 처리 중... (${batch.length}명)`)
+
+        // 배치 내 모든 API 호출을 병렬로 실행
+        const batchPromises = batch.map(student =>
+          apiService.getStudentTimetable(student.id)
+            .then(response => ({ student, response, success: true }))
+            .catch(error => ({ student, error, success: false }))
+        )
+
+        // 배치 완료 대기
+        const batchResults = await Promise.all(batchPromises)
+
+        // 결과 처리
+        batchResults.forEach(({ student, response, success, error }) => {
+          if (success && response.success && response.data && response.data.classSections) {
+            // 성공: 시간표 데이터 변환
             const timetableData = {
               classSections: response.data.classSections.map((section: any) => ({
                 id: section.id,
@@ -186,7 +205,7 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
                 teacherName: section.teacher?.name || '',
                 classroomName: section.classroom?.name || '',
                 schedule: section.schedule.map((scheduleItem: any) => ({
-                  dayOfWeek: scheduleItem.dayOfWeek, // 'monday', 'tuesday' 등
+                  dayOfWeek: scheduleItem.dayOfWeek,
                   startTime: scheduleItem.startTime,
                   endTime: scheduleItem.endTime
                 })),
@@ -199,19 +218,17 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
                 totalTeachers: 0
               }
             }
-            
-            // 로컬 변수에 추가
+
             localLoadedTimetables[student.id] = timetableData
-            
-            setLoadedTimetables(prev => {
-              const newLoadedTimetables = {
-                ...prev,
-                [student.id]: timetableData
-              }
-              return newLoadedTimetables
-            })
+
+            setLoadedTimetables(prev => ({
+              ...prev,
+              [student.id]: timetableData
+            }))
           } else {
-            // 시간표가 없는 경우 빈 데이터로 설정
+            // 실패 또는 빈 데이터: 빈 시간표 설정
+            console.warn(`⚠️ ${student.name} 시간표 로드 실패 또는 데이터 없음`)
+
             const emptyTimetableData = {
               classSections: [],
               conflicts: [],
@@ -221,85 +238,99 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
                 totalTeachers: 0
               }
             }
-            
-            // 로컬 변수에 추가
+
             localLoadedTimetables[student.id] = emptyTimetableData
-            
-            setLoadedTimetables(prev => {
-              const newLoadedTimetables = {
-                ...prev,
-                [student.id]: emptyTimetableData
-              }
-              return newLoadedTimetables
-            })
-          }
-        } catch (error) {
-          console.error(`❌ 학생 ${student.name}의 시간표 로드 실패:`, error)
-          // 오류 시에도 빈 데이터로 설정
-          const errorTimetableData = {
-            classSections: [],
-            conflicts: [],
-            metadata: {
-              totalClasses: 0,
-              totalStudents: 1,
-              totalTeachers: 0
-            }
-          }
-          
-          // 로컬 변수에 추가
-          localLoadedTimetables[student.id] = errorTimetableData
-          
-          setLoadedTimetables(prev => {
-            const newLoadedTimetables = {
+
+            setLoadedTimetables(prev => ({
               ...prev,
-              [student.id]: errorTimetableData
-            }
-            return newLoadedTimetables
-          })
+              [student.id]: emptyTimetableData
+            }))
+          }
+
+          loadedCount++
+          const progress = calculateOverallProgress('api', loadedCount, selectedStudentsList.length)
+          setTimetableLoadProgress(progress)
+        })
+
+        // 배치 간 짧은 휴식 (서버 부하 방지, 선택사항)
+        if (i + BATCH_SIZE < selectedStudentsList.length) {
+          await new Promise(resolve => setTimeout(resolve, 100))
         }
-        
-        loadedCount++
-        setTimetableLoadProgress(Math.round((loadedCount / selectedStudentsList.length) * 100))
-        
-        // API 부하 방지를 위한 짧은 대기
-        await new Promise(resolve => setTimeout(resolve, 200))
       }
+
+      console.log(`✅ 모든 시간표 데이터 로드 완료 (${loadedCount}/${selectedStudentsList.length})`)
       
       // 🎯 시간표 로드 단계에서 실제 렌더링 및 캡쳐 진행
+      // ✅ Phase 1.3: optimalFormat 계산
+      const totalStudents = selectedStudentsList.length
+      const optimalFormat = getOptimalFormat(
+        totalStudents,
+        downloadOptions.format || 'png',
+        downloadOptions.quality
+      )
+
+      // 첫 실행 시 한 번만 알림
+      if (optimalFormat.shouldNotify) {
+        console.log(`📢 성능 최적화: ${totalStudents}명 다운로드를 위해 JPEG 포맷으로 자동 변환됩니다.`)
+      }
+
       const captureResults: Array<{ studentId: string; success: boolean; blob?: Blob; error?: string }> = []
       let captureSuccessCount = 0
       let captureFailedCount = 0
-      
-      for (const student of selectedStudentsList) {
-        try {
-          const timetableData = localLoadedTimetables[student.id]
-          if (!timetableData) {
-            throw new Error('시간표 데이터가 없습니다')
-          }
-          
-          // 실제 TimetableWidget 렌더링 및 캡쳐
-          const blob = await renderAndCaptureTimetable(student, timetableData)
-          if (blob) {
+
+      // ✅ Phase 2.2: 렌더링 배치 크기 설정
+      const RENDER_BATCH_SIZE = 10  // 10개씩 처리 후 메모리 정리 기회 제공
+
+      for (let i = 0; i < selectedStudentsList.length; i += RENDER_BATCH_SIZE) {
+        const batch = selectedStudentsList.slice(i, Math.min(i + RENDER_BATCH_SIZE, selectedStudentsList.length))
+
+        console.log(`🎨 렌더링 배치 ${Math.floor(i / RENDER_BATCH_SIZE) + 1} 처리 중... (${batch.length}명)`)
+
+        // 배치 내에서 순차 렌더링 (DOM 충돌 방지)
+        for (const student of batch) {
+          try {
+            const timetableData = localLoadedTimetables[student.id]
+            if (!timetableData) {
+              throw new Error('시간표 데이터가 없습니다')
+            }
+
+            // ✅ Phase 2.3: 재시도 로직 적용
+            const blob = await renderAndCaptureTimetableWithRetry(student, timetableData, optimalFormat)
+            if (blob) {
+              captureResults.push({
+                studentId: student.id,
+                success: true,
+                blob: blob
+              })
+              captureSuccessCount++
+            } else {
+              throw new Error('이미지 생성 실패')
+            }
+
+          } catch (error) {
+            console.error(`${student.name} 시간표 캡쳐 실패:`, error)
             captureResults.push({
               studentId: student.id,
-              success: true,
-              blob: blob
+              success: false,
+              error: error instanceof Error ? error.message : '알 수 없는 오류'
             })
-            captureSuccessCount++
-          } else {
-            throw new Error('이미지 생성 실패')
+            captureFailedCount++
           }
-          
-        } catch (error) {
-          console.error(`${student.name} 시간표 캡쳐 실패:`, error)
-          captureResults.push({
-            studentId: student.id,
-            success: false,
-            error: error instanceof Error ? error.message : '알 수 없는 오류'
-          })
-          captureFailedCount++
+
+          // 진행률 업데이트
+          const renderCount = i + (batch.indexOf(student) + 1)
+          const progress = calculateOverallProgress('render', renderCount, selectedStudentsList.length)
+          setTimetableLoadProgress(progress)
+        }
+
+        // ✅ Phase 2.2: 배치 완료 시 메모리 정리 기회 제공
+        if (i + RENDER_BATCH_SIZE < selectedStudentsList.length) {
+          console.log('🧹 메모리 정리 대기 중...')
+          await new Promise(resolve => setTimeout(resolve, 100))
         }
       }
+
+      console.log(`✅ 렌더링 완료: 성공 ${captureSuccessCount}명, 실패 ${captureFailedCount}명`)
       
       // 캡쳐된 이미지들을 로컬 상태에 저장 (나중에 다운로드에서 사용)
       setCapturedImages(captureResults)
@@ -315,8 +346,135 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
     }
   }
 
+  // ✅ Phase 1.1: 렌더링 완료 대기 함수 (requestAnimationFrame 기반)
+  const waitForRender = (): Promise<void> => {
+    return new Promise(resolve => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          // 2프레임 후 완료 (기본 렌더링 완료)
+          resolve()
+        })
+      })
+    })
+  }
+
+  // 🆕 TimetableWidget의 수업 셀 렌더링 완료를 기다리는 함수
+  const waitForTimetableRenderComplete = (timeout = 3000): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      // 타임아웃 설정
+      const timer = setTimeout(() => {
+        reject(new Error('TimetableWidget 렌더링 타임아웃'))
+      }, timeout)
+
+      // 콜백 설정
+      renderCompleteResolverRef.current = () => {
+        clearTimeout(timer)
+        resolve()
+      }
+    })
+  }
+
+  // ✅ Phase 1.4: 전체 프로세스 진행률 계산
+  const calculateOverallProgress = (
+    phase: 'api' | 'render' | 'zip' | 'download',
+    current: number,
+    total: number
+  ): number => {
+    const phaseWeights = {
+      api: 0.2,      // API 로드: 20%
+      render: 0.6,   // 렌더링+캡쳐: 60%
+      zip: 0.15,     // ZIP 생성: 15%
+      download: 0.05 // 다운로드: 5%
+    }
+
+    let baseProgress = 0
+
+    // 이전 단계들의 완료 진행률
+    if (phase === 'render') {
+      baseProgress = phaseWeights.api * 100
+    } else if (phase === 'zip') {
+      baseProgress = (phaseWeights.api + phaseWeights.render) * 100
+    } else if (phase === 'download') {
+      baseProgress = (phaseWeights.api + phaseWeights.render + phaseWeights.zip) * 100
+    }
+
+    // 현재 단계의 진행률
+    const currentPhaseProgress = (current / total) * phaseWeights[phase] * 100
+
+    return Math.round(baseProgress + currentPhaseProgress)
+  }
+
+  // ✅ Phase 1.3: 학생 수에 따라 최적 포맷 선택
+  const getOptimalFormat = (studentCount: number, userFormat: string, quality?: number) => {
+    if (studentCount > 30) {
+      // 대량: JPEG 강제 (메모리 절약)
+      return {
+        format: 'image/jpeg' as const,
+        quality: 0.85,
+        shouldNotify: userFormat === 'png'
+      }
+    } else if (studentCount > 10) {
+      // 중간: JPEG 권장
+      return {
+        format: 'image/jpeg' as const,
+        quality: 0.9,
+        shouldNotify: false
+      }
+    } else {
+      // 소량: 사용자 선택 존중
+      return {
+        format: (userFormat === 'jpeg' ? 'image/jpeg' : 'image/png') as const,
+        quality: quality || 0.9,
+        shouldNotify: false
+      }
+    }
+  }
+
+  // ✅ Phase 2.3: 재시도 로직이 포함된 래퍼 함수 추가
+  const renderAndCaptureTimetableWithRetry = async (
+    student: any,
+    timetableData: any,
+    optimalFormat: { format: 'image/jpeg' | 'image/png'; quality: number; shouldNotify: boolean },
+    maxRetries: number = 2
+  ): Promise<Blob | null> => {
+    let lastError: Error | null = null
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🎨 ${student.name} 렌더링 시도 ${attempt}/${maxRetries}`)
+
+        const blob = await renderAndCaptureTimetable(student, timetableData, optimalFormat)
+
+        if (blob && blob.size > 0) {
+          console.log(`✅ ${student.name} 렌더링 성공 (${(blob.size / 1024).toFixed(1)}KB)`)
+          return blob
+        } else {
+          throw new Error('생성된 이미지가 비어있습니다')
+        }
+
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('알 수 없는 오류')
+        console.warn(`⚠️ ${student.name} 시도 ${attempt}/${maxRetries} 실패:`, lastError.message)
+
+        // 마지막 시도가 아니면 재시도 전 대기
+        if (attempt < maxRetries) {
+          console.log(`⏳ 재시도 전 ${500}ms 대기...`)
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+      }
+    }
+
+    // 모든 재시도 실패
+    console.error(`❌ ${student.name} 모든 재시도 실패:`, lastError?.message)
+    return null
+  }
+
   // 모달 내에서 시간표 렌더링 및 캡쳐
-  const renderAndCaptureTimetable = async (student: any, timetableData: any): Promise<Blob | null> => {
+  const renderAndCaptureTimetable = async (
+    student: any,
+    timetableData: any,
+    optimalFormat: { format: 'image/jpeg' | 'image/png'; quality: number; shouldNotify: boolean }
+  ): Promise<Blob | null> => {
     return new Promise((resolve) => {
       (async () => {
       try {
@@ -336,7 +494,13 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
         const { TimetableWidget } = await import('../TimetableWidget')
         const { DndProvider } = await import('react-dnd')
         const { HTML5Backend } = await import('react-dnd-html5-backend')
-        
+
+        // 🆕 TimetableWidget 렌더링 완료 콜백
+        const handleTimetableRenderComplete = () => {
+          console.log(`✅ ${student.name} 시간표 렌더링 완료`)
+          renderCompleteResolverRef.current?.()
+        }
+
         root.render(
           <DndProvider backend={HTML5Backend}>
             <div className="timetable-with-name" style={{
@@ -360,13 +524,24 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
                 showConflicts={false}
                 showEmptySlots={false}
                 showTimeLabels={true}
+                onRenderComplete={handleTimetableRenderComplete} // 🆕 콜백 전달
               />
             </div>
           </DndProvider>
         )
 
-        // 렌더링 완료 대기
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // ✅ Phase 1.1: 기본 렌더링 완료 대기
+        await waitForRender()
+
+        // 🆕 Phase 1.1 개선: TimetableWidget의 실제 수업 셀 렌더링 완료 대기
+        try {
+          await waitForTimetableRenderComplete(3000) // 3초 타임아웃
+          console.log(`✅ ${student.name} 시간표 캡쳐 준비 완료`)
+        } catch (error) {
+          console.error(`${student.name} 시간표 렌더링 타임아웃:`, error)
+          // 폴백: 추가 대기 후 캡쳐 시도
+          await new Promise(resolve => setTimeout(resolve, 200))
+        }
 
         // html2canvas로 캡쳐
         const html2canvas = (await import('html2canvas')).default
@@ -383,21 +558,24 @@ export const BulkTimetableDownloadModal: React.FC<BulkTimetableDownloadModalProp
         console.log(`${student.name} 시간표 실제 크기:`, { actualWidth, actualHeight })
 
         // 학생 이름 + 시간표 전체를 캡쳐
+        // ✅ Phase 1.2: html2canvas 최적화
         const canvas = await html2canvas(containerElement as HTMLElement, {
           allowTaint: true,
           useCORS: true,
           background: downloadOptions.backgroundColor || '#ffffff',
           width: actualWidth,
           height: actualHeight,
-          logging: true
+          logging: false,  // 로깅 비활성화
+          imageTimeout: 0,  // 타임아웃 제거
+          foreignObjectRendering: false  // 성능 개선
         })
         
-        // Canvas를 Blob으로 변환
+        // ✅ Phase 1.3: Canvas를 Blob으로 변환 (최적 포맷 사용)
         const blob = await new Promise<Blob | null>((resolveBlob) => {
           canvas.toBlob(
             (blob) => resolveBlob(blob),
-            downloadOptions.format === 'jpeg' ? 'image/jpeg' : 'image/png',
-            downloadOptions.quality || 0.9
+            optimalFormat.format,
+            optimalFormat.quality
           )
         })
         
