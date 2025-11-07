@@ -249,28 +249,34 @@ cd shared && npm install && cd ..
 
 **`.env`** (프로덕션):
 ```env
-VITE_API_BASE_URL=https://asia-northeast3-wiseupmanagementsystem-a6189.cloudfunctions.net/api
-VITE_FIREBASE_PROJECT_ID=wiseupmanagementsystem-a6189
+VITE_API_BASE_URL=https://[REGION]-[PROJECT_ID].cloudfunctions.net/api
+VITE_FIREBASE_PROJECT_ID=[PROJECT_ID]
 VITE_ENVIRONMENT=production
 ```
 
 **`.env.test`** (테스트):
 ```env
-VITE_API_BASE_URL=https://asia-northeast3-wiseupmanagementprogramtest.cloudfunctions.net/api
-VITE_FIREBASE_PROJECT_ID=wiseupmanagementprogramtest
+VITE_API_BASE_URL=https://[REGION]-[TEST_PROJECT_ID].cloudfunctions.net/api
+VITE_FIREBASE_PROJECT_ID=[TEST_PROJECT_ID]
 VITE_ENVIRONMENT=test
 ```
 
 **`.env.local`** (로컬 개발):
 ```env
-VITE_API_BASE_URL=http://localhost:5001/wiseupmanagementsystem/us-central1/wiseupApi/api
-VITE_FIREBASE_PROJECT_ID=wiseupmanagementsystem
+VITE_API_BASE_URL=http://localhost:5001/[PROJECT_ID]/us-central1/wiseupApi/api
+VITE_FIREBASE_PROJECT_ID=[PROJECT_ID]
 VITE_ENVIRONMENT=local
 ```
+
+**참고:**
+- 실제 환경 변수 파일은 보안상 `.gitignore`에 포함되어 있습니다
+- 프로젝트 관리자에게 실제 환경 변수 값을 요청하세요
+- Firebase 프로젝트 ID와 리전은 Firebase Console에서 확인 가능합니다
 
 #### 백엔드 환경 변수
 
 Functions는 환경 변수로 `JWT_SECRET` 필요 (dev.sh에서 자동 설정됨)
+- 프로덕션/테스트 환경에서는 Firebase Functions 환경 변수로 설정 필요
 
 ### 3. 개발 서버 실행
 
