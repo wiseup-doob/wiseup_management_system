@@ -702,6 +702,11 @@ firebase deploy
 
 ## 📚 문서
 
+### 시작하기
+- **[SETUP_GUIDE.md](SETUP_GUIDE.md)**: 🌟 새로운 개발자를 위한 환경 설정 가이드 (필독!)
+- **[ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)**: 환경 변수 설정 상세 가이드
+- **[README.md](README.md)**: 프로젝트 전체 개요 (본 문서)
+
 ### 주요 문서
 - **[CLAUDE.md](CLAUDE.md)**: Claude Code를 위한 프로젝트 가이드 (가장 중요!)
 - **[database_structure.md](database_structure.md)**: Firestore 데이터베이스 스키마
