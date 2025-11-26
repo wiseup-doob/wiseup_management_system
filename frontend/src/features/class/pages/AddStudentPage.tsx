@@ -32,8 +32,8 @@ function AddStudentPage({ isOpen, onClose, classData, onStudentAdded }: AddStude
     try {
       setIsLoading(true)
       setError(null)
-      
-      const response = await apiService.getStudents()
+
+      const response = await apiService.getStudents('active')
       if (response.success && response.data) {
         setStudents(response.data)
         setFilteredStudents(response.data)

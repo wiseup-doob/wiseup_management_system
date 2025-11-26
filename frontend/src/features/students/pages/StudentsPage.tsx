@@ -42,6 +42,9 @@ function StudentsPage() {
     error 
   } = useAppSelector((state) => state.students);
 
+  // 퇴원 학생 표시 여부
+  const [showInactive, setShowInactive] = useState(false);
+
   // 학생 생성 폼 상태
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState<StudentFormData>({
@@ -289,6 +292,31 @@ function StudentsPage() {
     setSelectedClassroom(null);
   };
 
+  // 퇴원 처리 핸들러
+  const handleWithdrawStudent = async (student: Student) => {
+    try {
+      const confirmed = window.confirm(
+        `${student.name} 학생을 퇴원 처리하시겠습니까?\n마지막 등원일이 오늘 날짜로 자동 설정됩니다.`
+      );
+      if (!confirmed) return;
+
+      const response = await apiService.updateStudent(student.id, {
+        status: 'inactive'
+        // lastAttendanceDate는 Backend에서 자동 설정됨
+      });
+
+      if (response.success) {
+        console.log('퇴원 처리 완료:', student.name);
+        dispatch(fetchStudents()); // 목록 새로고침
+      } else {
+        alert('퇴원 처리에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('퇴원 처리 실패:', error);
+      alert('퇴원 처리 중 오류가 발생했습니다.');
+    }
+  };
+
   // 삭제 모달 열기
   const handleOpenDeleteModal = async (itemId: string, itemName: string, itemType: 'student' | 'teacher' | 'classroom') => {
     // 학생인 경우 의존성 정보 미리 확인
@@ -468,6 +496,11 @@ function StudentsPage() {
       }
     });
   };
+
+  // 퇴원 학생 필터링
+  const filteredStudents = students.filter(student =>
+    showInactive ? true : student.status === 'active'
+  );
 
   return (
     <div className="students-page-container">
@@ -673,13 +706,22 @@ function StudentsPage() {
                   <option key={grade} value={grade}>{grade}</option>
                 ))}
               </select>
+
+              <label className="checkbox-filter">
+                <input
+                  type="checkbox"
+                  checked={showInactive}
+                  onChange={(e) => setShowInactive(e.target.checked)}
+                />
+                <span>퇴원 학생 표시</span>
+              </label>
             </div>
           </div>
 
           <div className="students-grid">
             {isLoading ? (
               <p>학생 목록을 불러오는 중...</p>
-            ) : students && students.length > 0 ? (
+            ) : filteredStudents && filteredStudents.length > 0 ? (
               <table className="students-table">
                 <thead>
                   <tr>
@@ -690,7 +732,7 @@ function StudentsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {students.map((student) => (
+                  {filteredStudents.map((student) => (
                     <tr key={student.id}>
                       <td>{student.name}</td>
                       <td>{student.grade}</td>
@@ -705,6 +747,16 @@ function StudentsPage() {
                           >
                             편집
                           </Button>
+                          {student.status === 'active' && (
+                            <Button
+                              type="button"
+                              variant="warning"
+                              onClick={() => handleWithdrawStudent(student)}
+                              className="withdraw-btn"
+                            >
+                              퇴원
+                            </Button>
+                          )}
                           <Button
                             type="button"
                             variant="danger"

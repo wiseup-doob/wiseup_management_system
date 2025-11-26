@@ -1032,8 +1032,9 @@ export class ClassSectionService extends BaseService {
           });
         });
       }
-      
-      return students;
+
+      // Filter to return only active students
+      return students.filter(student => student.status === 'active');
       
     } catch (error) {
       console.error('등록된 학생 목록 조회 실패:', error);

@@ -1,11 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { 
-  Student, 
-  StudentsState, 
-  CreateStudentRequest, 
+import type {
+  Student,
+  StudentsState,
+  CreateStudentRequest,
   UpdateStudentRequest,
-  StudentSearchParams 
+  StudentSearchParams,
+  StudentStatus
 } from '../types/students.types';
 import { 
   getAllStudents, 
@@ -20,9 +21,9 @@ import {
 // 비동기 액션: 모든 학생 조회
 export const fetchStudents = createAsyncThunk(
   'students/fetchStudents',
-  async (_, { rejectWithValue }) => {
+  async (status?: StudentStatus, { rejectWithValue }) => {
     try {
-      const response = await getAllStudents();
+      const response = await getAllStudents(status);
       if (response.success && response.data) {
         return response.data;
       } else {

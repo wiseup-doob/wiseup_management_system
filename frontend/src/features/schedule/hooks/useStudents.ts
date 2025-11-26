@@ -18,9 +18,9 @@ export const useStudents = (): UseStudentsReturn => {
   const loadStudents = useCallback(async () => {
     setIsLoading(true)
     setError(null)
-    
+
     try {
-      const response = await apiService.getStudents()
+      const response = await apiService.getStudents('active')
       if (response.success && response.data) {
         setStudents(response.data)
       } else {

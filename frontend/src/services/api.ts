@@ -171,8 +171,11 @@ class ApiService {
 
   // ===== 학생 관리 API =====
 
-  async getStudents(): Promise<ApiResponse<Student[]>> {
-    return this.request<Student[]>(API_ENDPOINTS.STUDENTS.GET_ALL);
+  async getStudents(status?: StudentStatus): Promise<ApiResponse<Student[]>> {
+    const endpoint = status
+      ? `${API_ENDPOINTS.STUDENTS.GET_ALL}?status=${status}`
+      : API_ENDPOINTS.STUDENTS.GET_ALL;
+    return this.request<Student[]>(endpoint);
   }
 
   async searchStudents(params: StudentSearchParams): Promise<ApiResponse<Student[]>> {

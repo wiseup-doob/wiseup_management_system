@@ -40,9 +40,10 @@ export const useStudentSearch = (students: Student[]): UseStudentSearchReturn =>
 
     try {
       const searchParams: StudentSearchParams = {
-        name: value.trim()
+        name: value.trim(),
+        status: 'active'
       }
-      
+
       const response = await apiService.searchStudents(searchParams)
       if (response.success && response.data) {
         setSearchResults(response.data)
@@ -71,9 +72,10 @@ export const useStudentSearch = (students: Student[]): UseStudentSearchReturn =>
     try {
       const searchParams: StudentSearchParams = {
         ...(searchValue.trim() && { name: searchValue.trim() }),
-        ...(value && { [key]: value as any })
+        ...(value && { [key]: value as any }),
+        status: 'active'
       }
-      
+
       const response = await apiService.searchStudents(searchParams)
       if (response.success && response.data) {
         setSearchResults(response.data)

@@ -26,6 +26,28 @@ export class StudentService extends BaseService {
 
   // 학생 수정
   async updateStudent(id: string, data: UpdateStudentRequest): Promise<void> {
+    // 1. 상태 변경인지 확인
+    if (data.status !== undefined) {
+      const student = await this.getStudentById(id);
+
+      if (student) {
+        // 2-1. 재원 → 퇴원으로 변경 시
+        if (student.status === 'active' && data.status === 'inactive') {
+          console.log(`✅ 퇴원 처리: ${id} (${student.name})`);
+          // ✅ lastAttendanceDate가 지정되지 않은 경우에만 자동 설정
+          if (!data.lastAttendanceDate) {
+            data.lastAttendanceDate = admin.firestore.FieldValue.serverTimestamp();
+          }
+        }
+
+        // 2-2. 퇴원 → 재원으로 변경 시
+        if (student.status === 'inactive' && data.status === 'active') {
+          console.log(`✅ 재원 처리: ${id} (${student.name})`);
+          // 필요시 추가 처리 (현재는 상태만 변경)
+        }
+      }
+    }
+
     const updateData = {
       ...data,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -148,10 +170,10 @@ export class StudentService extends BaseService {
       query = query.where('grade', '==', params.grade);
     }
 
-    // 상태로 검색
-    if (params.status) {
-      query = query.where('status', '==', params.status);
-    }
+    // ⚠️ 상태(status) 필터링은 Firestore 쿼리에서 제외
+    // 이유: name에 대한 Range Query와 status에 대한 Equality Query 조합은
+    //       Firestore에서 허용되지 않음 (500 에러 발생)
+    // 해결: status는 메모리에서 필터링 (아래 참조)
 
     // 부모 ID로 검색
     if (params.parentsId) {
@@ -170,7 +192,15 @@ export class StudentService extends BaseService {
                    .where('lastAttendanceDate', '<=', params.lastAttendanceDateRange.end);
     }
 
-    return this.search<Student>(query);
+    // Firestore 쿼리 실행
+    const results = await this.search<Student>(query);
+
+    // ✅ status 필터링은 메모리에서 처리 (Firestore 제약 회피)
+    if (params.status) {
+      return results.filter(student => student.status === params.status);
+    }
+
+    return results;
   }
 
   // 학년별 학생 수 조회

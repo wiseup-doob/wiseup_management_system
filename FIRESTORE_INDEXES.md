@@ -34,6 +34,53 @@ db.collection('timetable_versions')
   .orderBy('order', 'asc')
 ```
 
+## 제거된 인덱스 (2025-11-21)
+
+### ~~4. students - name + status~~ ❌ 제거됨
+**제거 이유**: Firestore 쿼리 제약 위반
+- Range Query (`name >= ... <= ...`) + Equality Query (`status ==`)의 조합은 Firestore에서 지원하지 않음
+- 복합 인덱스로도 해결 불가능 (근본적인 Firestore 제약사항)
+- **해결 방법**: `status` 필터링은 메모리에서 처리 ([StudentService.ts](functions/src/services/StudentService.ts) 참조)
+
+```typescript
+// ❌ 사용 불가 (500 에러 발생)
+db.collection('students')
+  .where('name', '>=', searchName)
+  .where('name', '<=', searchName + '\uf8ff')
+  .where('status', '==', 'active')  // Firestore 제약 위반!
+
+// ✅ 올바른 방법 (메모리 필터링)
+const results = await db.collection('students')
+  .where('name', '>=', searchName)
+  .where('name', '<=', searchName + '\uf8ff')
+  .get();
+const filtered = results.filter(doc => doc.data().status === 'active');
+```
+
+### ~~5. students - name + grade + status~~ ❌ 제거됨
+**제거 이유**: 위와 동일 (Range Query + Equality Query on different field)
+- `name`에 대한 Range Query와 `status`에 대한 Equality Query 조합 불가
+- **해결 방법**: `status` 필터링은 메모리에서 처리
+
+```typescript
+// ❌ 사용 불가 (500 에러 발생)
+db.collection('students')
+  .where('name', '>=', searchName)
+  .where('name', '<=', searchName + '\uf8ff')
+  .where('grade', '==', '중1')
+  .where('status', '==', 'active')  // Firestore 제약 위반!
+
+// ✅ 올바른 방법 (grade는 Firestore에서, status는 메모리에서)
+const results = await db.collection('students')
+  .where('name', '>=', searchName)
+  .where('name', '<=', searchName + '\uf8ff')
+  .where('grade', '==', '중1')
+  .get();
+const filtered = results.filter(doc => doc.data().status === 'active');
+```
+
+**참조**: [STUDENT_STATUS_FILTERING_IMPLEMENTATION_PLAN.md Phase 7](STUDENT_STATUS_FILTERING_IMPLEMENTATION_PLAN.md)
+
 ## 배포 방법
 
 ### 로컬 개발 환경 (Emulator)

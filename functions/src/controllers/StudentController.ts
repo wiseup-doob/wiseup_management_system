@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { StudentService } from '../services/StudentService';
-import type { CreateStudentRequest, UpdateStudentRequest, StudentSearchParams } from '@shared/types';
+import type { CreateStudentRequest, UpdateStudentRequest, StudentSearchParams, StudentStatus, Student } from '@shared/types';
 
 export class StudentController {
   private studentService: StudentService;
@@ -66,9 +66,13 @@ export class StudentController {
 
       await this.studentService.updateStudent(id, updateData);
 
+      // ✅ 추가: 업데이트된 학생 데이터 조회
+      const updatedStudent = await this.studentService.getStudentById(id);
+
       res.json({
         success: true,
-        message: '학생 정보가 성공적으로 수정되었습니다.'
+        message: '학생 정보가 성공적으로 수정되었습니다.',
+        data: updatedStudent  // ✅ 추가: Frontend가 기대하는 data 필드
       });
     } catch (error) {
       console.error('학생 수정 오류:', error);
@@ -103,7 +107,16 @@ export class StudentController {
   // 모든 학생 조회
   async getAllStudents(req: Request, res: Response): Promise<void> {
     try {
-      const students = await this.studentService.getAllStudents();
+      const status = req.query.status as StudentStatus | undefined;
+
+      let students: Student[];
+
+      // query parameter에 status가 있으면 필터링, 없으면 전체 조회
+      if (status) {
+        students = await this.studentService.searchStudents({ status });
+      } else {
+        students = await this.studentService.getAllStudents();
+      }
 
       res.json({
         success: true,

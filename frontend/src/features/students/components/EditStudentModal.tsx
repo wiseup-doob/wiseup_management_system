@@ -65,11 +65,17 @@ export const EditStudentModal: React.FC<EditStudentModalProps> = ({
   const convertTimestampToString = (timestamp: any): string => {
     if (!timestamp) return '';
     if (typeof timestamp === 'string') return timestamp;
-    if (timestamp.toDate) {
+    if (timestamp instanceof Date) {
+      return timestamp.toISOString().split('T')[0];
+    }
+    if (timestamp.toDate && typeof timestamp.toDate === 'function') {
       return timestamp.toDate().toISOString().split('T')[0];
     }
-    if (timestamp.seconds) {
+    if (timestamp.seconds !== undefined) {
       return new Date(timestamp.seconds * 1000).toISOString().split('T')[0];
+    }
+    if (timestamp._seconds !== undefined) {
+      return new Date(timestamp._seconds * 1000).toISOString().split('T')[0];
     }
     return '';
   };

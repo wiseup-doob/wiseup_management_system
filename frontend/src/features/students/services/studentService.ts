@@ -1,9 +1,10 @@
-import type { 
-  Student, 
-  CreateStudentRequest, 
-  UpdateStudentRequest, 
+import type {
+  Student,
+  CreateStudentRequest,
+  UpdateStudentRequest,
   StudentSearchParams,
-  StudentStatistics 
+  StudentStatistics,
+  StudentStatus
 } from '../types/students.types';
 import { API_CONFIG } from '../../../config/api.config';
 
@@ -45,9 +46,10 @@ export const createStudent = async (studentData: CreateStudentRequest): Promise<
 };
 
 // 모든 학생 조회
-export const getAllStudents = async (): Promise<ApiResponse<Student[]>> => {
+export const getAllStudents = async (status?: StudentStatus): Promise<ApiResponse<Student[]>> => {
   try {
-    const response = await fetch(API_BASE_URL);
+    const url = status ? `${API_BASE_URL}?status=${status}` : API_BASE_URL;
+    const response = await fetch(url);
     const result = await response.json();
 
     if (!response.ok) {
