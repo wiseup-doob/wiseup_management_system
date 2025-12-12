@@ -23,9 +23,18 @@ export interface TimetableClass {
   name: string
   teacherName: string
   classroomName: string
-  startTime: string
-  endTime: string
+
+  // ===== 기존 필드 =====
+  startTime: string        // 클리핑된 시작 시간 (렌더링용)
+  endTime: string          // 클리핑된 종료 시간 (렌더링용)
   duration: number
+
+  // ===== 🆕 클리핑 관련 필드 추가 =====
+  originalStartTime?: string  // 원본 시작 시간 (표시용)
+  originalEndTime?: string    // 원본 종료 시간 (표시용)
+  isClipped?: boolean         // 클리핑 여부 플래그
+
+  // 기존 필드들
   startSlotIndex: number
   endSlotIndex: number
   color: string

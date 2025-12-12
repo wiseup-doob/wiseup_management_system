@@ -12,6 +12,7 @@ import { ClassDetailModal } from '../../../components/business/ClassDetailModal'
 import { apiService } from '../../../services/api'
 import { TimetableVersionSelector } from '../../../components/TimetableVersionSelector'
 import { useTimetableVersion } from '../../../contexts/TimetableVersionContext'
+import { timeCalculations } from '../../../components/business/timetable/utils/timeCalculations'
 
 function SchedulePage() {
   // 시간표 버전 관리
@@ -152,8 +153,25 @@ function SchedulePage() {
 
   // 수업 상세 모달 열기/닫기 핸들러
   const handleClassClick = useCallback((classData: any) => {
-    console.log('📚 수업 클릭됨:', classData)
-    setSelectedClassId(classData.id)
+    console.log('🎯 시간표 수업 클릭:', classData)
+
+    // 🆕 클리핑된 데이터를 원본 시간으로 복원
+    const restoredClassData = {
+      ...classData,
+      startTime: classData.originalStartTime || classData.startTime,
+      endTime: classData.originalEndTime || classData.endTime,
+      duration: classData.originalStartTime && classData.originalEndTime
+        ? timeCalculations.timeToMinutes(classData.originalEndTime) -
+          timeCalculations.timeToMinutes(classData.originalStartTime)
+        : classData.duration
+    }
+
+    console.log('🔄 원본 시간 복원:', {
+      클리핑됨: `${classData.startTime}~${classData.endTime}`,
+      원본: `${restoredClassData.startTime}~${restoredClassData.endTime}`
+    })
+
+    setSelectedClassId(restoredClassData.id)
     setIsClassDetailModalOpen(true)
   }, [])
 

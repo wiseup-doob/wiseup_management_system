@@ -9,6 +9,54 @@ interface AddClassPageProps {
   onClassCreated?: () => void  // 수업 생성 후 콜백
 }
 
+// 시간 블록 템플릿 정의
+interface TimeBlockTemplate {
+  id: string
+  label: string
+  time: string
+  startTime: string
+  endTime: string
+}
+
+// 시간 블록 템플릿 버전 정의
+interface TimeBlockTemplateVersion {
+  id: string
+  name: string
+  blocks: TimeBlockTemplate[]
+}
+
+// 템플릿 버전들 (카테고리별 그룹화)
+const TEMPLATE_VERSIONS: TimeBlockTemplateVersion[] = [
+  {
+    id: 'vacation_weekend',
+    name: '방학/주말',
+    blocks: [
+      { id: 'block_0', label: '블록0', time: '08:30-10:00', startTime: '08:30', endTime: '10:00' },
+      { id: 'block_1', label: '블록1', time: '10:00-11:30', startTime: '10:00', endTime: '11:30' },
+      { id: 'block_2', label: '블록2', time: '11:30-13:00', startTime: '11:30', endTime: '13:00' },
+      { id: 'block_lunch', label: '점심', time: '13:00-14:00', startTime: '13:00', endTime: '14:00' },
+      { id: 'block_3', label: '블록3', time: '14:00-15:30', startTime: '14:00', endTime: '15:30' },
+      { id: 'block_4', label: '블록4', time: '15:30-17:00', startTime: '15:30', endTime: '17:00' },
+      { id: 'block_5', label: '블록5', time: '17:00-18:30', startTime: '17:00', endTime: '18:30' },
+      { id: 'block_dinner', label: '저녁', time: '18:30-19:00', startTime: '18:30', endTime: '19:00' },
+      { id: 'block_6', label: '블록6', time: '19:00-20:30', startTime: '19:00', endTime: '20:30' },
+      { id: 'block_7', label: '블록7', time: '20:30-22:00', startTime: '20:30', endTime: '22:00' },
+    ]
+  },
+  {
+    id: 'semester_weekday',
+    name: '학기/평일',
+    blocks: [
+      { id: 'sem_block_1', label: '블록1', time: '17:00-18:30', startTime: '17:00', endTime: '18:30' },
+      { id: 'sem_block_2', label: '블록2', time: '18:30-20:00', startTime: '18:30', endTime: '20:00' },
+      { id: 'sem_block_3', label: '블록3', time: '20:00-21:30', startTime: '20:00', endTime: '21:30' },
+    ]
+  }
+]
+
+// 하위 호환성을 위한 별칭 (기존 코드가 계속 작동하도록)
+const TIME_BLOCK_TEMPLATES = TEMPLATE_VERSIONS[0].blocks
+
 const AddClassPage: React.FC<AddClassPageProps> = ({ isOpen, onClose, onClassCreated }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -30,6 +78,7 @@ const AddClassPage: React.FC<AddClassPageProps> = ({ isOpen, onClose, onClassCre
     dayOfWeek: string
     startTime: string
     endTime: string
+    timeBlockId?: string
   }>>([])
 
   // 알림창 상태 추가
@@ -53,6 +102,16 @@ const AddClassPage: React.FC<AddClassPageProps> = ({ isOpen, onClose, onClassCre
   const [customColor, setCustomColor] = useState('')
   const [availableColors, setAvailableColors] = useState<Array<{ code: string; name: string }>>([])
   const [colorDropdownOpen, setColorDropdownOpen] = useState(false)
+
+  // 시간 블록 템플릿 관련 상태
+  const [useTimeBlockTemplate, setUseTimeBlockTemplate] = useState(true)
+  const [selectedTemplateVersion, setSelectedTemplateVersion] = useState<string>('vacation_weekend')
+  const [selectedTimeBlock, setSelectedTimeBlock] = useState<string>('')
+  const [manualStartTime, setManualStartTime] = useState<string>('')
+  const [manualEndTime, setManualEndTime] = useState<string>('')
+
+  // 현재 선택된 템플릿 버전의 블록들
+  const currentTemplateBlocks = TEMPLATE_VERSIONS.find(v => v.id === selectedTemplateVersion)?.blocks || []
 
   // 색상 팔레트 로드
   useEffect(() => {
@@ -121,6 +180,55 @@ const AddClassPage: React.FC<AddClassPageProps> = ({ isOpen, onClose, onClassCre
       setIsSubmitting(false)
     }
   }, [isOpen])
+
+  // ===== 시간 블록 템플릿 이벤트 핸들러 =====
+
+  // 시간 블록 선택 핸들러
+  const handleTimeBlockSelect = (blockId: string, scheduleIndex: number) => {
+    setSelectedTimeBlock(blockId)
+
+    const selectedBlock = currentTemplateBlocks.find((b) => b.id === blockId)
+    if (selectedBlock) {
+      // schedules 배열 업데이트
+      const updatedSchedules = schedules.map((s, i) =>
+        i === scheduleIndex
+          ? {
+              ...s,
+              startTime: selectedBlock.startTime,
+              endTime: selectedBlock.endTime,
+              timeBlockId: blockId,
+            }
+          : s
+      )
+      setSchedules(updatedSchedules)
+    }
+  }
+
+  // 수동 시간 입력 핸들러
+  const handleManualTimeChange = (
+    field: 'startTime' | 'endTime',
+    value: string,
+    scheduleIndex: number
+  ) => {
+    // 수동 입력 상태 업데이트
+    if (field === 'startTime') {
+      setManualStartTime(value)
+    } else {
+      setManualEndTime(value)
+    }
+
+    // schedules 배열 업데이트 (timeBlockId 제거)
+    const updatedSchedules = schedules.map((s, i) =>
+      i === scheduleIndex
+        ? {
+            ...s,
+            [field]: value,
+            timeBlockId: undefined,
+          }
+        : s
+    )
+    setSchedules(updatedSchedules)
+  }
 
   // 필드 터치 처리
   const handleFieldBlur = (fieldName: string) => {
@@ -674,9 +782,44 @@ const AddClassPage: React.FC<AddClassPageProps> = ({ isOpen, onClose, onClassCre
               <div className="form-section">
                 <div className="schedule-section">
                   <div className="schedule-header">
-                    <h3>수업 일정</h3>
-                    <button 
-                      type="button" 
+                    <div className="schedule-header-left">
+                      <h3>수업 일정</h3>
+                      <div className="template-controls">
+                        {/* 시간 블록 템플릿 체크박스 */}
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={useTimeBlockTemplate}
+                            onChange={(e) => {
+                              setUseTimeBlockTemplate(e.target.checked)
+                            }}
+                            disabled={isSubmitting}
+                          />
+                          <span>시간 블록 템플릿 사용</span>
+                        </label>
+
+                        {/* 카테고리 선택 드롭다운 */}
+                        {useTimeBlockTemplate && (
+                          <select
+                            className="template-category-select"
+                            value={selectedTemplateVersion}
+                            onChange={(e) => {
+                              setSelectedTemplateVersion(e.target.value)
+                              setSelectedTimeBlock('') // 카테고리 변경 시 선택 초기화
+                            }}
+                            disabled={isSubmitting}
+                          >
+                            {TEMPLATE_VERSIONS.map(version => (
+                              <option key={version.id} value={version.id}>
+                                {version.name}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
                       className="btn-add-schedule"
                       onClick={() => {
                         const newSchedule = {
@@ -708,7 +851,7 @@ const AddClassPage: React.FC<AddClassPageProps> = ({ isOpen, onClose, onClassCre
                     <div className="schedules-list">
                       {schedules.map((schedule, index) => (
                         <div key={schedule.id} className="schedule-item">
-                          <div className="schedule-inputs">
+                          <div className={`schedule-inputs ${!useTimeBlockTemplate ? 'manual-mode' : ''}`}>
                             <div className="form-group">
                               <label>요일 *</label>
                               <select
@@ -732,36 +875,56 @@ const AddClassPage: React.FC<AddClassPageProps> = ({ isOpen, onClose, onClassCre
                                 <option value="sunday">일요일</option>
                               </select>
                             </div>
-                            <div className="form-group">
-                              <label>시작 시간 *</label>
-                              <input
-                                type="time"
-                                value={schedule.startTime}
-                                onChange={(e) => {
-                                  const updatedSchedules = schedules.map((s, i) => 
-                                    i === index ? { ...s, startTime: e.target.value } : s
-                                  )
-                                  setSchedules(updatedSchedules)
-                                }}
-                                required
-                                disabled={isSubmitting}
-                              />
-                            </div>
-                            <div className="form-group">
-                              <label>종료 시간 *</label>
-                              <input
-                                type="time"
-                                value={schedule.endTime}
-                                onChange={(e) => {
-                                  const updatedSchedules = schedules.map((s, i) => 
-                                    i === index ? { ...s, endTime: e.target.value } : s
-                                  )
-                                  setSchedules(updatedSchedules)
-                                }}
-                                required
-                                disabled={isSubmitting}
-                              />
-                            </div>
+
+                            {/* 템플릿 모드: 시간 블록 선택 */}
+                            {useTimeBlockTemplate ? (
+                              <div className="form-group time-block-select">
+                                <label>시간 블록 *</label>
+                                <select
+                                  value={selectedTimeBlock}
+                                  onChange={(e) => {
+                                    handleTimeBlockSelect(e.target.value, index)
+                                  }}
+                                  required
+                                  disabled={isSubmitting}
+                                >
+                                  <option value="">블록 선택</option>
+                                  {currentTemplateBlocks.map((block) => (
+                                    <option key={block.id} value={block.id}>
+                                      {block.label} ({block.time})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            ) : (
+                              /* 수동 입력 모드: 시작/종료 시간 */
+                              <>
+                                <div className="form-group">
+                                  <label>시작 시간 *</label>
+                                  <input
+                                    type="time"
+                                    value={schedule.startTime}
+                                    onChange={(e) => {
+                                      handleManualTimeChange('startTime', e.target.value, index)
+                                    }}
+                                    required
+                                    disabled={isSubmitting}
+                                  />
+                                </div>
+                                <div className="form-group">
+                                  <label>종료 시간 *</label>
+                                  <input
+                                    type="time"
+                                    value={schedule.endTime}
+                                    onChange={(e) => {
+                                      handleManualTimeChange('endTime', e.target.value, index)
+                                    }}
+                                    required
+                                    disabled={isSubmitting}
+                                  />
+                                </div>
+                              </>
+                            )}
                           </div>
                           <button
                             type="button"

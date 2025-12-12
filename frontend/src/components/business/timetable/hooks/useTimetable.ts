@@ -25,8 +25,84 @@ const generateTimeSlots = (startHour: number, endHour: number): TimetableTimeSlo
   return slots
 }
 
+// ===== 🆕 시간 클리핑 유틸리티 함수 =====
+const clipTimeToRange = (
+  startTime: string,
+  endTime: string,
+  startHour: number,
+  endHour: number
+): {
+  clippedStartTime: string
+  clippedEndTime: string
+  originalStartTime: string
+  originalEndTime: string
+  isClipped: boolean
+  shouldDisplay: boolean
+} => {
+  // 🆕 예외 처리: timeCalculations가 외부 의존성이므로 방어 코드 추가
+  const actualStartMinutes = timeCalculations.timeToMinutes(startTime)
+  const actualEndMinutes = timeCalculations.timeToMinutes(endTime)
+
+  // 🆕 NaN 체크: 잘못된 시간 포맷 처리
+  if (isNaN(actualStartMinutes) || isNaN(actualEndMinutes)) {
+    console.error('❌ Invalid time format:', { startTime, endTime })
+    return {
+      clippedStartTime: '09:00',
+      clippedEndTime: '09:00',
+      originalStartTime: startTime,
+      originalEndTime: endTime,
+      isClipped: true,
+      shouldDisplay: false
+    }
+  }
+
+  // 🆕 시간 순서 검증: endTime이 startTime보다 빠른 경우
+  if (actualEndMinutes <= actualStartMinutes) {
+    console.error('❌ Invalid time range (end <= start):', { startTime, endTime })
+    return {
+      clippedStartTime: startTime,
+      clippedEndTime: startTime,
+      originalStartTime: startTime,
+      originalEndTime: endTime,
+      isClipped: true,
+      shouldDisplay: false
+    }
+  }
+
+  const startHourMinutes = startHour * 60
+  const endHourMinutes = endHour * 60
+
+  // 클리핑 수행
+  const clippedStartMinutes = Math.max(actualStartMinutes, startHourMinutes)
+  const clippedEndMinutes = Math.min(actualEndMinutes, endHourMinutes)
+
+  // 클리핑 후 duration 계산
+  const clippedDuration = clippedEndMinutes - clippedStartMinutes
+
+  // duration이 0 이하면 표시하지 않음 (완전히 범위 밖)
+  const shouldDisplay = clippedDuration > 0
+
+  // 클리핑 여부 판단
+  const isClipped =
+    actualStartMinutes < startHourMinutes ||
+    actualEndMinutes > endHourMinutes
+
+  return {
+    clippedStartTime: timeCalculations.minutesToTime(clippedStartMinutes),
+    clippedEndTime: timeCalculations.minutesToTime(clippedEndMinutes),
+    originalStartTime: startTime,
+    originalEndTime: endTime,
+    isClipped,
+    shouldDisplay
+  }
+}
+
 // 백엔드 데이터를 프론트엔드 형식으로 변환
-const transformBackendData = (classSections: any[]): Record<string, TimetableClass[]> => {
+const transformBackendData = (
+  classSections: any[],
+  startHour: number,    // 🆕 추가
+  endHour: number       // 🆕 추가
+): Record<string, TimetableClass[]> => {
   // 입력 데이터가 배열이 아니거나 null/undefined인 경우 빈 객체 반환
   if (!Array.isArray(classSections)) {
     console.warn('transformBackendData: classSections is not an array:', classSections)
@@ -44,24 +120,63 @@ const transformBackendData = (classSections: any[]): Record<string, TimetableCla
       console.log('🔍 Schedule is array, processing...')
       section.schedule.forEach((schedule: any) => {
         const day = schedule.dayOfWeek || 'monday'
-        
+
         if (!acc[day]) {
           acc[day] = []
         }
-        
+
+        // 🆕 클리핑 로직 적용
+        const clippingResult = clipTimeToRange(
+          schedule.startTime || '09:00',
+          schedule.endTime || '10:00',
+          startHour,
+          endHour
+        )
+
+        // 🆕 표시 불가능한 수업 필터링 (완전히 범위 밖)
+        if (!clippingResult.shouldDisplay) {
+          console.warn('⚠️ 수업이 시간표 범위를 완전히 벗어났습니다:', {
+            name: section.name,
+            originalTime: `${schedule.startTime} ~ ${schedule.endTime}`,
+            timetableRange: `${startHour}:00 ~ ${endHour}:00`
+          })
+          return // 이 수업은 추가하지 않음
+        }
+
+        // 🆕 클리핑된 duration 계산
+        const clippedDuration =
+          timeCalculations.timeToMinutes(clippingResult.clippedEndTime) -
+          timeCalculations.timeToMinutes(clippingResult.clippedStartTime)
+
         const timetableClass = {
           id: section.id,
           name: section.name,
           teacherName: section.teacher?.name || '',
           classroomName: section.classroom?.name || '',
-          startTime: schedule.startTime || '09:00',
-          endTime: schedule.endTime || '10:00',
-          duration: timeCalculations.timeToMinutes(schedule.endTime || '10:00') - 
-                   timeCalculations.timeToMinutes(schedule.startTime || '09:00'),
+
+          // 🆕 클리핑된 시간 (렌더링용)
+          startTime: clippingResult.clippedStartTime,
+          endTime: clippingResult.clippedEndTime,
+          duration: clippedDuration,
+
+          // 🆕 원본 시간 (표시용)
+          originalStartTime: clippingResult.isClipped ? clippingResult.originalStartTime : undefined,
+          originalEndTime: clippingResult.isClipped ? clippingResult.originalEndTime : undefined,
+          isClipped: clippingResult.isClipped,
+
           color: section.color || '#3498db',
           status: 'active'
         }
-        
+
+        // 🆕 클리핑 로그 추가
+        if (clippingResult.isClipped) {
+          console.log('✂️ 수업 시간이 클리핑되었습니다:', {
+            name: section.name,
+            original: `${clippingResult.originalStartTime} ~ ${clippingResult.originalEndTime}`,
+            clipped: `${clippingResult.clippedStartTime} ~ ${clippingResult.clippedEndTime}`
+          })
+        }
+
         console.log('🔍 Created timetable class:', timetableClass)
         acc[day].push(timetableClass)
       })
@@ -72,24 +187,63 @@ const transformBackendData = (classSections: any[]): Record<string, TimetableCla
         if (Array.isArray(parsedSchedule)) {
           parsedSchedule.forEach((schedule: any) => {
             const day = schedule.dayOfWeek || 'monday'
-            
+
             if (!acc[day]) {
               acc[day] = []
             }
-            
+
+            // 🆕 클리핑 로직 적용
+            const clippingResult = clipTimeToRange(
+              schedule.startTime || '09:00',
+              schedule.endTime || '10:00',
+              startHour,
+              endHour
+            )
+
+            // 🆕 표시 불가능한 수업 필터링 (완전히 범위 밖)
+            if (!clippingResult.shouldDisplay) {
+              console.warn('⚠️ 수업이 시간표 범위를 완전히 벗어났습니다:', {
+                name: section.name,
+                originalTime: `${schedule.startTime} ~ ${schedule.endTime}`,
+                timetableRange: `${startHour}:00 ~ ${endHour}:00`
+              })
+              return // 이 수업은 추가하지 않음
+            }
+
+            // 🆕 클리핑된 duration 계산
+            const clippedDuration =
+              timeCalculations.timeToMinutes(clippingResult.clippedEndTime) -
+              timeCalculations.timeToMinutes(clippingResult.clippedStartTime)
+
             const timetableClass = {
               id: section.id,
               name: section.name,
               teacherName: section.teacher?.name || '',
               classroomName: section.classroom?.name || '',
-              startTime: schedule.startTime || '09:00',
-              endTime: schedule.endTime || '10:00',
-              duration: timeCalculations.timeToMinutes(schedule.endTime || '10:00') - 
-                       timeCalculations.timeToMinutes(schedule.startTime || '09:00'),
+
+              // 🆕 클리핑된 시간 (렌더링용)
+              startTime: clippingResult.clippedStartTime,
+              endTime: clippingResult.clippedEndTime,
+              duration: clippedDuration,
+
+              // 🆕 원본 시간 (표시용)
+              originalStartTime: clippingResult.isClipped ? clippingResult.originalStartTime : undefined,
+              originalEndTime: clippingResult.isClipped ? clippingResult.originalEndTime : undefined,
+              isClipped: clippingResult.isClipped,
+
               color: section.color || '#3498db',
               status: 'active'
             }
-            
+
+            // 🆕 클리핑 로그 추가
+            if (clippingResult.isClipped) {
+              console.log('✂️ 수업 시간이 클리핑되었습니다:', {
+                name: section.name,
+                original: `${clippingResult.originalStartTime} ~ ${clippingResult.originalEndTime}`,
+                clipped: `${clippingResult.clippedStartTime} ~ ${clippingResult.clippedEndTime}`
+              })
+            }
+
             console.log('🔍 Created timetable class from parsed string:', timetableClass)
             acc[day].push(timetableClass)
           })
@@ -302,9 +456,10 @@ export const useTimetable = (rawData: any[] = [], options?: {
     
     // 30분 고정으로 시간 슬롯 생성
     const timeSlots = generateTimeSlots(startHour, endHour)
-    
+
     // 2. 백엔드 데이터를 프론트엔드 형식으로 변환
-    const groupedByDay = transformBackendData(classSections)
+    // 🆕 transformBackendData에 startHour, endHour 전달
+    const groupedByDay = transformBackendData(classSections, startHour, endHour)
     console.log('🔍 useTimetable groupedByDay:', groupedByDay)
     
     // 3. 모든 요일을 포함하는 완전한 주간 일정 생성

@@ -3,6 +3,7 @@ import { Label } from '../../../components/labels/Label'
 import { TimetableWidget, TimetableSkeleton } from '../../../components/business/timetable'
 import { ClassDetailModal } from '../../../components/business/ClassDetailModal'
 import { apiService } from '../../../services/api'
+import { timeCalculations } from '../../../components/business/timetable/utils/timeCalculations'
 import type { ClassSectionWithDetails } from '../types/class.types'
 import type { Student } from '@shared/types/student.types'
 
@@ -33,7 +34,26 @@ export function ClassDetailPanel({ selectedClass, isLoading, onRefreshClasses }:
   // 수업 클릭 핸들러
   const handleClassClick = useCallback((classData: any) => {
     console.log('📚 수업 클릭됨:', classData)
-    setSelectedClassId(classData.id)
+
+    // 🆕 클리핑된 데이터를 원본 시간으로 복원
+    const restoredClassData = {
+      ...classData,
+      // originalStartTime이 있으면 원본 시간 사용, 없으면 현재 시간 유지
+      startTime: classData.originalStartTime || classData.startTime,
+      endTime: classData.originalEndTime || classData.endTime,
+      // duration 재계산 (원본 시간 기준)
+      duration: classData.originalStartTime && classData.originalEndTime
+        ? timeCalculations.timeToMinutes(classData.originalEndTime) -
+          timeCalculations.timeToMinutes(classData.originalStartTime)
+        : classData.duration
+    }
+
+    console.log('🔄 원본 시간 복원:', {
+      클리핑됨: `${classData.startTime}~${classData.endTime}`,
+      원본: `${restoredClassData.startTime}~${restoredClassData.endTime}`
+    })
+
+    setSelectedClassId(restoredClassData.id)
     setIsClassDetailModalOpen(true)
   }, [])
 

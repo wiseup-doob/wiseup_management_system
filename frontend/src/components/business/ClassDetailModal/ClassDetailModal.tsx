@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { apiService } from '../../../services/api'
 import { Button } from '../../buttons/Button'
 import { Label } from '../../labels/Label'
+import type { ClassSchedule } from '@shared/types/class-section.types'
 import './ClassDetailModal.css'
 
 interface ClassDetailModalProps {
@@ -18,6 +19,7 @@ interface ClassDetails {
   name: string
   currentStudents: number
   color?: string
+  schedule?: ClassSchedule[]
 }
 
 interface EnrolledStudent {
@@ -34,12 +36,13 @@ interface EnrolledStudent {
 // 데이터 검증 및 기본값 처리 함수
 const validateAndNormalizeClassDetails = (data: any): ClassDetails => {
   console.log('🔍 원본 API 응답 데이터:', data)
-  
+
   return {
     id: data.id || '',
     name: data.name || '수업명 없음',
     currentStudents: data.currentStudents || 0,
-    color: data.color || '#3498db'
+    color: data.color || '#3498db',
+    schedule: data.schedule || []
   }
 }
 
@@ -48,7 +51,7 @@ const validateAndNormalizeEnrolledStudents = (data: any[]): EnrolledStudent[] =>
   if (!Array.isArray(data)) {
     return []
   }
-  
+
   return data.map((student: any) => ({
     id: student.id || '',
     name: student.name || '이름 없음',
@@ -59,6 +62,11 @@ const validateAndNormalizeEnrolledStudents = (data: any[]): EnrolledStudent[] =>
       email: student.contactInfo?.email || ''
     }
   }))
+}
+
+// 시간 포맷팅 헬퍼 함수
+const formatScheduleTime = (schedule: ClassSchedule): string => {
+  return `${schedule.startTime} - ${schedule.endTime}`
 }
 
 export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
@@ -280,12 +288,21 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
         <div className="class-detail-modal-header">
           <div className="header-content">
             <Label variant="heading" size="large">
-              {classDetails ? `${classDetails.name}` : '수업 이름 로드 실패'}
+              {classDetails ? (
+                <>
+                  {classDetails.name}
+                  {classDetails.schedule && classDetails.schedule.length > 0 && (
+                    <span className="class-time-info">
+                      {' '}({formatScheduleTime(classDetails.schedule[0])})
+                    </span>
+                  )}
+                </>
+              ) : '수업 이름 로드 실패'}
             </Label>
           </div>
-          <Button 
-            variant="ghost" 
-            size="small" 
+          <Button
+            variant="ghost"
+            size="small"
             onClick={onClose}
             className="close-button"
           >

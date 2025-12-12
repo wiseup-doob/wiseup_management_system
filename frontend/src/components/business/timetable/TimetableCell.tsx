@@ -42,19 +42,23 @@ export function TimetableCell({ classData, className = '', onClick }: TimetableC
       <div className="cell-content">
         {/* 수업 이름 */}
         <div className="class-name">{classData.name}</div>
-        
-        {/* 시작 시간 */}
-        <div className="time-start">{classData.startTime}</div>
-        
+
+        {/* 시작 시간 - 원본 시간 우선 표시 */}
+        <div className="time-start">
+          {classData.originalStartTime || classData.startTime}
+        </div>
+
         {/* 구분선 */}
         <div className="time-separator">~</div>
-        
-        {/* 끝 시간 */}
-        <div className="time-end">{classData.endTime}</div>
-        
+
+        {/* 끝 시간 - 원본 시간 우선 표시 */}
+        <div className="time-end">
+          {classData.originalEndTime || classData.endTime}
+        </div>
+
         {/* 선생 이름 */}
         <div className="teacher-name">{classData.teacherName}</div>
-        
+
         {/* 강의실 */}
         <div className="classroom-name">{classData.classroomName}</div>
       </div>
