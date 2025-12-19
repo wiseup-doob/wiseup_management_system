@@ -10,7 +10,8 @@
   border-radius: 999px;
   background: #f7f9fc;
   border-color: #e6eef8;
-  color: #333333; /* pill 상태에서도 검은색 글씨 보이도록 */
+  color: #333333;
+  /* pill 상태에서도 검은색 글씨 보이도록 */
 }
 
 .search-input-icon {
@@ -20,6 +21,28 @@
   transform: translateY(-50%);
   color: #94a3b8;
   pointer-events: none;
+}
+
+.search-input-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #adb5bd;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.search-input-clear:hover {
+  color: #495057;
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .search-input {
@@ -34,24 +57,51 @@
   outline: none;
 }
 
-.search-input--xs { height: 28px; padding: 4px 32px 4px 28px; font-size: 12px; border-radius: 8px; }
-.search-input--sm { height: 32px; padding: 6px 36px 6px 30px; font-size: 13px; border-radius: 8px; }
-.search-input--md { height: 36px; padding: 8px 40px 8px 32px; font-size: 14px; border-radius: 10px; }
-.search-input--lg { height: 40px; padding: 12px 44px 12px 36px; font-size: 14px; border-radius: 12px; }
+.search-input--xs {
+  height: 28px;
+  padding: 4px 32px 4px 28px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+
+.search-input--sm {
+  height: 32px;
+  padding: 6px 36px 6px 30px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+.search-input--md {
+  height: 36px;
+  padding: 8px 40px 8px 32px;
+  font-size: 14px;
+  border-radius: 10px;
+}
+
+.search-input--lg {
+  height: 40px;
+  padding: 12px 44px 12px 36px;
+  font-size: 14px;
+  border-radius: 12px;
+}
 
 .search-input--pill {
-  padding-left: 40px; /* 아이콘 여백 */
+  padding-left: 40px;
+  /* 아이콘 여백 */
   background: #f7f9fc;
-  color: #333333; /* pill 상태에서도 검은색 글씨 보이도록 */
+  color: #333333;
+  /* pill 상태에서도 검은색 글씨 보이도록 */
 }
 
 /* Compact size for sidebar alignment */
 .search-input-container.compact .search-input {
   border-radius: 8px;
 }
+
 .search-input-container.compact .search-input-icon {
   left: 10px;
 }
+
 .search-input-container.compact.pill .search-input {
   border-radius: 999px;
 }
@@ -81,10 +131,11 @@
   .search-input-container {
     max-width: 100%;
   }
-  
+
   .search-input {
     padding: 10px 14px;
-    font-size: 16px; /* 모바일에서 더 큰 폰트 */
+    font-size: 16px;
+    /* 모바일에서 더 큰 폰트 */
   }
 }
 
@@ -98,7 +149,7 @@
   border: 1px solid #e0e0e0;
   border-top: none;
   border-radius: 12px;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
   z-index: 20;
   max-height: 260px;
   overflow-y: auto;
@@ -114,7 +165,8 @@
   border-bottom: 1px solid #f2f2f2;
   cursor: pointer;
   font-size: 14px;
-  color: #333333; /* 드롭다운 글자 색상을 검은색으로 설정 */
+  color: #333333;
+  /* 드롭다운 글자 색상을 검은색으로 설정 */
 }
 
 .search-suggestion-item:hover {
@@ -128,11 +180,11 @@
     border-color: #555555;
     color: #ffffff;
   }
-  
+
   .search-input::placeholder {
     color: #aaaaaa;
   }
-  
+
   .search-input:focus {
     border-color: #4dabf7;
     box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.1);

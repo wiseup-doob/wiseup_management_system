@@ -23,7 +23,7 @@
 
 .search-container {
   flex: 1;
-  max-width: 300px;
+  max-width: 1200px;
 }
 
 .filter-buttons {
@@ -417,48 +417,48 @@
   .class-page {
     padding: 10px;
   }
-  
+
   .search-filter-section {
     flex-direction: column;
     gap: 15px;
     align-items: stretch;
   }
-  
+
   .filter-buttons {
     flex-wrap: wrap;
     justify-content: center;
   }
-  
+
   .class-content {
     flex-direction: column;
   }
-  
+
   .class-panel {
     width: 100%;
     max-height: 300px;
   }
-  
+
   .class-detail-panel {
     min-height: 300px;
   }
-  
+
   .info-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .enrolled-students-section {
     padding: 15px;
   }
-  
+
   .students-table {
     font-size: 12px;
   }
-  
+
   .students-table th,
   .students-table td {
     padding: 8px 12px;
   }
-  
+
   .timetable-container {
     padding: 10px;
   }
@@ -604,6 +604,7 @@
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
@@ -767,6 +768,7 @@
     opacity: 0;
     transform: translateX(-50%) translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
@@ -803,6 +805,7 @@
     opacity: 0;
     transform: translateY(-30px) scale(0.9);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -954,15 +957,15 @@
   .delete-modal-overlay {
     padding: 10px;
   }
-  
+
   .delete-modal-content {
     max-width: 100%;
   }
-  
+
   .delete-modal-actions {
     flex-direction: column;
   }
-  
+
   .btn-cancel,
   .btn-delete {
     width: 100%;
@@ -1052,26 +1055,26 @@
     flex-direction: column;
     gap: 20px;
   }
-  
+
   .class-panel {
     width: 100%;
     max-width: none;
   }
-  
+
   .class-detail-panel {
     width: 100%;
   }
-  
+
   .search-filter-section {
     flex-direction: column;
     gap: 16px;
     align-items: stretch;
   }
-  
+
   .search-container {
     max-width: none;
   }
-  
+
   .filter-buttons {
     justify-content: center;
     flex-wrap: wrap;
@@ -1083,56 +1086,56 @@
     padding: 10px;
     gap: 10px;
   }
-  
+
   .pagination-controls {
     flex-direction: column;
     gap: 15px;
   }
-  
+
   .page-numbers {
     order: 2;
   }
-  
+
   .prev-btn,
   .next-btn {
     order: 1;
     width: 100%;
     justify-content: center;
   }
-  
+
   .timetable-edit-panel {
     padding: 16px;
   }
-  
+
   .time-slots-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .time-slot-item {
     flex-direction: column;
     gap: 16px;
     text-align: center;
   }
-  
+
   .time-slot-actions {
     width: 100%;
     justify-content: center;
   }
-  
+
   .time-input-modal-content {
     margin: 20px;
     max-height: calc(100vh - 40px);
   }
-  
+
   .class-item {
     padding: 16px;
   }
-  
+
   .class-item-actions {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .class-item-actions button {
     width: 100%;
   }
@@ -1143,43 +1146,43 @@
     padding: 8px;
     gap: 8px;
   }
-  
+
   .search-filter-section {
     padding: 12px;
   }
-  
+
   .filter-buttons {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .filter-select {
     width: 100%;
     min-width: auto;
   }
-  
+
   .add-class-btn {
     width: 100%;
   }
-  
+
   .tab-navigation {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .tab-button {
     width: 100%;
     text-align: center;
   }
-  
+
   .timetable-edit-panel {
     padding: 12px;
   }
-  
+
   .time-slots-list h4 {
     font-size: 16px;
   }
-  
+
   .time-slot-item {
     padding: 12px;
   }
@@ -1288,9 +1291,12 @@
 
 /* 로딩 애니메이션 개선 */
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -1310,6 +1316,7 @@
     transform: translateY(-100%);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -1480,18 +1487,18 @@
   .time-slots-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .time-slot-item {
     flex-direction: column;
     gap: 16px;
     text-align: center;
   }
-  
+
   .time-slot-actions {
     width: 100%;
     justify-content: center;
   }
-  
+
   .time-input-modal-content {
     margin: 20px;
     max-height: calc(100vh - 40px);
@@ -1542,8 +1549,13 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* 빈 스케줄 상태 */
@@ -1597,20 +1609,20 @@
     padding: 16px;
     margin-top: 20px;
   }
-  
+
   .timetable-section h3 {
     font-size: 16px;
     margin-bottom: 12px;
   }
-  
+
   .class-timetable-widget {
     min-height: 300px;
   }
-  
+
   .class-timetable-widget .timetable-grid {
     font-size: 10px;
   }
-  
+
   .class-timetable-widget .timetable-cell {
     font-size: 9px;
     padding: 2px 4px;
@@ -1703,7 +1715,7 @@
   .timetable-container {
     margin: 0 calc(-1 * var(--timetable-spacing-md));
   }
-  
+
   .timetable-section h3 {
     padding: 0 var(--timetable-spacing-lg);
     font-size: var(--title-small-font-size);
@@ -1714,18 +1726,18 @@
   .timetable-section {
     margin-top: var(--timetable-spacing-lg);
   }
-  
+
   .timetable-section h3 {
     padding: 0 var(--timetable-spacing-md);
     font-size: var(--title-small-font-size);
     margin-bottom: var(--timetable-spacing-md);
   }
-  
+
   .timetable-container {
     margin: 0 calc(-1 * var(--timetable-spacing-sm));
     border-radius: var(--border-radius-md);
   }
-  
+
   .class-timetable-widget {
     min-height: 300px;
   }
@@ -1735,18 +1747,18 @@
   .timetable-section {
     margin-top: var(--timetable-spacing-md);
   }
-  
+
   .timetable-section h3 {
     padding: 0 var(--timetable-spacing-sm);
     font-size: var(--body-medium-font-size);
     margin-bottom: var(--timetable-spacing-sm);
   }
-  
+
   .timetable-container {
     margin: 0 calc(-1 * var(--timetable-spacing-xs));
     border-radius: var(--border-radius-sm);
   }
-  
+
   .class-timetable-widget {
     min-height: 250px;
   }

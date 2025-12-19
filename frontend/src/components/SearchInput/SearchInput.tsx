@@ -24,7 +24,7 @@ export interface SearchInputProps extends BaseWidgetProps {
 }
 
 export const SearchInput = forwardRef<HTMLDivElement, SearchInputProps>(
-  ({ 
+  ({
     placeholder = '검색...',
     value = '',
     onChange,
@@ -39,7 +39,7 @@ export const SearchInput = forwardRef<HTMLDivElement, SearchInputProps>(
     containerStyle,
     inputStyle,
     autoFocus = false,
-    ...props 
+    ...props
   }, ref) => {
     const [open, setOpen] = useState(false)
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,8 +59,8 @@ export const SearchInput = forwardRef<HTMLDivElement, SearchInputProps>(
       return suggestions.filter(s => s.label.toLowerCase().includes(v))
     }, [suggestions, value])
     return (
-      <BaseWidget 
-        ref={ref} 
+      <BaseWidget
+        ref={ref}
         className={`search-input-container compact ${variant === 'pill' ? 'pill' : ''} ${className}`}
         style={containerStyle}
         {...props}
@@ -68,7 +68,7 @@ export const SearchInput = forwardRef<HTMLDivElement, SearchInputProps>(
         {showIcon && (
           <span className="search-input-icon" aria-hidden>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
         )}
@@ -84,6 +84,7 @@ export const SearchInput = forwardRef<HTMLDivElement, SearchInputProps>(
           style={inputStyle}
           autoFocus={autoFocus}
         />
+
         {open && filtered.length > 0 && (
           <div className="search-suggestions">
             {filtered.map(item => (

@@ -4,13 +4,13 @@ import { useSearchParams } from 'react-router-dom'
 import { BaseWidget } from '../../../components/base/BaseWidget'
 import { useAppDispatch } from '../../../hooks/useAppDispatch'
 import { useAppSelector } from '../../../hooks/useAppSelector'
-import { 
-  fetchClasses, 
-  searchClasses, 
-  createClass, 
-  deleteClassAsync, 
-  setSearchTerm, 
-  setFilter 
+import {
+  fetchClasses,
+  searchClasses,
+  createClass,
+  deleteClassAsync,
+  setSearchTerm,
+  setFilter
 } from '../slice/classSlice'
 import { apiService } from '../../../services/api'
 import type { ClassSchedule, ClassSectionDependencies } from '@shared/types/class-section.types'
@@ -22,6 +22,9 @@ import { ClassList } from '../components/ClassList'
 import { ClassDetailPanel } from '../components/ClassDetailPanel'
 import { ClassModals } from '../components/ClassModals'
 import { TeacherDetailPanel } from '../components/TeacherDetailPanel'
+import { ClassScheduleMatrix } from '../components/ClassScheduleMatrix'
+import type { EnrolledStudent } from '../types/class.types'
+import { SUBJECT_MAP } from '../utils/matrixUtils'
 
 function ClassPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -31,7 +34,7 @@ function ClassPage() {
   const filters = useAppSelector(state => state.class.filters)
   const isLoading = useAppSelector(state => state.class.isLoading)
   const error = useAppSelector(state => state.class.error)
-  
+
   // 필요한 함수들을 직접 정의
   const handleSearchChange = useCallback((value: string) => {
     dispatch(setSearchTerm(value))
@@ -48,10 +51,10 @@ function ClassPage() {
     dispatch(fetchClasses())
   }, [dispatch])
 
-  // 수업 선택 핸들러 (선생님 선택 해제)
+  // 수업 선택 핸들러 (선생님 선택 유지)
   const handleClassSelect = useCallback((classItem: ClassSectionWithDetails) => {
     setSelectedClass(classItem)
-    setSelectedTeacher(null) // 선생님 선택 해제 (우선순위)
+    // setSelectedTeacher(null) 제거: 선생님 필터 컨텍스트 유지
   }, [])
 
   // 선생님 정보 패널 닫기 핸들러
@@ -73,7 +76,7 @@ function ClassPage() {
   const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false)
   const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false)
   const [selectedClass, setSelectedClass] = useState<ClassSectionWithDetails | null>(null)
-  
+
   // 선생님 정보 패널 상태
   const [selectedTeacher, setSelectedTeacher] = useState<string | null>(null)
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
@@ -87,10 +90,33 @@ function ClassPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(10)
 
+  // --- [Matrix View] Student Cache State ---
+  const [studentCache, setStudentCache] = useState<Record<string, EnrolledStudent[]>>({});
+  const invalidateStudentCache = useCallback((classId: string) => {
+    setStudentCache(prev => {
+      const next = { ...prev };
+      delete next[classId];
+      return next;
+    });
+  }, []);
+
+  // 뷰 모드 상태 추가
+  const [viewMode, setViewMode] = useState<import('../types/class.types').ClassViewMode>('management')
+
+  const handleViewModeChange = (mode: import('../types/class.types').ClassViewMode) => {
+    setViewMode(mode)
+    handleClearSearch() // 뷰 모드 변경 시 검색 초기화
+    if (mode === 'management') {
+      // 뷰 모드 변경 시 필요한 초기화 로직이 있다면 여기에 추가
+      setSelectedClass(null)
+      setSelectedTeacher(null)
+    }
+  }
+
   // 컴포넌트 마운트 시 초기 데이터 로딩
   useEffect(() => {
     const hasSearchParams = searchValue || Object.values(urlFilters).some(f => f)
-    
+
     if (hasSearchParams) {
       if (searchValue) {
         handleSearchChange(searchValue)
@@ -103,6 +129,9 @@ function ClassPage() {
               if (teacher) {
                 setSelectedTeacher(teacher.id)
                 dispatch(searchClasses({ teacherId: teacher.id }))
+              } else {
+                // 선생님 정보를 못 찾았을 경우 (데이터 미로딩 등) 전체 목록 조회
+                dispatch(fetchClasses())
               }
             }
           }
@@ -111,7 +140,7 @@ function ClassPage() {
     } else {
       dispatch(fetchClasses())
     }
-    
+
     return () => {
       setSearchValue('')
       setUrlFilters({ teacherName: '' })
@@ -126,6 +155,8 @@ function ClassPage() {
       }
     }
   }, [])
+
+
 
   // URL 쿼리 파라미터 업데이트 함수
   const updateSearchParams = useCallback((updates: Record<string, string>) => {
@@ -144,11 +175,11 @@ function ClassPage() {
   const handleSearch = useCallback((value: string) => {
     setSearchValue(value)
     updateSearchParams({ search: value })
-    
+
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current)
     }
-    
+
     searchTimeoutRef.current = setTimeout(() => {
       handleSearchChange(value)
     }, 300)
@@ -160,7 +191,7 @@ function ClassPage() {
   const handleAddNewClass = () => {
     setIsAddClassModalOpen(true)
   }
-  
+
   const handleCloseAddClassModal = () => {
     setIsAddClassModalOpen(false)
   }
@@ -181,13 +212,13 @@ function ClassPage() {
       description: '새로운 수업이 목록에 추가되었습니다.'
     })
     setShowSuccessMessage(true)
-    
+
     refreshClasses()
     setSelectedClass(null)
     setSearchValue('')
     setUrlFilters({ teacherName: '' })
     setSearchParams({})
-    
+
     setTimeout(() => {
       setShowSuccessMessage(false)
     }, 3000)
@@ -222,19 +253,22 @@ function ClassPage() {
       description: '수업에 새로운 학생이 추가되었습니다.'
     })
     setShowSuccessMessage(true)
-    
+
     if (selectedClass) {
       refreshClasses()
+      // [Matrix View] Cache Invalidation
+      // 모달에서 학생이 추가되었으므로, 해당 수업의 캐시를 지워 매트릭스 뷰에서 다시 로드하게 함
+      invalidateStudentCache(selectedClass.id)
     }
-    
+
     setTimeout(() => {
       setShowSuccessMessage(false)
     }, 3000)
-  }, [selectedClass, refreshClasses])
+  }, [selectedClass, refreshClasses, invalidateStudentCache])
 
   const handleDeleteClass = async (classItem: ClassSectionWithDetails) => {
     setClassToDelete(classItem)
-    
+
     try {
       const response = await apiService.getClassSectionDependencies(classItem.id)
       if (response.success && response.data) {
@@ -243,7 +277,7 @@ function ClassPage() {
     } catch (error) {
       setClassDependencies(null)
     }
-    
+
     setIsDeleteModalOpen(true)
   }
 
@@ -258,31 +292,31 @@ function ClassPage() {
     if (!classToDelete) return
 
     setIsDeleting(true)
-    
+
     try {
       const response = await apiService.deleteClassSectionHierarchically(classToDelete.id)
-      
+
       if (response.success) {
         setSuccessMessage({
           title: '수업이 성공적으로 삭제되었습니다!',
           description: '수업과 관련된 모든 데이터가 함께 삭제되었습니다.'
         })
         setShowSuccessMessage(true)
-        
+
         if (selectedClass?.id === classToDelete.id) {
           setSelectedClass(null)
         }
-        
+
         handleCloseDeleteModal()
         refreshClasses()
-        
+
         setTimeout(() => {
           setShowSuccessMessage(false)
         }, 3000)
       } else {
         throw new Error('수업 계층적 삭제 실패')
       }
-      
+
     } catch (error) {
       alert('수업 삭제에 실패했습니다. 다시 시도해주세요.')
     } finally {
@@ -293,13 +327,27 @@ function ClassPage() {
   // 필터링된 클래스 목록
   const filteredClasses = useMemo(() => {
     if (!classes || !Array.isArray(classes) || classes.length === 0) return []
-    
+
     return classes.filter(classItem => {
       const teacherName = classItem.teacher?.name || classItem.teacherId
-      const matchesSearch = classItem.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           teacherName.toLowerCase().includes(searchTerm.toLowerCase())
+      const searchLower = searchTerm.toLowerCase();
+
+      // 과목명 매핑 확인 (예: '국어' -> 'korean' 인데, 여기서는 역방향 검색이 필요하거나, 
+      // classItem.course.subject가 'korean'일 때 SUBJECT_MAP['korean'] ('국어') 문자열에 검색어가 포함되는지 확인)
+      const subjectCode = classItem.course?.subject || '';
+      const subjectName = SUBJECT_MAP[subjectCode] || ''; // '국어', '수학' 등
+
+      const matchesSearch =
+        classItem.name.toLowerCase().includes(searchLower) ||
+        teacherName.toLowerCase().includes(searchLower) ||
+        subjectName.includes(searchTerm) || // 한글 과목명 검색
+        subjectCode.toLowerCase().includes(searchLower); // 영어 코드 검색
+
       const matchesTeacher = !filters.teacherName || teacherName === filters.teacherName
-      
+
+      // Matrix View에서는 'active' 상태가 아니면 필터링될 수 있으나, filteredClasses는 검색 결과만 반환하고 
+      // Matrix 컴포넌트 내부의 groupClasses는 status='active'만 처리함. 
+      // 여기서는 검색어 매칭만 담당.
       return matchesSearch && matchesTeacher
     })
   }, [classes, searchTerm, filters.teacherName])
@@ -316,12 +364,12 @@ function ClassPage() {
         currentClasses: []
       }
     }
-    
+
     const totalPages = Math.ceil(filteredClasses.length / itemsPerPage)
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
     const currentClasses = filteredClasses.slice(startIndex, endIndex)
-    
+
     return {
       totalPages,
       startIndex,
@@ -329,7 +377,7 @@ function ClassPage() {
       currentClasses
     }
   }, [filteredClasses, currentPage, itemsPerPage])
-  
+
   const { totalPages, startIndex, endIndex, currentClasses } = paginationData
 
   // 페이지 변경 핸들러
@@ -346,7 +394,7 @@ function ClassPage() {
   // 고유한 선생님 목록 추출 (teacherId와 name을 포함한 객체 배열)
   const uniqueTeachers = useMemo(() => {
     if (!classes || !Array.isArray(classes)) return []
-    
+
     const teacherMap = new Map()
     classes.forEach(cls => {
       if (cls.teacherId && cls.teacher?.name) {
@@ -356,21 +404,40 @@ function ClassPage() {
         })
       }
     })
-    
+
     return Array.from(teacherMap.values())
   }, [classes])
+
+  // uniqueTeachers 업데이트 시 상태 동기화 (새로고침 시 데이터 로드 후 복구용)
+  useEffect(() => {
+    if (uniqueTeachers.length > 0 && urlFilters.teacherName) {
+      const teacher = uniqueTeachers.find(t => t.name === urlFilters.teacherName)
+      if (teacher) {
+        // 1. 오른쪽 패널 복구
+        if (!selectedTeacher) {
+          setSelectedTeacher(teacher.id)
+        }
+
+        // 2. 왼쪽 리스트 필터링 상태(Redux) 동기화
+        // 현재 리덕스 필터가 URL 필터와 다르다면 동기화
+        if (filters.teacherName !== teacher.name) {
+          dispatch(setFilter({ key: 'teacherName', value: teacher.name }))
+        }
+      }
+    }
+  }, [uniqueTeachers, urlFilters.teacherName, selectedTeacher, filters.teacherName, dispatch])
 
   // 선생님별 수업 데이터 (teacherId로 정확한 필터링)
   const teacherClasses = useMemo(() => {
     if (!selectedTeacher || !classes) return []
-    
+
     // selectedTeacher가 teacherId인지 teacherName인지 확인
-    const teacher = uniqueTeachers.find(t => 
+    const teacher = uniqueTeachers.find(t =>
       t.id === selectedTeacher || t.name === selectedTeacher
     )
-    
+
     if (!teacher) return []
-    
+
     // teacherId로 정확한 필터링
     return classes.filter(cls => cls.teacherId === teacher.id)
   }, [selectedTeacher, classes, uniqueTeachers])
@@ -388,7 +455,7 @@ function ClassPage() {
   // 필터 변경 핸들러 (teacherName을 teacherId로 변환)
   const handleFilterChange = useCallback((key: keyof typeof filters, value: string) => {
     dispatch(setFilter({ key, value }))
-    
+
     // 선생님 선택 시 선생님 정보 패널 상태 업데이트
     if (key === 'teacherName') {
       if (value) {
@@ -402,10 +469,10 @@ function ClassPage() {
         setSelectedTeacher(null)
       }
     }
-    
+
     const currentFilters = { ...filters, [key]: value }
     const hasActiveFilters = Object.values(currentFilters).some(filter => filter && filter.trim())
-    
+
     if (hasActiveFilters) {
       const searchParams: any = {}
       if (currentFilters.teacherName) {
@@ -415,7 +482,7 @@ function ClassPage() {
           searchParams.teacherId = teacher.id  // teacherId로 검색
         }
       }
-      
+
       dispatch(searchClasses(searchParams))
     } else {
       dispatch(fetchClasses())
@@ -426,7 +493,7 @@ function ClassPage() {
   const handleFilter = useCallback((key: keyof typeof filters, value: string) => {
     const paramKey = key === 'teacherName' ? 'teacher' : key
     updateSearchParams({ [paramKey]: value })
-    
+
     setUrlFilters(prev => ({ ...prev, [key]: value }))
     dispatch(setFilter({ key, value }))  // Redux 필터 상태 동기화
     // teacherName을 teacherId로 변환하여 검색
@@ -490,7 +557,7 @@ function ClassPage() {
     const getPageNumbers = () => {
       const pages = []
       const maxVisiblePages = 5
-      
+
       if (totalPages <= maxVisiblePages) {
         for (let i = 1; i <= totalPages; i++) {
           pages.push(i)
@@ -498,16 +565,16 @@ function ClassPage() {
       } else {
         let start = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
         const end = Math.min(totalPages, start + maxVisiblePages - 1)
-        
+
         if (end === totalPages) {
           start = Math.max(1, end - maxVisiblePages + 1)
         }
-        
+
         for (let i = start; i <= end; i++) {
           pages.push(i)
         }
       }
-      
+
       return pages
     }
 
@@ -520,7 +587,7 @@ function ClassPage() {
             총 {filteredClasses?.length || 0}개 중 {startIndex + 1}-{Math.min(endIndex, filteredClasses?.length || 0)}개 표시
           </span>
         </div>
-        
+
         <div className="pagination-controls">
           <button
             className={`pagination-btn prev-btn ${currentPage === 1 ? 'disabled' : ''}`}
@@ -529,7 +596,7 @@ function ClassPage() {
           >
             ← 이전
           </button>
-          
+
           <div className="page-numbers">
             {pageNumbers.map(pageNum => (
               <button
@@ -541,7 +608,7 @@ function ClassPage() {
               </button>
             ))}
           </div>
-          
+
           <button
             className={`pagination-btn next-btn ${currentPage === totalPages ? 'disabled' : ''}`}
             onClick={() => handlePageChange(currentPage + 1)}
@@ -555,10 +622,18 @@ function ClassPage() {
   }
 
   // 검색 초기화 함수
+  // 검색 초기화 함수
   const handleClearSearch = () => {
+    // 1. 로컬 상태 초기화
     setSearchValue('')
     setUrlFilters({ teacherName: '' })
     setSearchParams({})
+
+    // 2. Redux 상태 초기화 (검색바와 동기화)
+    dispatch(setSearchTerm(''))
+    dispatch(setFilter({ key: 'teacherName', value: '' }))
+
+    // 3. 전체 데이터 다시 불러오기
     refreshClasses()
   }
 
@@ -568,53 +643,68 @@ function ClassPage() {
       <ClassSearchFilters
         searchValue={searchValue}
         onSearch={handleSearch}
+        viewMode={viewMode}
+        onViewModeChange={handleViewModeChange}
         filters={urlFilters}
         onFilter={handleFilter}
         uniqueTeachers={uniqueTeachers}
         onAddNewClass={handleAddNewClass}
+        onClear={handleClearSearch}
       />
 
       {/* 메인 콘텐츠 */}
       <div className="class-content">
-        {/* 왼쪽 패널 - 수업 목록 */}
-        <ClassList
-          isLoading={isLoading}
-          error={error}
-          filteredClasses={filteredClasses}
-          currentClasses={currentClasses}
-          selectedClass={selectedClass}
-          searchValue={searchValue}
-          filters={urlFilters}
-          onSelectClass={handleClassSelect}
-          onEditClass={handleEditClass}
-          onDeleteClass={handleDeleteClass}
-          onOpenAddStudentModal={handleOpenAddStudentModal}
-          onAddNewClass={handleAddNewClass}
-          onRefreshClasses={refreshClasses}
-          onClearSearch={handleClearSearch}
-          highlightText={highlightText}
-          renderSkeleton={renderSkeleton}
-          renderPagination={renderPagination}
-        />
+        {viewMode === 'list' ? (
+          <>
+            {/* 왼쪽 패널 - 수업 목록 */}
+            <ClassList
+              isLoading={isLoading}
+              error={error}
+              filteredClasses={filteredClasses}
+              currentClasses={currentClasses}
+              selectedClass={selectedClass}
+              searchValue={searchValue}
+              filters={urlFilters}
+              onSelectClass={handleClassSelect}
+              onEditClass={handleEditClass}
+              onDeleteClass={handleDeleteClass}
+              onOpenAddStudentModal={handleOpenAddStudentModal}
+              onAddNewClass={handleAddNewClass}
+              onRefreshClasses={refreshClasses}
+              onClearSearch={handleClearSearch}
+              highlightText={highlightText}
+              renderSkeleton={renderSkeleton}
+              renderPagination={renderPagination}
+            />
 
-        {/* 오른쪽 패널 - 선택된 수업 또는 선생님 상세 정보 */}
-        {selectedClass ? (
-          <ClassDetailPanel
-            selectedClass={selectedClass}
-            isLoading={isLoading}
-            onRefreshClasses={refreshClasses}
+            {/* 오른쪽 패널 - 선택된 수업 또는 선생님 상세 정보 */}
+            {selectedClass ? (
+              <ClassDetailPanel
+                selectedClass={selectedClass}
+                isLoading={isLoading}
+                onRefreshClasses={refreshClasses}
+              />
+            ) : selectedTeacher ? (
+              <TeacherDetailPanel
+                teacherName={getTeacherName(selectedTeacher)}
+                teacherId={selectedTeacher}
+                classes={teacherClasses}
+                onClose={handleCloseTeacherPanel}
+                onRefreshClasses={refreshClasses}
+              />
+            ) : null}
+          </>
+        ) : (
+          /* 전체 수업 관리 모드 (매트릭스 뷰) */
+          <ClassScheduleMatrix
+            classes={filteredClasses} // 필터링된 클래스 전달 (검색 적용)
+            studentCache={studentCache}
+            setStudentCache={setStudentCache}
+            onEditClass={handleEditClass}
           />
-        ) : selectedTeacher ? (
-          <TeacherDetailPanel
-            teacherName={getTeacherName(selectedTeacher)}  // teacherId로 이름 조회
-            teacherId={selectedTeacher}
-            classes={teacherClasses}
-            onClose={handleCloseTeacherPanel}
-            onRefreshClasses={refreshClasses}
-          />
-        ) : null}
+        )}
       </div>
-      
+
       {/* 모든 모달들 */}
       <ClassModals
         showSuccessMessage={showSuccessMessage}

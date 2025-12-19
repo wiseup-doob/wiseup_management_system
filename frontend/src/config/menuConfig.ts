@@ -27,6 +27,7 @@ export const SIDEBAR_MENU_ITEMS: MenuItem[] = [
     icon: SIDEBAR_IMPORTS.DEFAULT_ICON,
     description: '학생 시간표 관리'
   },
+
   {
     id: 'timetable-versions',
     label: '시간표 버전 관리',
@@ -72,7 +73,7 @@ export const getMenuItemById = (id: string): MenuItem | undefined => {
 // 메뉴 아이템 검색 함수
 export const searchMenuItems = (searchTerm: string): MenuItem[] => {
   const term = searchTerm.toLowerCase()
-  return SIDEBAR_MENU_ITEMS.filter(item => 
+  return SIDEBAR_MENU_ITEMS.filter(item =>
     item.label.toLowerCase().includes(term) ||
     item.description?.toLowerCase().includes(term)
   )

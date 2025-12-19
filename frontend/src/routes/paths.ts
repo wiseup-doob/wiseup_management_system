@@ -8,6 +8,7 @@ export const ROUTES = {
   CLASS: '/class',
   SCHEDULE: '/schedule',
 
+
   // 관리자 페이지
   ADMIN_TIMETABLE_VERSIONS: '/admin/timetable-versions'
 }
@@ -34,6 +35,7 @@ export const PAGE_METADATA = {
     title: '시간표 관리',
     description: '학생 시간표 관리'
   },
+
   [ROUTES.ADMIN_TIMETABLE_VERSIONS]: {
     title: '시간표 버전 관리',
     description: '시간표 버전 생성 및 관리'

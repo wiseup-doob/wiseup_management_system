@@ -8,6 +8,7 @@ import SchedulePage from '../features/schedule/pages/SchedulePage'
 import { TimetableVersionManagementPage } from '../features/admin/pages/TimetableVersionManagementPage'
 
 
+
 const routes = [
   {
     path: '/',
@@ -31,12 +32,13 @@ const routes = [
       },
       {
         path: 'class/add',
-        element: <AddClassPage isOpen={true} onClose={() => {}} />
+        element: <AddClassPage isOpen={true} onClose={() => { }} />
       },
       {
         path: 'schedule',
         element: <SchedulePage />
       },
+
       {
         path: 'admin/timetable-versions',
         element: <TimetableVersionManagementPage />

@@ -1,5 +1,7 @@
 import type { ClassSection } from '@shared/types/class-section.types'
 
+export type ClassViewMode = 'list' | 'management';
+
 // Course 정보를 포함한 ClassSection
 export interface ClassSectionWithDetails extends ClassSection {
   course?: {
@@ -65,7 +67,7 @@ export interface ClassState {
     teacherName: string
     status: string
   }
-  
+
   // ===== 시간표 관련 상태 =====
   // 사용자 정의 시간대
   customTimeSlots: CustomTimeSlot[]
